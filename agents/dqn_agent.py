@@ -194,6 +194,7 @@ class DQNAgent:
 
     def train(self):
         self.policy_net.train()
+        self.target_net.train()
 
     def getModelStr(self):
         return str(self.policy_net)

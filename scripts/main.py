@@ -23,6 +23,7 @@ from utils.env_wrapper import EnvWrapper
 
 from agents.dqn_agent import DQNAgent
 from networks.cnn import CNN
+from networks.equivariant import EquivariantCNN
 
 ExpertTransition = collections.namedtuple('ExpertTransition', 'state obs action reward next_state next_obs done step_left expert')
 
@@ -60,7 +61,12 @@ def train():
 
     # setup agent
     agent = DQNAgent()
-    net = CNN().to(device)
+    if model == 'cnn':
+        net = CNN().to(device)
+    elif model == 'equi':
+        net = EquivariantCNN().to(device)
+    else:
+        raise NotImplementedError
     agent.initNetwork(net)
 
     if load_model_pre:
