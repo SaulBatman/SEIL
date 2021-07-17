@@ -11,7 +11,7 @@ class CNN(nn.Module):
         super().__init__()
         self.conv = torch.nn.Sequential(
             # 128x128
-            nn.Conv2d(1, 32, kernel_size=3, padding=1),
+            nn.Conv2d(2, 32, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2),
             # 64x64
@@ -39,6 +39,14 @@ class CNN(nn.Module):
         self.dxy_fc = torch.nn.Linear(1024, 9)
         self.dz_fc = torch.nn.Linear(1024, 3)
         self.dtheta_fc = torch.nn.Linear(1024, 1)
+
+        for m in self.named_modules():
+            if isinstance(m[1], nn.Conv2d):
+                # nn.init.kaiming_normal_(m[1].weight.data)
+                nn.init.xavier_normal_(m[1].weight.data)
+            elif isinstance(m[1], nn.BatchNorm2d):
+                m[1].weight.data.fill_(1)
+                m[1].bias.data.zero_()
 
     def forward(self, x):
         h = self.conv(x)

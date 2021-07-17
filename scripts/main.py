@@ -86,8 +86,6 @@ def train():
         replay_buffer = QLearningBuffer(buffer_size)
     exploration = LinearSchedule(schedule_timesteps=explore, initial_p=init_eps, final_p=final_eps)
 
-    states, obs = envs.reset()
-
     if load_sub:
         logger.loadCheckPoint(os.path.join(log_dir, load_sub, 'checkpoint'), envs, agent, replay_buffer)
 
@@ -113,11 +111,34 @@ def train():
         logger.saveModel(0, 'pretrain', agent)
         # agent.sl = sl
 
+    if planner_episode > 0:
+        j = 0
+        states, obs = envs.reset()
+        if not no_bar:
+            planner_bar = tqdm(total=planner_episode)
+        while j < planner_episode:
+            plan_actions = envs.getNextAction()
+            planner_actions_star_idx, planner_actions_star = agent.getActionFromPlan(plan_actions)
+            states_, obs_, rewards, dones = envs.step(planner_actions_star, auto_reset=True)
+            steps_lefts = envs.getStepLeft()
+            for i in range(num_processes):
+                replay_buffer.add(
+                    ExpertTransition(states[i], obs[i], planner_actions_star_idx[i], rewards[i], states_[i],
+                                     obs_[i], dones[i], steps_lefts[i], torch.tensor(1))
+                )
+            states = copy.copy(states_)
+            obs = copy.copy(obs_)
+            if not no_bar:
+                planner_bar.update(dones.sum().item())
+            j += dones.sum().item()
+        planner_bar.close()
+
     if not no_bar:
         pbar = tqdm(total=max_episode)
         pbar.set_description('Episodes:0; Reward:0.0; Explore:0.0; Loss:0.0; Time:0.0')
     timer_start = time.time()
 
+    states, obs = envs.reset()
     while logger.num_episodes < max_episode:
         if fixed_eps:
             if logger.num_episodes < planner_episode:
@@ -128,7 +149,7 @@ def train():
             eps = exploration.value(logger.num_episodes)
 
         is_expert = 0
-        actions_star_idx, actions_star = agent.getEGreedyActions(obs, eps)
+        actions_star_idx, actions_star = agent.getEGreedyActions(states, obs, eps)
 
         envs.stepAsync(actions_star, auto_reset=False)
 

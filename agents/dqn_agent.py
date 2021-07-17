@@ -32,12 +32,15 @@ class DQNAgent:
         self.target_net = deepcopy(network)
         self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=self.lr, weight_decay=1e-5)
 
-    def forwardNetwork(self, obs, target_net=False, to_cpu=False):
+    def forwardNetwork(self, state, obs, target_net=False, to_cpu=False):
         if target_net:
             net = self.target_net
         else:
             net = self.policy_net
-        q_p, q_dxy, q_dz, q_dtheta = net(obs.to(self.device))
+
+        state_tile = state.reshape(state.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])
+        stacked = torch.cat([obs, state_tile], dim=1)
+        q_p, q_dxy, q_dz, q_dtheta = net(stacked.to(self.device))
         if to_cpu:
             q_p = q_p.to('cpu')
             q_dxy = q_dxy.to('cpu')
@@ -54,9 +57,9 @@ class DQNAgent:
         action_idxes = torch.stack([p_id, dxy_id, dz_id, dtheta_id], dim=1)
         return action_idxes, actions
 
-    def getEGreedyActions(self, obs, eps):
+    def getEGreedyActions(self, state, obs, eps):
         with torch.no_grad():
-            q_p, q_dxy, q_dz, q_dtheta = self.forwardNetwork(obs, to_cpu=True)
+            q_p, q_dxy, q_dz, q_dtheta = self.forwardNetwork(state, obs, to_cpu=True)
             p_id = torch.argmax(q_p, 1)
             dxy_id = torch.argmax(q_dxy, 1)
             dz_id = torch.argmax(q_dz, 1)
@@ -74,6 +77,19 @@ class DQNAgent:
         dtheta_id[rand_mask] = rand_dtheta.long()
         return self.decodeActions(p_id, dxy_id, dz_id, dtheta_id)
 
+    def getActionFromPlan(self, plan):
+        primitive = plan[:, 0:1]
+        dxy = plan[:, 1:3]
+        dz = plan[:, 3:4]
+        dr = plan[:, 4:5]
+
+        p_id = torch.argmin(torch.abs(self.p_range - primitive), 1)
+        dxy_id = torch.argmin((dxy.unsqueeze(1) - self.dxy_range).abs().sum(2), 1)
+        dz_id = torch.argmin(torch.abs(self.dz_range - dz), 1)
+        dtheta_id = torch.argmin(torch.abs(self.d_theta_range - dr), 1)
+
+        return self.decodeActions(p_id, dxy_id, dz_id, dtheta_id)
+
     def calcTDLoss(self):
         batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
         p_id = action_idx[:, 0]
@@ -82,11 +98,11 @@ class DQNAgent:
         dtheta_id = action_idx[:, 3]
 
         with torch.no_grad():
-            q_p_prime, q_dxy_prime, q_dz_prime, q_dtheta_prime = self.forwardNetwork(next_obs, target_net=True)
+            q_p_prime, q_dxy_prime, q_dz_prime, q_dtheta_prime = self.forwardNetwork(next_states, next_obs, target_net=True)
             q_prime = q_p_prime.max(1)[0] + q_dxy_prime.max(1)[0] + q_dz_prime.max(1)[0] + q_dtheta_prime.max(1)[0]
             q_target = rewards + self.gamma * q_prime * non_final_masks
 
-        q_p, q_dxy, q_dz, q_dtheta = self.forwardNetwork(obs)
+        q_p, q_dxy, q_dz, q_dtheta = self.forwardNetwork(states, obs)
         q_p_pred = q_p[torch.arange(batch_size), p_id]
         q_dxy_pred = q_dxy[torch.arange(batch_size), dxy_id]
         q_dz_pred = q_dz[torch.arange(batch_size), dz_id]
@@ -103,6 +119,7 @@ class DQNAgent:
 
         self.optimizer.zero_grad()
         td_loss.backward()
+        self.optimizer.step()
 
         self.loss_calc_dict = {}
 

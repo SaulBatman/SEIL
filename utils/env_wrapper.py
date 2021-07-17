@@ -18,11 +18,10 @@ class EnvWrapper:
         actions = actions.cpu().numpy()
         (states_, in_hands_, obs_), rewards, dones = self.envs.step(actions, auto_reset)
         states_ = torch.tensor(states_).float()
-        in_hands_ = torch.tensor(in_hands_).float()
         obs_ = torch.tensor(obs_).float()
         rewards = torch.tensor(rewards).float()
         dones = torch.tensor(dones).float()
-        return states_, in_hands_, obs_, rewards, dones
+        return states_, obs_, rewards, dones
 
     def stepAsync(self, actions, auto_reset=False):
         actions = actions.cpu().numpy()
