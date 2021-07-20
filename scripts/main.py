@@ -113,6 +113,7 @@ def train():
     if planner_episode > 0:
         j = 0
         states, obs = envs.reset()
+        s = 0
         if not no_bar:
             planner_bar = tqdm(total=planner_episode)
         while j < planner_episode:
@@ -127,10 +128,13 @@ def train():
                 )
             states = copy.copy(states_)
             obs = copy.copy(obs_)
-            if not no_bar:
-                planner_bar.update(dones.sum().item())
+
             j += dones.sum().item()
-        planner_bar.close()
+            s += rewards.sum().item()
+
+            if not no_bar:
+                planner_bar.set_description('{}/{}, AVG: {:.3f}'.format(s, j, float(s)/j if j != 0 else 0))
+                planner_bar.update(dones.sum().item())
 
     if not no_bar:
         pbar = tqdm(total=max_episode)

@@ -1,0 +1,46 @@
+from utils.parameters import *
+from agents.dqn_agent_fac import DQNAgentFac
+from agents.dqn_agent_com import DQNAgentCom
+from networks.cnn import CNNFac, CNNCom
+from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, EquivariantCNNCom, EquivariantCNNCom2
+
+def createAgent():
+    if env in ['close_loop_block_picking']:
+        n_p = 2
+    elif env in ['close_loop_block_reaching']:
+        n_p = 1
+    else:
+        raise NotImplementedError
+    if not random_orientation:
+        n_theta = 1
+    else:
+        n_theta = 3
+
+    # setup agent
+    if alg == 'dqn_fac':
+        agent = DQNAgentFac(device=device, n_p=n_p, n_theta=n_theta)
+        if model == 'cnn':
+            net = CNNFac(n_p=n_p, n_theta=n_theta).to(device)
+        elif model == 'equi_1':
+            net = EquivariantCNNFac(n_p=n_p, n_theta=n_theta).to(device)
+        elif model == 'equi_2':
+            net = EquivariantCNNFac2(n_p=n_p, n_theta=n_theta).to(device)
+        else:
+            raise NotImplementedError
+        agent.initNetwork(net)
+    elif alg == 'dqn_com':
+        agent = DQNAgentCom(device=device, n_p=n_p, n_theta=n_theta)
+        if model == 'cnn':
+            net = CNNCom(n_p=n_p, n_theta=n_theta).to(device)
+        elif model == 'equi_1':
+            net = EquivariantCNNCom(n_p=n_p, n_theta=n_theta).to(device)
+        elif model == 'equi_2':
+            net = EquivariantCNNCom2(n_p=n_p, n_theta=n_theta).to(device)
+
+        else:
+            raise NotImplementedError
+        agent.initNetwork(net)
+    else:
+        raise NotImplementedError
+
+    return agent
