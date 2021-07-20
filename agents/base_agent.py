@@ -3,8 +3,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-class DQNAgent:
-    def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.01, dy=0.01, dz=0.01, dr=np.pi/32):
+class BaseAgent:
+    def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/32, n_p=1, n_theta=1):
         self.lr = lr
         self.gamma = gamma
         self.device = device
@@ -18,35 +18,32 @@ class DQNAgent:
         self.optimizer = None
 
         self.loss_calc_dict = {}
+        self.p_range = torch.tensor([1])
+        if n_p == 2:
+            self.p_range = torch.tensor([0, 1])
 
-        self.p_range = torch.tensor([0, 1])
-        self.dxy_range = torch.tensor([[0, 0],
-                                       [-0.005, -0.005], [-0.005, 0], [-0.005, 0.005],
-                                       [0, -0.005], [0, 0.005],
-                                       [0.005, -0.005], [0.005, 0], [0.005, 0.005]])
-        self.dz_range = torch.tensor([-0.005, 0, 0.005])
         self.d_theta_range = torch.tensor([0])
+        if n_theta == 3:
+            self.d_theta_range = torch.tensor([-dr, 0, dr])
+
+        self.dxy_range = torch.tensor([[-dx, -dy], [-dx, 0], [-dx, dy],
+                                       [0, -dy], [0, 0], [0, dy],
+                                       [dx, -dy], [dx, 0], [dx, dy]])
+        self.dz_range = torch.tensor([-dz, 0, dz])
+
+    def forwardNetwork(self, state, obs, target_net=False, to_cpu=False):
+        raise NotImplementedError
+
+    def getEGreedyActions(self, state, obs, eps):
+        raise NotImplementedError
+
+    def calcTDLoss(self):
+        raise NotImplementedError
 
     def initNetwork(self, network):
         self.policy_net = network
         self.target_net = deepcopy(network)
         self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=self.lr, weight_decay=1e-5)
-
-    def forwardNetwork(self, state, obs, target_net=False, to_cpu=False):
-        if target_net:
-            net = self.target_net
-        else:
-            net = self.policy_net
-
-        state_tile = state.reshape(state.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])
-        stacked = torch.cat([obs, state_tile], dim=1)
-        q_p, q_dxy, q_dz, q_dtheta = net(stacked.to(self.device))
-        if to_cpu:
-            q_p = q_p.to('cpu')
-            q_dxy = q_dxy.to('cpu')
-            q_dz = q_dz.to('cpu')
-            q_dtheta = q_dtheta.to('cpu')
-        return q_p, q_dxy, q_dz, q_dtheta
 
     def decodeActions(self, p_id, dxy_id, dz_id, dtheta_id):
         p = self.p_range[p_id]
@@ -56,26 +53,6 @@ class DQNAgent:
         actions = torch.stack([p, dxy[:, 0], dxy[:, 1], dz, dtheta], dim=1)
         action_idxes = torch.stack([p_id, dxy_id, dz_id, dtheta_id], dim=1)
         return action_idxes, actions
-
-    def getEGreedyActions(self, state, obs, eps):
-        with torch.no_grad():
-            q_p, q_dxy, q_dz, q_dtheta = self.forwardNetwork(state, obs, to_cpu=True)
-            p_id = torch.argmax(q_p, 1)
-            dxy_id = torch.argmax(q_dxy, 1)
-            dz_id = torch.argmax(q_dz, 1)
-            dtheta_id = torch.argmax(q_dtheta, 1)
-
-        rand = torch.tensor(np.random.uniform(0, 1, obs.size(0)))
-        rand_mask = rand < eps
-        rand_p = torch.randint_like(torch.empty(rand_mask.sum()), 0, q_p.size(1))
-        p_id[rand_mask] = rand_p.long()
-        rand_dxy = torch.randint_like(torch.empty(rand_mask.sum()), 0, q_dxy.size(1))
-        dxy_id[rand_mask] = rand_dxy.long()
-        rand_dz = torch.randint_like(torch.empty(rand_mask.sum()), 0, q_dz.size(1))
-        dz_id[rand_mask] = rand_dz.long()
-        rand_dtheta = torch.randint_like(torch.empty(rand_mask.sum()), 0, q_dtheta.size(1))
-        dtheta_id[rand_mask] = rand_dtheta.long()
-        return self.decodeActions(p_id, dxy_id, dz_id, dtheta_id)
 
     def getActionFromPlan(self, plan):
         primitive = plan[:, 0:1]
@@ -89,29 +66,6 @@ class DQNAgent:
         dtheta_id = torch.argmin(torch.abs(self.d_theta_range - dr), 1)
 
         return self.decodeActions(p_id, dxy_id, dz_id, dtheta_id)
-
-    def calcTDLoss(self):
-        batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
-        p_id = action_idx[:, 0]
-        dxy_id = action_idx[:, 1]
-        dz_id = action_idx[:, 2]
-        dtheta_id = action_idx[:, 3]
-
-        with torch.no_grad():
-            q_p_prime, q_dxy_prime, q_dz_prime, q_dtheta_prime = self.forwardNetwork(next_states, next_obs, target_net=True)
-            q_prime = q_p_prime.max(1)[0] + q_dxy_prime.max(1)[0] + q_dz_prime.max(1)[0] + q_dtheta_prime.max(1)[0]
-            q_target = rewards + self.gamma * q_prime * non_final_masks
-
-        q_p, q_dxy, q_dz, q_dtheta = self.forwardNetwork(states, obs)
-        q_p_pred = q_p[torch.arange(batch_size), p_id]
-        q_dxy_pred = q_dxy[torch.arange(batch_size), dxy_id]
-        q_dz_pred = q_dz[torch.arange(batch_size), dz_id]
-        q_dtheta_pred = q_dtheta[torch.arange(batch_size), dtheta_id]
-        q_pred = q_p_pred + q_dxy_pred + q_dz_pred + q_dtheta_pred
-        td_loss = F.smooth_l1_loss(q_pred, q_target)
-        with torch.no_grad():
-            td_error = torch.abs(q_pred - q_target)
-        return td_loss, td_error
 
     def update(self, batch):
         self._loadBatchToDevice(batch)
@@ -204,3 +158,21 @@ class DQNAgent:
 
     def saveModel(self, path_pre):
         torch.save(self.policy_net.state_dict(), '{}_network.pt'.format(path_pre))
+
+    def loadModel(self, path_pre):
+        path = '{}_network.pt'.format(path_pre)
+        print('loading {}'.format(path))
+        self.policy_net.load_state_dict(torch.load(path))
+        self.updateTarget()
+
+    def getSaveState(self):
+        state = {}
+        state['policy_net'] = self.policy_net.state_dict()
+        state['target_net'] = self.target_net.state_dict()
+        state['optimizer'] = self.optimizer.state_dict()
+        return state
+
+    def loadFromState(self, save_state):
+        self.policy_net.load_state_dict(save_state['policy_net'])
+        self.target_net.load_state_dict(save_state['target_net'])
+        self.optimizer.load_state_dict(save_state['optimizer'])

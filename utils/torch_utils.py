@@ -115,26 +115,27 @@ def argmax2d(tensor):
   n = tensor.size(0)
   d = tensor.size(2)
   m = tensor.view(n, -1).argmax(1)
-  return torch.cat(((m / d).view(-1, 1), (m % d).view(-1, 1)), dim=1)
+  return torch.cat(((m // d).view(-1, 1), (m % d).view(-1, 1)), dim=1)
 
 def argmax3d(tensor):
   n = tensor.size(0)
   c = tensor.size(1)
   d = tensor.size(2)
   m = tensor.contiguous().view(n, -1).argmax(1)
-  return torch.cat(((m/(d*d)).view(-1, 1), ((m%(d*d))/d).view(-1, 1), ((m%(d*d))%d).view(-1, 1)), dim=1)
+  return torch.cat(((m//(d*d)).view(-1, 1), ((m%(d*d))//d).view(-1, 1), ((m%(d*d))%d).view(-1, 1)), dim=1)
 
 def argmax4d(tensor):
   n = tensor.size(0)
   c1 = tensor.size(1)
   c2 = tensor.size(2)
-  d = tensor.size(3)
-  m = tensor.view(n, -1).argmax(1)
+  c3 = tensor.size(3)
+  c4 = tensor.size(4)
+  m = tensor.reshape(n, -1).argmax(1)
 
-  d0 = (m/(d*d*c2)).view(-1, 1)
-  d1 = ((m%(d*d*c2))/(d*d)).view(-1, 1)
-  d2 = (((m%(d*d*c2))%(d*d))/d).view(-1, 1)
-  d3 = (((m%(d*d*c2))%(d*d))%d).view(-1, 1)
+  d0 = (m//(c4*c3*c2)).reshape(-1, 1)
+  d1 = ((m%(c4*c3*c2))//(c4*c3)).reshape(-1, 1)
+  d2 = (((m%(c4*c3*c2))%(c4*c3))//c4).reshape(-1, 1)
+  d3 = (((m%(c4*c3*c2))%(c4*c3))%c4).reshape(-1, 1)
 
   return torch.cat((d0, d1, d2, d3), dim=1)
 

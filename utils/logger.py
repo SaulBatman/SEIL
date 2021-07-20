@@ -31,12 +31,13 @@ class Logger(object):
       - num_envs: Number of environments running concurrently
     '''
 
-    def __init__(self, log_dir, env, mode, num_envs, max_episode, log_dir_sub=None):
+    def __init__(self, log_dir, env, mode, num_envs, max_episode, gamma, log_dir_sub=None):
         # Logging variables
         self.env = env
         self.mode = mode
         self.max_episode = max_episode
         self.num_envs = num_envs
+        self.gamma = gamma
 
         # Create directory in the logging directory
         timestamp = time.time()
@@ -61,7 +62,8 @@ class Logger(object):
         os.makedirs(self.checkpoint_dir)
 
         # Variables to hold episode information
-        self.episode_rewards = np.zeros(self.num_envs)
+        # self.episode_rewards = np.zeros(self.num_envs)
+        self.episode_rewards = [[] for _ in range(self.num_envs)]
         self.num_steps = 0
         self.num_training_steps = 0
         self.num_episodes = 0
@@ -75,11 +77,20 @@ class Logger(object):
         self.transitions = list()
 
     def stepBookkeeping(self, rewards, step_lefts, done_masks):
-        self.episode_rewards += rewards.squeeze()
+        for i, r in enumerate(rewards.reshape(-1)):
+            self.episode_rewards[i].append(r)
+        # self.episode_rewards += rewards.squeeze()
         self.num_episodes += int(np.sum(done_masks))
-        self.rewards.extend(self.episode_rewards[done_masks.astype(bool)])
+        for i, d in enumerate(done_masks.astype(bool)):
+            if d:
+                R = 0
+                for r in reversed(self.episode_rewards[i]):
+                    R = r + self.gamma * R
+                self.rewards.append(R)
+                self.episode_rewards[i] = []
+        # self.rewards.extend(self.episode_rewards[done_masks.astype(bool)])
         self.steps_left.extend(step_lefts[done_masks.astype(bool)])
-        self.episode_rewards[done_masks.astype(bool)] = 0.
+        # self.episode_rewards[done_masks.astype(bool)] = 0.
 
     def trainingBookkeeping(self, loss, td_error):
         self.losses.append(loss)

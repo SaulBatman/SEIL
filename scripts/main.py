@@ -2,28 +2,18 @@ import os
 import sys
 import time
 import copy
-import math
 import collections
 from tqdm import tqdm
 
-import torch
-
-import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import AxesGrid
 sys.path.append('./')
 sys.path.append('..')
 from utils.parameters import *
 from storage.buffer import QLearningBufferExpert, QLearningBuffer
-from helping_hands_rl_envs import env_factory
 from utils.logger import Logger
 from utils.schedules import LinearSchedule
-from utils.torch_utils import rand_perlin_2d
 from utils.env_wrapper import EnvWrapper
 
-from agents.dqn_agent import DQNAgent
-from networks.cnn import CNN
-from networks.equivariant import EquivariantCNN
+from utils.create_agent import createAgent
 
 ExpertTransition = collections.namedtuple('ExpertTransition', 'state obs action reward next_state next_obs done step_left expert')
 
@@ -44,13 +34,13 @@ def train_step(agent, replay_buffer, logger):
 
 def saveModelAndInfo(logger, agent):
     logger.saveModel(logger.num_steps, env, agent)
-    logger.saveLearningCurve(1000)
+    logger.saveLearningCurve(100)
     logger.saveLossCurve(100)
     logger.saveTdErrorCurve(100)
     logger.saveRewards()
     logger.saveLosses()
     logger.saveTdErrors()
-    logger.saveStepLeftCurve(1000)
+    logger.saveStepLeftCurve(100)
 
 def train():
     start_time = time.time()
@@ -58,20 +48,23 @@ def train():
         set_seed(seed)
     # setup env
     envs = EnvWrapper(num_processes, simulator, env, env_config, planner_config)
-
-    # setup agent
-    agent = DQNAgent()
-    if model == 'cnn':
-        net = CNN().to(device)
-    elif model == 'equi':
-        net = EquivariantCNN().to(device)
+    if env in ['close_loop_block_picking']:
+        n_p = 2
+    elif env in ['close_loop_block_reaching']:
+        n_p = 1
     else:
         raise NotImplementedError
-    agent.initNetwork(net)
+    if not random_orientation:
+        n_theta = 1
+    else:
+        raise NotImplementedError
 
+    # setup agent
+    agent = createAgent()
+
+    agent.train()
     if load_model_pre:
         agent.loadModel(load_model_pre)
-    agent.train()
 
     # logging
     simulator_str = copy.copy(simulator)
@@ -82,7 +75,7 @@ def train():
         log_dir += '_'
         log_dir += note
 
-    logger = Logger(log_dir, env, 'train', num_processes, max_episode, log_sub)
+    logger = Logger(log_dir, env, 'train', num_processes, max_episode, gamma, log_sub)
     hyper_parameters['model_shape'] = agent.getModelStr()
     logger.saveParameters(hyper_parameters)
 
