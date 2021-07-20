@@ -48,16 +48,6 @@ def train():
         set_seed(seed)
     # setup env
     envs = EnvWrapper(num_processes, simulator, env, env_config, planner_config)
-    if env in ['close_loop_block_picking']:
-        n_p = 2
-    elif env in ['close_loop_block_reaching']:
-        n_p = 1
-    else:
-        raise NotImplementedError
-    if not random_orientation:
-        n_theta = 1
-    else:
-        raise NotImplementedError
 
     # setup agent
     agent = createAgent()
