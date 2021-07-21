@@ -123,7 +123,7 @@ def train():
             s += rewards.sum().item()
 
             if not no_bar:
-                planner_bar.set_description('{}/{}, AVG: {:.3f}'.format(s, j, float(s)/j if j != 0 else 0))
+                planner_bar.set_description('{:.3f}/{}, AVG: {:.3f}'.format(s, j, float(s)/j if j != 0 else 0))
                 planner_bar.update(dones.sum().item())
 
     if not no_bar:

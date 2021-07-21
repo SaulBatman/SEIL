@@ -154,13 +154,16 @@ load_sub = args.load_sub
 if load_sub == 'None':
     load_sub = None
 
+dpos = 0.005
+drot = np.pi/32
+
 ######################################################################################
 env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size': heightmap_size,
               'fast_mode': fast_mode,  'action_sequence': action_sequence, 'render': render, 'num_objects': num_objects,
               'random_orientation':random_orientation, 'reward_type': reward_type, 'robot': robot,
               'workspace_check': 'point', 'object_scale_range': (1, 1),
               'hard_reset_freq': 1000, 'physics_mode' : 'fast'}
-planner_config = {'random_orientation':random_orientation,}
+planner_config = {'random_orientation':random_orientation, 'dpos': dpos, 'drot': drot}
 if seed is not None:
     env_config['seed'] = seed
 ######################################################################################

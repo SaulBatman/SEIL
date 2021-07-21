@@ -22,7 +22,7 @@ def createAgent():
 
     # setup agent
     if alg == 'dqn_fac':
-        agent = DQNAgentFac(device=device, n_p=n_p, n_theta=n_theta)
+        agent = DQNAgentFac(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p, n_theta=n_theta)
         if model == 'cnn':
             net = CNNFac(n_p=n_p, n_theta=n_theta).to(device)
         elif model == 'equi_1':
@@ -33,7 +33,7 @@ def createAgent():
             raise NotImplementedError
         agent.initNetwork(net)
     elif alg == 'dqn_com':
-        agent = DQNAgentCom(device=device, n_p=n_p, n_theta=n_theta)
+        agent = DQNAgentCom(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p, n_theta=n_theta)
         if model == 'cnn':
             net = CNNCom(n_p=n_p, n_theta=n_theta).to(device)
         elif model == 'equi_1':

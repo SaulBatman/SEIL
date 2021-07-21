@@ -93,60 +93,63 @@ from e2cnn import nn
 class EquivariantCNNFac(torch.nn.Module):
     def __init__(self, initialize=True, n_p=2, n_theta=1):
         super().__init__()
-        self.n_inv = 3 + n_theta + n_p
+        self.n_inv = 3 + n_p
         self.n_theta = n_theta
         self.n_p = n_p
 
-        self.r2_act = gspaces.Rot2dOnR2(4)
+        self.r2_act = gspaces.FlipRot2dOnR2(4)
         self.conv = torch.nn.Sequential(
             # 128x128
             nn.R2Conv(nn.FieldType(self.r2_act, 2 * [self.r2_act.trivial_repr]),
-                      nn.FieldType(self.r2_act, 16 * [self.r2_act.regular_repr]),
+                      nn.FieldType(self.r2_act, 16 * [self.r2_act.quotient_repr((0, 1))]),
                       kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r2_act, 16 * [self.r2_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 16 * [self.r2_act.regular_repr]), 2),
+            nn.ReLU(nn.FieldType(self.r2_act, 16 * [self.r2_act.quotient_repr((0, 1))]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 16 * [self.r2_act.quotient_repr((0, 1))]), 2),
             # 64x64
-            nn.R2Conv(nn.FieldType(self.r2_act, 16 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, 32 * [self.r2_act.regular_repr]),
+            nn.R2Conv(nn.FieldType(self.r2_act, 16 * [self.r2_act.quotient_repr((0, 1))]),
+                      nn.FieldType(self.r2_act, 32 * [self.r2_act.quotient_repr((0, 1))]),
                       kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r2_act, 32 * [self.r2_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 32 * [self.r2_act.regular_repr]), 2),
+            nn.ReLU(nn.FieldType(self.r2_act, 32 * [self.r2_act.quotient_repr((0, 1))]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 32 * [self.r2_act.quotient_repr((0, 1))]), 2),
             # 32x32
-            nn.R2Conv(nn.FieldType(self.r2_act, 32 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, 64 * [self.r2_act.regular_repr]),
+            nn.R2Conv(nn.FieldType(self.r2_act, 32 * [self.r2_act.quotient_repr((0, 1))]),
+                      nn.FieldType(self.r2_act, 64 * [self.r2_act.quotient_repr((0, 1))]),
                       kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r2_act, 64 * [self.r2_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 64 * [self.r2_act.regular_repr]), 2),
+            nn.ReLU(nn.FieldType(self.r2_act, 64 * [self.r2_act.quotient_repr((0, 1))]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 64 * [self.r2_act.quotient_repr((0, 1))]), 2),
             # 16x16
-            nn.R2Conv(nn.FieldType(self.r2_act, 64 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, 128 * [self.r2_act.regular_repr]),
+            nn.R2Conv(nn.FieldType(self.r2_act, 64 * [self.r2_act.quotient_repr((0, 1))]),
+                      nn.FieldType(self.r2_act, 128 * [self.r2_act.quotient_repr((0, 1))]),
                       kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r2_act, 128 * [self.r2_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 128 * [self.r2_act.regular_repr]), 2),
+            nn.ReLU(nn.FieldType(self.r2_act, 128 * [self.r2_act.quotient_repr((0, 1))]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 128 * [self.r2_act.quotient_repr((0, 1))]), 2),
             # 8x8
-            nn.R2Conv(nn.FieldType(self.r2_act, 128 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
+            nn.R2Conv(nn.FieldType(self.r2_act, 128 * [self.r2_act.quotient_repr((0, 1))]),
+                      nn.FieldType(self.r2_act, 256 * [self.r2_act.quotient_repr((0, 1))]),
                       kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]), inplace=True),
+            nn.ReLU(nn.FieldType(self.r2_act, 256 * [self.r2_act.quotient_repr((0, 1))]), inplace=True),
 
-            nn.R2Conv(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
+            nn.R2Conv(nn.FieldType(self.r2_act, 256 * [self.r2_act.quotient_repr((0, 1))]),
+                      nn.FieldType(self.r2_act, 256 * [self.r2_act.quotient_repr((0, 1))]),
                       kernel_size=3, padding=0),
-            nn.ReLU(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]), 2),
+            nn.ReLU(nn.FieldType(self.r2_act, 256 * [self.r2_act.quotient_repr((0, 1))]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 256 * [self.r2_act.quotient_repr((0, 1))]), 2),
             # 3x3
         )
 
-        self.equi_out = nn.R2Conv(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
+        self.equi_out = nn.R2Conv(nn.FieldType(self.r2_act, 256 * [self.r2_act.quotient_repr((0, 1))]),
                                   nn.FieldType(self.r2_act, 1 * [self.r2_act.trivial_repr]),
                                   kernel_size=1, padding=0)
         self.inv_out = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
+            nn.R2Conv(nn.FieldType(self.r2_act, 256 * [self.r2_act.quotient_repr((0, 1))]),
+                      nn.FieldType(self.r2_act, 256 * [self.r2_act.quotient_repr((0, 1))]),
                       kernel_size=3, padding=0),
-            nn.ReLU(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]), inplace=True),
-            nn.R2Conv(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, self.n_inv * [self.r2_act.trivial_repr]),
+            nn.ReLU(nn.FieldType(self.r2_act, 256 * [self.r2_act.quotient_repr((0, 1))]), inplace=True),
+            nn.R2Conv(nn.FieldType(self.r2_act, 256 * [self.r2_act.quotient_repr((0, 1))]),
+                      nn.FieldType(self.r2_act,
+                                   self.n_inv * [self.r2_act.trivial_repr] +
+                                   1 * [self.r2_act.quotient_repr((None, 4))] +
+                                   1 * [self.r2_act.quotient_repr((0, 4))]),
                       kernel_size=1, padding=0),
         )
 
@@ -157,8 +160,13 @@ class EquivariantCNNFac(torch.nn.Module):
         dxy = self.equi_out(h).tensor.reshape(batch_size, -1)
         inv_out = self.inv_out(h).tensor.reshape(batch_size, -1)
         dz = inv_out[:, :3]
-        dtheta = inv_out[:, 3:3+self.n_theta]
-        p = inv_out[:, 3+self.n_theta:]
+        p = inv_out[:, 3:3+self.n_p]
+        dtheta_1 = inv_out[:, 3+self.n_p:3+self.n_p+2]
+        dtheta_0 = inv_out[:, -1:]
+        if self.n_theta == 3:
+            dtheta = torch.cat((dtheta_1[:, 0:1], dtheta_0, dtheta_1[:, 1:2]), dim=1)
+        else:
+            dtheta = dtheta_0
         return p, dxy, dz, dtheta
 
 class EquivariantCNNFac2(torch.nn.Module):
