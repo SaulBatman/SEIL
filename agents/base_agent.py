@@ -40,9 +40,10 @@ class BaseAgent:
     def calcTDLoss(self):
         raise NotImplementedError
 
-    def initNetwork(self, network):
+    def initNetwork(self, network, initialize=True):
         self.policy_net = network
-        self.target_net = deepcopy(network)
+        if initialize:
+            self.target_net = deepcopy(network)
         self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=self.lr, weight_decay=1e-5)
 
     def decodeActions(self, p_id, dxy_id, dz_id, dtheta_id):

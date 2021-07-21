@@ -5,6 +5,10 @@ from networks.cnn import CNNFac, CNNCom
 from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, EquivariantCNNCom, EquivariantCNNCom2
 
 def createAgent():
+    if load_sub is not None or load_model_pre is not None:
+        initialize = False
+    else:
+        initialize = True
     if env in ['close_loop_block_picking']:
         n_p = 2
     elif env in ['close_loop_block_reaching']:
@@ -22,9 +26,9 @@ def createAgent():
         if model == 'cnn':
             net = CNNFac(n_p=n_p, n_theta=n_theta).to(device)
         elif model == 'equi_1':
-            net = EquivariantCNNFac(n_p=n_p, n_theta=n_theta).to(device)
+            net = EquivariantCNNFac(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_2':
-            net = EquivariantCNNFac2(n_p=n_p, n_theta=n_theta).to(device)
+            net = EquivariantCNNFac2(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(net)
@@ -33,13 +37,13 @@ def createAgent():
         if model == 'cnn':
             net = CNNCom(n_p=n_p, n_theta=n_theta).to(device)
         elif model == 'equi_1':
-            net = EquivariantCNNCom(n_p=n_p, n_theta=n_theta).to(device)
+            net = EquivariantCNNCom(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_2':
-            net = EquivariantCNNCom2(n_p=n_p, n_theta=n_theta).to(device)
+            net = EquivariantCNNCom2(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
 
         else:
             raise NotImplementedError
-        agent.initNetwork(net)
+        agent.initNetwork(net, initialize=initialize)
     else:
         raise NotImplementedError
 
