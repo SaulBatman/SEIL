@@ -111,8 +111,8 @@ class Logger(object):
         ''' Get the average reward for the last n episodes '''
         if not self.rewards:
             return 0.0
-        starting = max(starting, len(self.rewards)-1-n)
-        return np.sum(self.rewards[starting:])/n
+        starting = max(starting, len(self.rewards)-n)
+        return np.mean(self.rewards[starting:])
         # return np.mean(self.rewards[-n:]) if self.rewards else 0.0
 
     def getCurrentLoss(self):
