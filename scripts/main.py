@@ -60,7 +60,7 @@ def train():
     simulator_str = copy.copy(simulator)
     if simulator == 'pybullet':
         simulator_str += ('_' + robot)
-    log_dir = os.path.join(log_pre, '{}'.format(alg))
+    log_dir = os.path.join(log_pre, '{}_{}'.format(alg, model))
     if note:
         log_dir += '_'
         log_dir += note
@@ -177,7 +177,7 @@ def train():
         if not no_bar:
             timer_final = time.time()
             description = 'Steps:{}; Reward:{:.03f}; Explore:{:.02f}; Loss:{:.03f}; Time:{:.03f}'.format(
-                logger.num_steps, logger.getCurrentAvgReward(1000), eps, float(logger.getCurrentLoss()),
+                logger.num_steps, logger.getCurrentAvgReward(100), eps, float(logger.getCurrentLoss()),
                 timer_final - timer_start)
             pbar.set_description(description)
             timer_start = timer_final

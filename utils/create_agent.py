@@ -2,7 +2,7 @@ from utils.parameters import *
 from agents.dqn_agent_fac import DQNAgentFac
 from agents.dqn_agent_com import DQNAgentCom
 from networks.cnn import CNNFac, CNNCom
-from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, EquivariantCNNCom, EquivariantCNNCom2
+from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, EquivariantCNNFac3, EquivariantCNNCom, EquivariantCNNCom2
 
 def createAgent():
     if load_sub is not None or load_model_pre is not None:
@@ -29,6 +29,8 @@ def createAgent():
             net = EquivariantCNNFac(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_2':
             net = EquivariantCNNFac2(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
+        elif model == 'equi_3':
+            net = EquivariantCNNFac3(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(net)
