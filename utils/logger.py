@@ -128,7 +128,9 @@ class Logger(object):
     def saveLearningCurve(self, n=100):
         ''' Plot the rewards over timesteps and save to logging dir '''
         n = min(n, len(self.rewards))
-        plt.plot(np.mean(list(windowed(self.rewards, n)), axis=1))
+        avg_reward = np.mean(list(windowed(self.rewards, n)), axis=1)
+        xs = np.arange(n, (len(avg_reward))+n)
+        plt.plot(xs, np.mean(list(windowed(self.rewards, n)), axis=1))
         plt.savefig(os.path.join(self.info_dir, 'learning_curve.pdf'))
         plt.close()
 
