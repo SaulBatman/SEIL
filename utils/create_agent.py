@@ -50,7 +50,7 @@ def createAgent(test=False):
         agent.initNetwork(net, initialize_target=not test)
 
     elif alg == 'ddpg':
-        agent = DDPG(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence), tau=0.01)
+        agent = DDPG(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence), tau=ddpg_tau)
         if model == 'cnn':
             actor = Actor(len(action_sequence)).to(device)
             critic = Critic(len(action_sequence)).to(device)

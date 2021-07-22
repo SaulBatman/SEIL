@@ -50,6 +50,7 @@ training_group.add_argument('--perlin', type=float, default=0.0)
 training_group.add_argument('--load_buffer', type=str, default=None)
 training_group.add_argument('--load_n', type=int, default=1000000)
 training_group.add_argument('--pre_train_step', type=int, default=0)
+training_group.add_argument('--ddpg_tau', type=float, default=1e-3)
 
 margin_group = parser.add_argument_group('margin')
 margin_group.add_argument('--margin', default='l', choices=['ce', 'bce', 'bcel', 'l', 'oril'])
@@ -124,6 +125,8 @@ is_test = args.test
 note = args.note
 seed = args.seed
 perlin = args.perlin
+
+ddpg_tau = args.ddpg_tau
 
 # pre train
 load_buffer = args.load_buffer
