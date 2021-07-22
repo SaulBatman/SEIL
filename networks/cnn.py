@@ -101,3 +101,131 @@ class CNNCom(nn.Module):
         h = self.conv(x)
         q = self.fc(h)
         return q
+
+class Actor(nn.Module):
+    def __init__(self, action_dim=5):
+        super().__init__()
+        self.conv = torch.nn.Sequential(
+            # 128x128
+            nn.Conv2d(2, 32, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 64x64
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 32x32
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 16x16
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 8x8
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+
+            nn.Flatten(),
+            torch.nn.Linear(512*8*8, 1024),
+            nn.ReLU(inplace=True),
+            torch.nn.Linear(1024, action_dim),
+            nn.Tanh()
+        )
+
+        for m in self.named_modules():
+            if isinstance(m[1], nn.Conv2d):
+                # nn.init.kaiming_normal_(m[1].weight.data)
+                nn.init.xavier_normal_(m[1].weight.data)
+            elif isinstance(m[1], nn.BatchNorm2d):
+                m[1].weight.data.fill_(1)
+                m[1].bias.data.zero_()
+
+    def forward(self, x):
+        return self.conv(x)
+
+# class Critic(nn.Module):
+#     def __init__(self, action_dim=5):
+#         super().__init__()
+#         self.state_conv = torch.nn.Sequential(
+#             # 128x128
+#             nn.Conv2d(2, 32, kernel_size=3, padding=1),
+#             nn.ReLU(inplace=True),
+#             nn.MaxPool2d(2),
+#             # 64x64
+#             nn.Conv2d(32, 64, kernel_size=3, padding=1),
+#             nn.ReLU(inplace=True),
+#             nn.MaxPool2d(2),
+#             # 32x32
+#             nn.Conv2d(64, 128, kernel_size=3, padding=1),
+#             nn.ReLU(inplace=True),
+#             nn.MaxPool2d(2),
+#             # 16x16
+#             nn.Conv2d(128, 256, kernel_size=3, padding=1),
+#             nn.ReLU(inplace=True),
+#             nn.MaxPool2d(2),
+#             # 8x8
+#             nn.Conv2d(256, 512, kernel_size=3, padding=1),
+#             nn.ReLU(inplace=True),
+#
+#             nn.Flatten(),
+#             torch.nn.Linear(512 * 8 * 8, 1024),
+#             nn.ReLU(inplace=True),
+#         )
+#
+#         self.action_fc = torch.nn.Sequential(
+#             torch.nn.Linear(action_dim, 1024),
+#             nn.ReLU(inplace=True),
+#         )
+#
+#         self.critic_fc = torch.nn.Sequential(
+#             torch.nn.Linear(2048, 1024),
+#             nn.ReLU(inplace=True),
+#             torch.nn.Linear(1024, 1)
+#         )
+#
+#     def forward(self, obs, act):
+#         obs_out = self.state_conv(obs)
+#         act_out = self.action_fc(act)
+#         out = self.critic_fc(torch.cat((obs_out, act_out), dim=1))
+#         return out
+
+class Critic(nn.Module):
+    def __init__(self, action_dim=5):
+        super().__init__()
+        self.state_conv = torch.nn.Sequential(
+            # 128x128
+            nn.Conv2d(2, 32, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 64x64
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 32x32
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 16x16
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 8x8
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+
+            nn.Flatten(),
+            torch.nn.Linear(512 * 8 * 8, 1024),
+            nn.ReLU(inplace=True),
+        )
+
+        self.critic_fc = torch.nn.Sequential(
+            torch.nn.Linear(1024+action_dim, 512),
+            nn.ReLU(inplace=True),
+            torch.nn.Linear(512, 1)
+        )
+
+    def forward(self, obs, act):
+        obs_out = self.state_conv(obs)
+        out = self.critic_fc(torch.cat((obs_out, act), dim=1))
+        return out

@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 
 class BaseAgent:
-    def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/32, n_p=1, n_theta=1):
+    def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/32):
         self.lr = lr
         self.gamma = gamma
         self.device = device
@@ -13,73 +13,14 @@ class BaseAgent:
         self.dz = dz
         self.dr = dr
 
-        self.policy_net = None
-        self.target_net = None
-        self.optimizer = None
+        self.networks = []
+        self.target_networks = []
+        self.optimizers = []
 
         self.loss_calc_dict = {}
-        self.p_range = torch.tensor([1])
-        if n_p == 2:
-            self.p_range = torch.tensor([0, 1])
-
-        self.d_theta_range = torch.tensor([0])
-        if n_theta == 3:
-            self.d_theta_range = torch.tensor([-dr, 0, dr])
-
-        self.dxy_range = torch.tensor([[-dx, -dy], [-dx, 0], [-dx, dy],
-                                       [0, -dy], [0, 0], [0, dy],
-                                       [dx, -dy], [dx, 0], [dx, dy]])
-        self.dz_range = torch.tensor([-dz, 0, dz])
-
-    def forwardNetwork(self, state, obs, target_net=False, to_cpu=False):
-        raise NotImplementedError
-
-    def getEGreedyActions(self, state, obs, eps):
-        raise NotImplementedError
-
-    def calcTDLoss(self):
-        raise NotImplementedError
-
-    def initNetwork(self, network, initialize=True):
-        self.policy_net = network
-        if initialize:
-            self.target_net = deepcopy(network)
-        self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=self.lr, weight_decay=1e-5)
-
-    def decodeActions(self, p_id, dxy_id, dz_id, dtheta_id):
-        p = self.p_range[p_id]
-        dxy = self.dxy_range[dxy_id]
-        dz = self.dz_range[dz_id]
-        dtheta = self.d_theta_range[dtheta_id]
-        actions = torch.stack([p, dxy[:, 0], dxy[:, 1], dz, dtheta], dim=1)
-        action_idxes = torch.stack([p_id, dxy_id, dz_id, dtheta_id], dim=1)
-        return action_idxes, actions
-
-    def getActionFromPlan(self, plan):
-        primitive = plan[:, 0:1]
-        dxy = plan[:, 1:3]
-        dz = plan[:, 3:4]
-        dr = plan[:, 4:5]
-
-        p_id = torch.argmin(torch.abs(self.p_range - primitive), 1)
-        dxy_id = torch.argmin((dxy.unsqueeze(1) - self.dxy_range).abs().sum(2), 1)
-        dz_id = torch.argmin(torch.abs(self.dz_range - dz), 1)
-        dtheta_id = torch.argmin(torch.abs(self.d_theta_range - dr), 1)
-
-        return self.decodeActions(p_id, dxy_id, dz_id, dtheta_id)
 
     def update(self, batch):
-        self._loadBatchToDevice(batch)
-        td_loss, td_error = self.calcTDLoss()
-
-        self.optimizer.zero_grad()
-        td_loss.backward()
-        self.optimizer.step()
-
-        self.loss_calc_dict = {}
-
-        return td_loss.item(), td_error
-
+        raise NotImplementedError
 
     def _loadBatchToDevice(self, batch):
         states = []
@@ -148,32 +89,62 @@ class BaseAgent:
         return batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts
 
     def train(self):
-        self.policy_net.train()
-        self.target_net.train()
+        for i in range(len(self.networks)):
+            self.networks[i].train()
+        for i in range(len(self.target_networks)):
+            self.target_networks[i].train()
+
+    def eval(self):
+        for i in range(len(self.networks)):
+            self.networks[i].eval()
 
     def getModelStr(self):
-        return str(self.policy_net)
+        return str(self.networks)
 
     def updateTarget(self):
-        self.target_net.load_state_dict(self.policy_net.state_dict())
-
-    def saveModel(self, path_pre):
-        torch.save(self.policy_net.state_dict(), '{}_network.pt'.format(path_pre))
+        """
+        hard update the target networks
+        """
+        for i in range(len(self.networks)):
+            self.target_networks[i].load_state_dict(self.networks[i].state_dict())
 
     def loadModel(self, path_pre):
-        path = '{}_network.pt'.format(path_pre)
-        print('loading {}'.format(path))
-        self.policy_net.load_state_dict(torch.load(path))
+        """
+        load the saved models
+        :param path_pre: path prefix to the model
+        """
+        for i in range(len(self.networks)):
+            path = path_pre + '_{}.pt'.format(i)
+            print('loading {}'.format(path))
+            self.networks[i].load_state_dict(torch.load(path))
         self.updateTarget()
 
+    def saveModel(self, path_pre):
+        """
+        save the models with path prefix path_pre. a '_q{}.pt' suffix will be added to each model
+        :param path_pre: path prefix
+        """
+        for i in range(len(self.networks)):
+            torch.save(self.networks[i].state_dict(), '{}_{}.pt'.format(path_pre, i))
+
     def getSaveState(self):
+        """
+        get the save state for checkpointing. Include network states, target network states, and optimizer states
+        :return: the saving state dictionary
+        """
         state = {}
-        state['policy_net'] = self.policy_net.state_dict()
-        state['target_net'] = self.target_net.state_dict()
-        state['optimizer'] = self.optimizer.state_dict()
+        for i in range(len(self.networks)):
+            state['{}'.format(i)] = self.networks[i].state_dict()
+            state['{}_target'.format(i)] = self.target_networks[i].state_dict()
+            state['{}_optimizer'.format(i)] = self.optimizers[i].state_dict()
         return state
 
     def loadFromState(self, save_state):
-        self.policy_net.load_state_dict(save_state['policy_net'])
-        self.target_net.load_state_dict(save_state['target_net'])
-        self.optimizer.load_state_dict(save_state['optimizer'])
+        """
+        load from a save_state
+        :param save_state: the loading state dictionary
+        """
+        for i in range(len(self.networks)):
+            self.networks[i].load_state_dict(save_state['{}'.format(i)])
+            self.target_networks[i].load_state_dict(save_state['{}_target'.format(i)])
+            self.optimizers[i].load_state_dict(save_state['{}_optimizer'.format(i)])

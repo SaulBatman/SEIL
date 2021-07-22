@@ -2,9 +2,9 @@ from copy import deepcopy
 import numpy as np
 import torch
 import torch.nn.functional as F
-from agents.base_agent import BaseAgent
+from agents.dqn_base import DQNBase
 
-class DQNAgentFac(BaseAgent):
+class DQNAgentFac(DQNBase):
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/16, n_p=1, n_theta=1):
         super().__init__(lr, gamma, device, dx, dy, dz, dr, n_p, n_theta)
 
