@@ -11,7 +11,7 @@ from utils.env_wrapper import EnvWrapper
 def test():
     plt.style.use('default')
     envs = EnvWrapper(num_processes, simulator, env, env_config, planner_config)
-    agent = createAgent()
+    agent = createAgent(test=True)
     agent.train()
     agent.loadModel(load_model_pre)
     states, obs = envs.reset()

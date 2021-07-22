@@ -4,7 +4,7 @@ from agents.dqn_agent_com import DQNAgentCom
 from networks.cnn import CNNFac, CNNCom
 from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, EquivariantCNNFac3, EquivariantCNNCom, EquivariantCNNCom2
 
-def createAgent():
+def createAgent(test=False):
     if load_sub is not None or load_model_pre is not None:
         initialize = False
     else:
@@ -45,7 +45,7 @@ def createAgent():
 
         else:
             raise NotImplementedError
-        agent.initNetwork(net, initialize=initialize)
+        agent.initNetwork(net, initialize=test)
     else:
         raise NotImplementedError
 
