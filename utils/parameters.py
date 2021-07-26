@@ -53,6 +53,7 @@ training_group.add_argument('--pre_train_step', type=int, default=0)
 training_group.add_argument('--tau', type=float, default=1e-3)
 training_group.add_argument('--init_temp', type=float, default=0.1)
 training_group.add_argument('--dpos', type=float, default=0.005)
+training_group.add_argument('--drot_n', type=int, default=32)
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -169,7 +170,7 @@ if load_sub == 'None':
     load_sub = None
 
 dpos = args.dpos
-drot = np.pi/32
+drot = np.pi/args.drot_n
 
 ######################################################################################
 env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size': heightmap_size,
