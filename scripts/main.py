@@ -41,6 +41,38 @@ def saveModelAndInfo(logger, agent):
     logger.saveLosses()
     logger.saveTdErrors()
     logger.saveStepLeftCurve(100)
+    logger.saveEvalCurve()
+    logger.saveEvalRewards()
+
+def evaluate(envs, agent, logger):
+    states, obs = envs.reset()
+    evaled = 0
+    temp_reward = [[] for _ in range(num_processes)]
+    eval_rewards = []
+    if not no_bar:
+        eval_bar = tqdm(total=num_eval_episodes)
+    while evaled < num_eval_episodes:
+        actions_star_idx, actions_star = agent.getGreedyActions(states, obs)
+        states_, obs_, rewards, dones = envs.step(actions_star, auto_reset=True)
+        rewards = rewards.numpy()
+        dones = dones.numpy()
+        states = copy.copy(states_)
+        obs = copy.copy(obs_)
+        for i, r in enumerate(rewards.reshape(-1)):
+            temp_reward[i].append(r)
+        evaled += int(np.sum(dones))
+        for i, d in enumerate(dones.astype(bool)):
+            if d:
+                R = 0
+                for r in reversed(temp_reward[i]):
+                    R = r + gamma * R
+                eval_rewards.append(R)
+                temp_reward[i] = []
+        if not no_bar:
+            eval_bar.update(evaled - eval_bar.n)
+    logger.eval_rewards.append(np.mean(eval_rewards[:num_eval_episodes]))
+    if not no_bar:
+        eval_bar.close()
 
 def train():
     start_time = time.time()
@@ -48,6 +80,7 @@ def train():
         set_seed(seed)
     # setup env
     envs = EnvWrapper(num_processes, simulator, env, env_config, planner_config)
+    eval_envs = EnvWrapper(num_processes, simulator, env, env_config, planner_config)
 
     # setup agent
     agent = createAgent()
@@ -176,13 +209,16 @@ def train():
 
         if not no_bar:
             timer_final = time.time()
-            description = 'Steps:{}; Reward:{:.03f}; Explore:{:.02f}; Loss:{:.03f}; Time:{:.03f}'.format(
-                logger.num_steps, logger.getCurrentAvgReward(100), eps, float(logger.getCurrentLoss()),
+            description = 'Steps:{}; Reward:{:.03f}; Eval Reward:{:.03f}; Explore:{:.02f}; Loss:{:.03f}; Time:{:.03f}'.format(
+                logger.num_steps, logger.getCurrentAvgReward(100), logger.eval_rewards[-1] if len(logger.eval_rewards) > 0 else 0, eps, float(logger.getCurrentLoss()),
                 timer_final - timer_start)
             pbar.set_description(description)
             timer_start = timer_final
             pbar.update(logger.num_episodes-pbar.n)
         logger.num_steps += num_processes
+
+        if logger.num_training_steps > 0 and logger.num_training_steps % eval_freq == 0:
+            evaluate(eval_envs, agent, logger)
 
         if logger.num_steps % (num_processes * save_freq) == 0:
             saveModelAndInfo(logger, agent)

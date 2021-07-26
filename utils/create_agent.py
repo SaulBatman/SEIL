@@ -7,6 +7,9 @@ from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, Equivari
 from agents.ddpg import DDPG
 from networks.cnn import Actor, Critic
 
+from agents.sac import SAC
+from networks.sac_networks import DeterministicPolicy, GaussianPolicy, SACCritic
+
 def createAgent(test=False):
     if load_sub is not None or load_model_pre is not None:
         initialize = False
@@ -50,13 +53,25 @@ def createAgent(test=False):
         agent.initNetwork(net, initialize_target=not test)
 
     elif alg == 'ddpg':
-        agent = DDPG(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence), tau=ddpg_tau)
+        agent = DDPG(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence), tau=tau)
         if model == 'cnn':
             actor = Actor(len(action_sequence)).to(device)
             critic = Critic(len(action_sequence)).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(actor, critic, initialize_target=not test)
+
+    elif alg == 'sac':
+        agent = SAC(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
+                    tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True)
+        if model == 'cnn':
+            actor = GaussianPolicy(len(action_sequence)).to(device)
+            # actor = DeterministicPolicy(len(action_sequence)).to(device)
+            critic = SACCritic(len(action_sequence)).to(device)
+        else:
+            raise NotImplementedError
+        agent.initNetwork(actor, critic, not test)
+
 
 
     else:

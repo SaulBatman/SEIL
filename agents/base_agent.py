@@ -22,6 +22,12 @@ class BaseAgent:
     def update(self, batch):
         raise NotImplementedError
 
+    def getEGreedyActions(self, state, obs, eps):
+        raise NotImplementedError
+
+    def getGreedyActions(self, state, obs):
+        return self.getEGreedyActions(state, obs, 0)
+
     def _loadBatchToDevice(self, batch):
         states = []
         images = []
@@ -135,8 +141,9 @@ class BaseAgent:
         state = {}
         for i in range(len(self.networks)):
             state['{}'.format(i)] = self.networks[i].state_dict()
-            state['{}_target'.format(i)] = self.target_networks[i].state_dict()
             state['{}_optimizer'.format(i)] = self.optimizers[i].state_dict()
+        for i in range(len(self.target_networks)):
+            state['{}_target'.format(i)] = self.target_networks[i].state_dict()
         return state
 
     def loadFromState(self, save_state):
@@ -146,5 +153,6 @@ class BaseAgent:
         """
         for i in range(len(self.networks)):
             self.networks[i].load_state_dict(save_state['{}'.format(i)])
-            self.target_networks[i].load_state_dict(save_state['{}_target'.format(i)])
             self.optimizers[i].load_state_dict(save_state['{}_optimizer'.format(i)])
+        for i in range(len(self.target_networks)):
+            self.target_networks[i].load_state_dict(save_state['{}_target'.format(i)])

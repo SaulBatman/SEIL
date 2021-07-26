@@ -28,9 +28,6 @@ class DQNBase(BaseAgent):
     def forwardNetwork(self, state, obs, target_net=False, to_cpu=False):
         raise NotImplementedError
 
-    def getEGreedyActions(self, state, obs, eps):
-        raise NotImplementedError
-
     def calcTDLoss(self):
         raise NotImplementedError
 

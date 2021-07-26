@@ -50,7 +50,13 @@ training_group.add_argument('--perlin', type=float, default=0.0)
 training_group.add_argument('--load_buffer', type=str, default=None)
 training_group.add_argument('--load_n', type=int, default=1000000)
 training_group.add_argument('--pre_train_step', type=int, default=0)
-training_group.add_argument('--ddpg_tau', type=float, default=1e-3)
+training_group.add_argument('--tau', type=float, default=1e-3)
+training_group.add_argument('--init_temp', type=float, default=0.1)
+training_group.add_argument('--dpos', type=float, default=0.005)
+
+eval_group = parser.add_argument_group('eval')
+eval_group.add_argument('--eval_freq', default=1000, type=int)
+eval_group.add_argument('--num_eval_episodes', default=100, type=int)
 
 margin_group = parser.add_argument_group('margin')
 margin_group.add_argument('--margin', default='l', choices=['ce', 'bce', 'bcel', 'l', 'oril'])
@@ -126,7 +132,12 @@ note = args.note
 seed = args.seed
 perlin = args.perlin
 
-ddpg_tau = args.ddpg_tau
+tau = args.tau
+init_temp = args.init_temp
+
+# eval
+eval_freq = args.eval_freq
+num_eval_episodes = args.num_eval_episodes
 
 # pre train
 load_buffer = args.load_buffer
@@ -157,7 +168,7 @@ load_sub = args.load_sub
 if load_sub == 'None':
     load_sub = None
 
-dpos = 0.005
+dpos = args.dpos
 drot = np.pi/32
 
 ######################################################################################

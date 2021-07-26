@@ -73,6 +73,8 @@ class Logger(object):
         self.td_errors = list()
         self.expert_samples = list()
 
+        self.eval_rewards = list()
+
         # Buffer of transitions
         self.transitions = list()
 
@@ -164,6 +166,12 @@ class Logger(object):
         plt.savefig(os.path.join(self.info_dir, 'td_error_curve.pdf'))
         plt.close()
 
+    def saveEvalCurve(self):
+        xs = np.arange(eval_freq, (len(self.eval_rewards)+1) * eval_freq, eval_freq)
+        plt.plot(xs, self.eval_rewards)
+        plt.savefig(os.path.join(self.info_dir, 'eval_curve.pdf'))
+        plt.close()
+
     def saveModel(self, iteration, name, agent):
         '''
         Save PyTorch model to log directory
@@ -186,6 +194,9 @@ class Logger(object):
 
     def saveCandidateSchedule(self, schedule):
         np.save(os.path.join(self.info_dir, 'schedule.npy'), schedule)
+
+    def saveEvalRewards(self):
+        np.save(os.path.join(self.info_dir, 'eval_rewards.npy'), self.eval_rewards)
 
     def saveTransitions(self, iteration="final", n=0):
         '''Saves last n stored transitions to file '''
@@ -239,7 +250,8 @@ class Logger(object):
                 'losses': self.losses,
                 'steps_left': self.steps_left,
                 'td_errors': self.td_errors,
-                'expert_samples': self.expert_samples
+                'expert_samples': self.expert_samples,
+                'eval_rewards': self.eval_rewards,
             },
             'torch_rng_state': torch.get_rng_state(),
             'torch_cuda_rng_state': torch.cuda.get_rng_state(),
@@ -269,6 +281,7 @@ class Logger(object):
         self.steps_left = checkpoint['logger']['steps_left']
         self.td_errors =checkpoint['logger']['td_errors']
         self.expert_samples = checkpoint['logger']['expert_samples']
+        self.eval_rewards = checkpoint['logger']['eval_rewards']
         torch.set_rng_state(checkpoint['torch_rng_state'])
         torch.cuda.set_rng_state(checkpoint['torch_cuda_rng_state'])
         np.random.set_state(checkpoint['np_rng_state'])
