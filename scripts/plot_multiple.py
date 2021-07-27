@@ -30,6 +30,75 @@ def plotLearningCurveAvg(rewards, window=1000, label='reward', color='b', shadow
         ax.legend(loc=4)
     return l
 
+def plotEvalCurveAvg(rewards, freq=1000, label='reward', color='b', shadow=True, ax=plt, legend=True, linestyle='-'):
+    min_len = np.min(list(map(lambda x: len(x), rewards)))
+    rewards = list(map(lambda x: x[:min_len], rewards))
+    avg_rewards = np.mean(rewards, axis=0)
+    # avg_rewards = np.concatenate(([0], avg_rewards))
+    # std_rewards = np.std(rewards, axis=0)
+    std_rewards = stats.sem(rewards, axis=0)
+    # std_rewards = np.concatenate(([0], std_rewards))
+    xs = np.arange(freq, freq * (avg_rewards.shape[0]+1), freq)
+    if shadow:
+        ax.fill_between(xs, avg_rewards-std_rewards, avg_rewards+std_rewards, alpha=0.2, color=color)
+    l = ax.plot(xs, avg_rewards, label=label, color=color, linestyle=linestyle, alpha=0.7)
+    if legend:
+        ax.legend(loc=4)
+    return l
+
+def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
+    plt.style.use('ggplot')
+    plt.figure(dpi=300)
+    MEDIUM_SIZE = 12
+    BIGGER_SIZE = 14
+
+    plt.rc('axes', titlesize=BIGGER_SIZE)  # fontsize of the axes title
+    plt.rc('axes', labelsize=BIGGER_SIZE)  # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
+    plt.rc('ytick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
+
+    colors = "bgrycmkwbgrycmkw"
+    if use_default_cm:
+        color_map = {}
+    else:
+        color_map = {
+        }
+
+    linestyle_map = {
+    }
+    name_map = {}
+
+    sequence = {}
+
+    i = 0
+    methods = filter(lambda x: x[0] != '.', get_immediate_subdirectories(base))
+    for method in sorted(methods, key=lambda x: sequence[x] if x in sequence.keys() else x):
+        rs = []
+        for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
+            try:
+                r = np.load(os.path.join(base, method, run, 'info/eval_rewards.npy'))
+                rs.append(r[:step//freq])
+            except Exception as e:
+                print(e)
+                continue
+
+        plotEvalCurveAvg(rs, freq, label=name_map[method] if method in name_map else method,
+                         color=color_map[method] if method in color_map else colors[i],
+                         linestyle=linestyle_map[method] if method in linestyle_map else '-')
+        i += 1
+
+
+    # plt.plot([0, ep], [1.450, 1.450], label='planner')
+    plt.legend(loc=0, facecolor='w', fontsize='x-large')
+    plt.xlabel('number of episodes')
+    # if base.find('bbp') > -1:
+    plt.ylabel('discounted reward')
+    plt.xlim((-100, step+100))
+    # plt.yticks(np.arange(0., 1.05, 0.1))
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(base, 'eval.png'), bbox_inches='tight',pad_inches = 0)
+
 def get_immediate_subdirectories(a_dir):
     return [name for name in os.listdir(a_dir)
             if os.path.isdir(os.path.join(a_dir, name))]
@@ -327,8 +396,9 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop/bp_r_0721/com'
+    base = '/media/dian/hdd/close_loop/bp_r_0726_sac'
     plotLearningCurve(base, 10000, window=500)
+    plotEvalCurve(base, 50000, freq=1000)
     showPerformance(base)
     # plotLoss(base, 30000)
 

@@ -31,11 +31,11 @@ class Logger(object):
       - num_envs: Number of environments running concurrently
     '''
 
-    def __init__(self, log_dir, env, mode, num_envs, max_episode, gamma, log_dir_sub=None):
+    def __init__(self, log_dir, env, mode, num_envs, max_train_step, gamma, log_dir_sub=None):
         # Logging variables
         self.env = env
         self.mode = mode
-        self.max_episode = max_episode
+        self.max_train_step = max_train_step
         self.num_envs = num_envs
         self.gamma = gamma
 
@@ -241,7 +241,7 @@ class Logger(object):
             'logger':{
                 'env': self.env,
                 'num_envs': self.num_envs,
-                'max_episode': self.max_episode,
+                'max_train_step': self.max_train_step,
                 'episode_rewards': self.episode_rewards,
                 'num_steps': self.num_steps,
                 'num_training_steps': self.num_training_steps,

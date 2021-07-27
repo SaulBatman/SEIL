@@ -98,7 +98,7 @@ def train():
         log_dir += '_'
         log_dir += note
 
-    logger = Logger(log_dir, env, 'train', num_processes, max_episode, gamma, log_sub)
+    logger = Logger(log_dir, env, 'train', num_processes, max_train_step, gamma, log_sub)
     hyper_parameters['model_shape'] = agent.getModelStr()
     logger.saveParameters(hyper_parameters)
 
@@ -160,19 +160,16 @@ def train():
                 planner_bar.update(dones.sum().item())
 
     if not no_bar:
-        pbar = tqdm(total=max_episode)
+        pbar = tqdm(total=max_train_step)
         pbar.set_description('Episodes:0; Reward:0.0; Explore:0.0; Loss:0.0; Time:0.0')
     timer_start = time.time()
 
     states, obs = envs.reset()
-    while logger.num_episodes < max_episode:
+    while logger.num_training_steps < max_train_step:
         if fixed_eps:
-            if logger.num_episodes < planner_episode:
-                eps = 1
-            else:
-                eps = final_eps
+            eps = final_eps
         else:
-            eps = exploration.value(logger.num_episodes)
+            eps = exploration.value(logger.max_train_step)
 
         is_expert = 0
         actions_star_idx, actions_star = agent.getEGreedyActions(states, obs, eps)
@@ -209,12 +206,12 @@ def train():
 
         if not no_bar:
             timer_final = time.time()
-            description = 'Steps:{}; Reward:{:.03f}; Eval Reward:{:.03f}; Explore:{:.02f}; Loss:{:.03f}; Time:{:.03f}'.format(
+            description = 'Action Step:{}; Reward:{:.03f}; Eval Reward:{:.03f}; Explore:{:.02f}; Loss:{:.03f}; Time:{:.03f}'.format(
                 logger.num_steps, logger.getCurrentAvgReward(100), logger.eval_rewards[-1] if len(logger.eval_rewards) > 0 else 0, eps, float(logger.getCurrentLoss()),
                 timer_final - timer_start)
             pbar.set_description(description)
             timer_start = timer_final
-            pbar.update(logger.num_episodes-pbar.n)
+            pbar.update(logger.num_training_steps-pbar.n)
         logger.num_steps += num_processes
 
         if logger.num_training_steps > 0 and logger.num_training_steps % eval_freq == 0:
