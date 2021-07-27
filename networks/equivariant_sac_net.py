@@ -143,11 +143,11 @@ class EquivariantSACActor(torch.nn.Module):
                       kernel_size=3, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), inplace=True),
             # 1x1
+            # nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
+            #           nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
+            #           kernel_size=1, padding=0, initialize=initialize),
+            # nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.trivial_repr]), inplace=True),
             nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, 256 * [self.c4_act.trivial_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.trivial_repr]), inplace=True),
-            nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.trivial_repr]),
                       nn.FieldType(self.c4_act, 1 * [self.c4_act.irrep(1)] + (action_dim*2-2) * [self.c4_act.trivial_repr]),
                       kernel_size=1, padding=0, initialize=initialize)
         )
@@ -180,11 +180,19 @@ class EquivariantSACActor(torch.nn.Module):
 
 
 if __name__ == '__main__':
-    critic = EquivariantSACCritic(4, initialize=False)
-    o = torch.rand(16, 2, 128, 128)
-    a = torch.rand(16, 4)
-    out = critic(o, a)
+    import matplotlib.pyplot as plt
+    # critic = EquivariantSACCritic(4, initialize=True)
+    o = torch.zeros(1, 2, 128, 128)
+    o[0, 0, 10:20, 10:20] = 1
+    a = torch.zeros(1, 4)
+    a[0, 1:3] = torch.tensor([-1., -1.])
 
-    actor = EquivariantSACActor(4, initialize=False)
+    o2 = torch.rot90(o, 1, [2, 3])
+    a2 = torch.zeros(1, 4)
+    a2[0, 1:3] = torch.tensor([1., -1.])
+
+    # out = critic(o, a)
+
+    actor = EquivariantSACActor(4, initialize=True)
     out2 = actor(o)
 
