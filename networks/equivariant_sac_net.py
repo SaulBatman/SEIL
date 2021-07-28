@@ -63,9 +63,10 @@ class EquivariantSACCritic(torch.nn.Module):
 
         self.critic_1 = torch.nn.Sequential(
             nn.R2Conv(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr] + (action_dim-2) * [self.c4_act.trivial_repr] + 1*[self.c4_act.irrep(1)]),
-                      nn.FieldType(self.c4_act, 128 * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 128 * [self.c4_act.trivial_repr]), inplace=True),
+            nn.ReLU(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]), inplace=True),
+            nn.GroupPooling(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr])),
             nn.R2Conv(nn.FieldType(self.c4_act, 128 * [self.c4_act.trivial_repr]),
                       nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
@@ -73,9 +74,10 @@ class EquivariantSACCritic(torch.nn.Module):
 
         self.critic_2 = torch.nn.Sequential(
             nn.R2Conv(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr] + (action_dim-2) * [self.c4_act.trivial_repr] + 1*[self.c4_act.irrep(1)]),
-                      nn.FieldType(self.c4_act, 128 * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 128 * [self.c4_act.trivial_repr]), inplace=True),
+            nn.ReLU(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]), inplace=True),
+            nn.GroupPooling(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr])),
             nn.R2Conv(nn.FieldType(self.c4_act, 128 * [self.c4_act.trivial_repr]),
                       nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
@@ -181,7 +183,7 @@ class EquivariantSACActor(torch.nn.Module):
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    critic = EquivariantSACCritic(4, initialize=False)
+    critic = EquivariantSACCritic(4, initialize=True)
     o = torch.zeros(1, 2, 128, 128)
     o[0, 0, 10:20, 10:20] = 1
     a = torch.zeros(1, 4)

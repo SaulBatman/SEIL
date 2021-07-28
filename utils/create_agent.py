@@ -73,6 +73,9 @@ def createAgent(test=False):
             actor = EquivariantSACActor(len(action_sequence), initialize=initialize).to(device)
             # critic = EquivariantSACCritic(len(action_sequence), initialize=initialize).to(device)
             critic = SACCritic(len(action_sequence)).to(device)
+        elif model == 'equi_both':
+            actor = EquivariantSACActor(len(action_sequence), initialize=initialize).to(device)
+            critic = EquivariantSACCritic(len(action_sequence), initialize=initialize).to(device)
 
 
         else:

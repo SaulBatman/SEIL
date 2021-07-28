@@ -26,8 +26,9 @@ b_geo = nn.GeometricTensor(b, nn.FieldType(c4_act, 1 * 1* [c4_act.regular_repr] 
 
 layer3 = torch.nn.Sequential(
     nn.R2Conv(nn.FieldType(c4_act, 2 * [c4_act.regular_repr]),
-              nn.FieldType(c4_act, 1 * [c4_act.trivial_repr]),
+              nn.FieldType(c4_act, 1 * [c4_act.regular_repr]),
               1),
+    nn.GroupPooling(nn.FieldType(c4_act, 1 * [c4_act.regular_repr])),
 )
 
 a = torch.tensor([1, 2, 3, 4, 5, 6, 7, 8]).reshape(1, 8, 1, 1).float()
