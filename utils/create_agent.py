@@ -71,7 +71,9 @@ def createAgent(test=False):
             critic = SACCritic(len(action_sequence)).to(device)
         elif model == 'equi':
             actor = EquivariantSACActor(len(action_sequence), initialize=initialize).to(device)
-            critic = EquivariantSACCritic(len(action_sequence), initialize=initialize).to(device)
+            # critic = EquivariantSACCritic(len(action_sequence), initialize=initialize).to(device)
+            critic = SACCritic(len(action_sequence)).to(device)
+
 
         else:
             raise NotImplementedError

@@ -45,24 +45,24 @@ class EquivariantSACCritic(torch.nn.Module):
             nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), inplace=True),
 
             nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]),
                       kernel_size=3, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), 2),
+            nn.ReLU(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]), 2),
             # 3x3
-            nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
+            nn.R2Conv(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]),
                       kernel_size=3, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), inplace=True),
+            nn.ReLU(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]), inplace=True),
             # 1x1
-            nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, 256 * [self.c4_act.trivial_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.trivial_repr]), inplace=True),
+            # nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
+            #           nn.FieldType(self.c4_act, 256 * [self.c4_act.trivial_repr]),
+            #           kernel_size=1, padding=0, initialize=initialize),
+            # nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.trivial_repr]), inplace=True),
         )
 
         self.critic_1 = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.c4_act, (256 + action_dim-2) * [self.c4_act.trivial_repr] + 1*[self.c4_act.irrep(1)]),
+            nn.R2Conv(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr] + (action_dim-2) * [self.c4_act.trivial_repr] + 1*[self.c4_act.irrep(1)]),
                       nn.FieldType(self.c4_act, 128 * [self.c4_act.trivial_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, 128 * [self.c4_act.trivial_repr]), inplace=True),
@@ -72,7 +72,7 @@ class EquivariantSACCritic(torch.nn.Module):
         )
 
         self.critic_2 = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.c4_act, (256 + action_dim-2) * [self.c4_act.trivial_repr] + 1*[self.c4_act.irrep(1)]),
+            nn.R2Conv(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr] + (action_dim-2) * [self.c4_act.trivial_repr] + 1*[self.c4_act.irrep(1)]),
                       nn.FieldType(self.c4_act, 128 * [self.c4_act.trivial_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, 128 * [self.c4_act.trivial_repr]), inplace=True),
@@ -91,7 +91,7 @@ class EquivariantSACCritic(torch.nn.Module):
         # dxy_geo = nn.GeometricTensor(dxy.reshape(batch_size, 2, 1, 1), nn.FieldType(self.c4_act, 1*[self.c4_act.irrep(1)]))
         # inv_act_geo = nn.GeometricTensor(inv_act.reshape(batch_size, n_inv, 1, 1), nn.FieldType(self.c4_act, n_inv*[self.c4_act.trivial_repr]))
         cat = torch.cat((conv_out.tensor, inv_act.reshape(batch_size, n_inv, 1, 1), dxy.reshape(batch_size, 2, 1, 1)), dim=1)
-        cat_geo = nn.GeometricTensor(cat, nn.FieldType(self.c4_act, (256 + n_inv) * [self.c4_act.trivial_repr] + 1*[self.c4_act.irrep(1)]))
+        cat_geo = nn.GeometricTensor(cat, nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr] + 1*[self.c4_act.irrep(1)]))
         out1 = self.critic_1(cat_geo).tensor.reshape(batch_size, 1)
         out2 = self.critic_2(cat_geo).tensor.reshape(batch_size, 1)
         return out1, out2
@@ -133,21 +133,21 @@ class EquivariantSACActor(torch.nn.Module):
             nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), inplace=True),
 
             nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]),
                       kernel_size=3, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), 2),
+            nn.ReLU(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]), 2),
             # 3x3
-            nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
+            nn.R2Conv(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]),
                       kernel_size=3, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), inplace=True),
+            nn.ReLU(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]), inplace=True),
             # 1x1
             # nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
             #           nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
             #           kernel_size=1, padding=0, initialize=initialize),
             # nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.trivial_repr]), inplace=True),
-            nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
+            nn.R2Conv(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]),
                       nn.FieldType(self.c4_act, 1 * [self.c4_act.irrep(1)] + (action_dim*2-2) * [self.c4_act.trivial_repr]),
                       kernel_size=1, padding=0, initialize=initialize)
         )
@@ -181,7 +181,7 @@ class EquivariantSACActor(torch.nn.Module):
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    # critic = EquivariantSACCritic(4, initialize=True)
+    critic = EquivariantSACCritic(4, initialize=False)
     o = torch.zeros(1, 2, 128, 128)
     o[0, 0, 10:20, 10:20] = 1
     a = torch.zeros(1, 4)
@@ -191,7 +191,7 @@ if __name__ == '__main__':
     a2 = torch.zeros(1, 4)
     a2[0, 1:3] = torch.tensor([1., -1.])
 
-    # out = critic(o, a)
+    out = critic(o, a)
 
     actor = EquivariantSACActor(4, initialize=True)
     out2 = actor(o)
