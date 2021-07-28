@@ -169,7 +169,7 @@ def train():
         if fixed_eps:
             eps = final_eps
         else:
-            eps = exploration.value(logger.max_train_step)
+            eps = exploration.value(logger.num_training_steps)
 
         is_expert = 0
         actions_star_idx, actions_star = agent.getEGreedyActions(states, obs, eps)

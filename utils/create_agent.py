@@ -10,6 +10,7 @@ from networks.cnn import Actor, Critic
 from agents.sac import SAC
 from networks.sac_networks import DeterministicPolicy, GaussianPolicy, SACCritic
 from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic
+from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
 
 def createAgent(test=False):
     if load_sub is not None or load_model_pre is not None:
@@ -58,6 +59,9 @@ def createAgent(test=False):
         if model == 'cnn':
             actor = Actor(len(action_sequence)).to(device)
             critic = Critic(len(action_sequence)).to(device)
+        elif model == 'equi_both':
+            actor = EquivariantDDPGActor(len(action_sequence), initialize=initialize).to(device)
+            critic = EquivariantDDPGCritic(len(action_sequence), initialize=initialize).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(actor, critic, initialize_target=not test)
