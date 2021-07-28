@@ -93,7 +93,7 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
     plt.xlabel('number of episodes')
     # if base.find('bbp') > -1:
     plt.ylabel('discounted reward')
-    plt.xlim((-100, step+100))
+    # plt.xlim((-100, step+100))
     # plt.yticks(np.arange(0., 1.05, 0.1))
 
     plt.tight_layout()
@@ -396,9 +396,9 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/close_loop/cl_br_0726_sac'
+    base = '/media/dian/hdd/close_loop/bp_r_0727_sac_equi/equi_both/2'
     plotLearningCurve(base, 10000, window=500)
-    plotEvalCurve(base, 50000, freq=1000)
+    plotEvalCurve(base, 20000, freq=1000)
     showPerformance(base)
     # plotLoss(base, 30000)
 

@@ -29,9 +29,9 @@ class SAC(A2CBase):
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr, weight_decay=1e-5)
         if initialize_target:
             self.critic_target = deepcopy(critic)
+            self.target_networks.append(self.critic_target)
         self.networks.append(self.actor)
         self.networks.append(self.critic)
-        self.target_networks.append(self.critic_target)
         self.optimizers.append(self.actor_optimizer)
         self.optimizers.append(self.critic_optimizer)
 

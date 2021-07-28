@@ -21,7 +21,7 @@ def test():
     step_times = []
     pbar = tqdm(total=test_episode)
     while total < 1000:
-        actions_star_idx, actions_star = agent.getEGreedyActions(states, obs, 0)
+        actions_star_idx, actions_star = agent.getGreedyActions(states, obs)
         states_, obs_, rewards, dones = envs.step(actions_star, auto_reset=True)
 
         states = copy.copy(states_)
