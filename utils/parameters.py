@@ -22,6 +22,7 @@ env_group.add_argument('--fast_mode', type=strToBool, default=True)
 env_group.add_argument('--action_sequence', type=str, default='pxyzr')
 env_group.add_argument('--random_orientation', type=strToBool, default=True)
 env_group.add_argument('--num_processes', type=int, default=5)
+env_group.add_argument('--num_eval_processes', type=int, default=5)
 env_group.add_argument('--render', type=strToBool, default=False)
 env_group.add_argument('--workspace_size', type=float, default=0.4)
 env_group.add_argument('--heightmap_size', type=int, default=128)
@@ -95,6 +96,7 @@ max_episode_steps = args.max_episode_steps
 fast_mode = args.fast_mode
 action_sequence = args.action_sequence
 num_processes = args.num_processes
+num_eval_processes = args.num_eval_processes
 render = args.render
 robot = args.robot
 

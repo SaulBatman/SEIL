@@ -47,7 +47,7 @@ def saveModelAndInfo(logger, agent):
 def evaluate(envs, agent, logger):
     states, obs = envs.reset()
     evaled = 0
-    temp_reward = [[] for _ in range(num_processes)]
+    temp_reward = [[] for _ in range(num_eval_processes)]
     eval_rewards = []
     if not no_bar:
         eval_bar = tqdm(total=num_eval_episodes)
@@ -80,7 +80,7 @@ def train():
         set_seed(seed)
     # setup env
     envs = EnvWrapper(num_processes, simulator, env, env_config, planner_config)
-    eval_envs = EnvWrapper(num_processes, simulator, env, env_config, planner_config)
+    eval_envs = EnvWrapper(num_eval_processes, simulator, env, env_config, planner_config)
 
     # setup agent
     agent = createAgent()
@@ -135,16 +135,23 @@ def train():
 
     if planner_episode > 0:
         j = 0
-        states, obs = envs.reset()
+        states, obs = eval_envs.reset()
         s = 0
         if not no_bar:
             planner_bar = tqdm(total=planner_episode)
         while j < planner_episode:
-            plan_actions = envs.getNextAction()
+            if num_processes > num_eval_processes:
+                planner_envs = envs
+                planner_num_process = num_processes
+            else:
+                planner_envs = eval_envs
+                planner_num_process = num_eval_processes
+
+            plan_actions = planner_envs.getNextAction()
             planner_actions_star_idx, planner_actions_star = agent.getActionFromPlan(plan_actions)
-            states_, obs_, rewards, dones = envs.step(planner_actions_star, auto_reset=True)
-            steps_lefts = envs.getStepLeft()
-            for i in range(num_processes):
+            states_, obs_, rewards, dones = planner_envs.step(planner_actions_star, auto_reset=True)
+            steps_lefts = planner_envs.getStepLeft()
+            for i in range(planner_num_process):
                 replay_buffer.add(
                     ExpertTransition(states[i], obs[i], planner_actions_star_idx[i], rewards[i], states_[i],
                                      obs_[i], dones[i], steps_lefts[i], torch.tensor(1))
