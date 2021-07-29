@@ -13,6 +13,7 @@ from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCrit
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
 
 def createAgent(test=False):
+    obs_channel = 2
     if load_sub is not None or load_model_pre is not None:
         initialize = False
     else:
@@ -74,12 +75,12 @@ def createAgent(test=False):
             # actor = DeterministicPolicy(len(action_sequence)).to(device)
             critic = SACCritic(len(action_sequence)).to(device)
         elif model == 'equi':
-            actor = EquivariantSACActor(len(action_sequence), initialize=initialize).to(device)
+            actor = EquivariantSACActor(obs_channel, len(action_sequence), initialize=initialize).to(device)
             # critic = EquivariantSACCritic(len(action_sequence), initialize=initialize).to(device)
             critic = SACCritic(len(action_sequence)).to(device)
         elif model == 'equi_both':
-            actor = EquivariantSACActor(len(action_sequence), initialize=initialize).to(device)
-            critic = EquivariantSACCritic(len(action_sequence), initialize=initialize).to(device)
+            actor = EquivariantSACActor(obs_channel, len(action_sequence), initialize=initialize).to(device)
+            critic = EquivariantSACCritic(obs_channel, len(action_sequence), initialize=initialize).to(device)
 
 
         else:

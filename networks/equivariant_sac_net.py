@@ -10,12 +10,13 @@ LOG_SIG_MIN = -20
 epsilon = 1e-6
 
 class EquivariantSACCritic(torch.nn.Module):
-    def __init__(self, action_dim=5, initialize=True):
+    def __init__(self, obs_channel=2, action_dim=5, initialize=True):
         super().__init__()
+        self.obs_channel = obs_channel
         self.c4_act = gspaces.Rot2dOnR2(4)
         self.img_conv = torch.nn.Sequential(
             # 128x128
-            nn.R2Conv(nn.FieldType(self.c4_act, 2 * [self.c4_act.trivial_repr]),
+            nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
                       nn.FieldType(self.c4_act, 16 * [self.c4_act.regular_repr]),
                       kernel_size=3, padding=1, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, 16 * [self.c4_act.regular_repr]), inplace=True),
@@ -85,7 +86,7 @@ class EquivariantSACCritic(torch.nn.Module):
 
     def forward(self, obs, act):
         batch_size = obs.shape[0]
-        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, 2*[self.c4_act.trivial_repr]))
+        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
         conv_out = self.img_conv(obs_geo)
         dxy = act[:, 1:3]
         inv_act = torch.cat((act[:, 0:1], act[:, 3:]), dim=1)
@@ -99,13 +100,14 @@ class EquivariantSACCritic(torch.nn.Module):
         return out1, out2
 
 class EquivariantSACActor(torch.nn.Module):
-    def __init__(self, action_dim=5, initialize=True):
+    def __init__(self, obs_channel=2, action_dim=5, initialize=True):
         super().__init__()
+        self.obs_channel = obs_channel
         self.action_dim = action_dim
         self.c4_act = gspaces.Rot2dOnR2(4)
         self.conv = torch.nn.Sequential(
             # 128x128
-            nn.R2Conv(nn.FieldType(self.c4_act, 2 * [self.c4_act.trivial_repr]),
+            nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
                       nn.FieldType(self.c4_act, 16 * [self.c4_act.regular_repr]),
                       kernel_size=3, padding=1, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, 16 * [self.c4_act.regular_repr]), inplace=True),
@@ -156,7 +158,7 @@ class EquivariantSACActor(torch.nn.Module):
 
     def forward(self, obs):
         batch_size = obs.shape[0]
-        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, 2*[self.c4_act.trivial_repr]))
+        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
         conv_out = self.conv(obs_geo).tensor.reshape(batch_size, -1)
         dxy = conv_out[:, 0:2]
         inv_act = conv_out[:, 2:self.action_dim]
