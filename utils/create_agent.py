@@ -57,8 +57,8 @@ def createAgent(test=False):
         agent.initNetwork(net, initialize_target=not test)
 
     elif alg == 'ddpg':
-        lr = (actor_lr, critic_lr)
-        agent = DDPG(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence), tau=tau)
+        ddpg_lr = (actor_lr, critic_lr)
+        agent = DDPG(lr=ddpg_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence), tau=tau)
         if model == 'cnn':
             actor = Actor(len(action_sequence)).to(device)
             critic = Critic(len(action_sequence)).to(device)
@@ -70,23 +70,23 @@ def createAgent(test=False):
         agent.initNetwork(actor, critic, initialize_target=not test)
 
     elif alg in ['sac', 'sacfd']:
-        lr = (actor_lr, critic_lr, alpha_lr)
+        sac_lr = (actor_lr, critic_lr, alpha_lr)
         if alg == 'sac':
-            agent = SAC(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
+            agent = SAC(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
                         tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True)
         else:
-            agent = SACfD(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
+            agent = SACfD(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
                         tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True, demon_w=demon_w)
         if model == 'cnn':
             actor = GaussianPolicy(len(action_sequence)).to(device)
             # actor = DeterministicPolicy(len(action_sequence)).to(device)
             critic = SACCritic(len(action_sequence)).to(device)
         elif model == 'equi_actor':
-            actor = EquivariantSACActor(obs_channel, len(action_sequence), initialize=initialize, N=equi_n).to(device)
+            actor = EquivariantSACActor(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
             critic = SACCritic(len(action_sequence)).to(device)
         elif model == 'equi_both':
-            actor = EquivariantSACActor(obs_channel, len(action_sequence), initialize=initialize, N=equi_n).to(device)
-            critic = EquivariantSACCritic(obs_channel, len(action_sequence), initialize=initialize, N=equi_n).to(device)
+            actor = EquivariantSACActor(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+            critic = EquivariantSACCritic(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
 
 
         else:

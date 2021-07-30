@@ -9,6 +9,7 @@ sys.path.append('./')
 sys.path.append('..')
 from utils.parameters import *
 from storage.buffer import QLearningBufferExpert, QLearningBuffer
+from storage.per_buffer import PrioritizedQLearningBuffer, EXPERT, NORMAL
 from utils.logger import Logger
 from utils.schedules import LinearSchedule
 from utils.env_wrapper import EnvWrapper
@@ -24,9 +25,19 @@ def set_seed(s):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-def train_step(agent, replay_buffer, logger):
-    batch = replay_buffer.sample(batch_size)
-    loss, td_error = agent.update(batch)
+def train_step(agent, replay_buffer, logger, p_beta_schedule):
+    if buffer_type == 'per' or buffer_type == 'per_expert':
+        beta = p_beta_schedule.value(logger.num_training_steps)
+        batch, weights, batch_idxes = replay_buffer.sample(batch_size, beta)
+        loss, td_error = agent.update(batch)
+        new_priorities = np.abs(td_error.cpu()) + torch.stack([t.expert for t in batch]) * per_expert_eps + per_eps
+        replay_buffer.update_priorities(batch_idxes, new_priorities)
+        logger.expertSampleBookkeeping(
+            torch.tensor(list(zip(*batch))[-1]).sum().float().item() / batch_size)
+    else:
+        batch = replay_buffer.sample(batch_size)
+        loss, td_error = agent.update(batch)
+
     logger.trainingBookkeeping(loss, td_error.mean().item())
     logger.num_training_steps += 1
     if logger.num_training_steps % target_update_freq == 0:
@@ -37,10 +48,11 @@ def saveModelAndInfo(logger, agent):
     logger.saveLearningCurve(100)
     logger.saveLossCurve(100)
     logger.saveTdErrorCurve(100)
+    logger.saveStepLeftCurve(100)
+    logger.saveExpertSampleCurve(100)
     logger.saveRewards()
     logger.saveLosses()
     logger.saveTdErrors()
-    logger.saveStepLeftCurve(100)
     logger.saveEvalCurve()
     logger.saveEvalRewards()
 
@@ -102,11 +114,18 @@ def train():
     hyper_parameters['model_shape'] = agent.getModelStr()
     logger.saveParameters(hyper_parameters)
 
-    if buffer_type == 'expert':
+    if buffer_type == 'per':
+        replay_buffer = PrioritizedQLearningBuffer(buffer_size, per_alpha, NORMAL)
+    elif buffer_type == 'per_expert':
+        replay_buffer = PrioritizedQLearningBuffer(buffer_size, per_alpha, EXPERT)
+    elif buffer_type == 'expert':
         replay_buffer = QLearningBufferExpert(buffer_size)
-    else:
+    elif buffer_type == 'normal':
         replay_buffer = QLearningBuffer(buffer_size)
+    else:
+        raise NotImplementedError
     exploration = LinearSchedule(schedule_timesteps=explore, initial_p=init_eps, final_p=final_eps)
+    p_beta_schedule = LinearSchedule(schedule_timesteps=max_train_step, initial_p=per_beta, final_p=1.0)
 
     if load_sub:
         logger.loadCheckPoint(os.path.join(log_dir, load_sub, 'checkpoint'), envs, agent, replay_buffer)
@@ -118,7 +137,7 @@ def train():
         pbar = tqdm(total=pre_train_step)
         while len(logger.losses) < pre_train_step:
             t0 = time.time()
-            train_step(agent, replay_buffer, logger)
+            train_step(agent, replay_buffer, logger, p_beta_schedule)
             if logger.num_training_steps % 1000 == 0:
                 logger.saveLossCurve(100)
                 logger.saveTdErrorCurve(100)
@@ -185,7 +204,7 @@ def train():
 
         if len(replay_buffer) >= training_offset:
             for training_iter in range(training_iters):
-                train_step(agent, replay_buffer, logger)
+                train_step(agent, replay_buffer, logger, p_beta_schedule)
 
         states_, obs_, rewards, dones = envs.stepWait()
         steps_lefts = envs.getStepLeft()

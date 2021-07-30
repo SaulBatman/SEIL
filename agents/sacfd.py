@@ -68,6 +68,6 @@ class SACfD(SAC):
             self.targetSoftUpdate()
 
         with torch.no_grad():
-            td_error = torch.abs(qf2 - next_q_value)
+            td_error = 0.5 * (torch.abs(qf2 - next_q_value) + torch.abs(qf1 - next_q_value))
 
         return (qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item(), alpha_tlogs.item()), td_error
