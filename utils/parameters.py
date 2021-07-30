@@ -58,6 +58,8 @@ training_group.add_argument('--tau', type=float, default=1e-3)
 training_group.add_argument('--init_temp', type=float, default=0.1)
 training_group.add_argument('--dpos', type=float, default=0.005)
 training_group.add_argument('--drot_n', type=int, default=32)
+training_group.add_argument('--demon_w', type=float, default=0.1)
+training_group.add_argument('--equi_n', type=int, default=4)
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -150,6 +152,9 @@ perlin = args.perlin
 
 tau = args.tau
 init_temp = args.init_temp
+
+demon_w = args.demon_w
+equi_n = args.equi_n
 
 # eval
 eval_freq = args.eval_freq

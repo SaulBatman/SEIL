@@ -10,10 +10,10 @@ LOG_SIG_MIN = -20
 epsilon = 1e-6
 
 class EquivariantSACCritic(torch.nn.Module):
-    def __init__(self, obs_channel=2, action_dim=5, initialize=True):
+    def __init__(self, obs_channel=2, action_dim=5, initialize=True, N=4):
         super().__init__()
         self.obs_channel = obs_channel
-        self.c4_act = gspaces.Rot2dOnR2(4)
+        self.c4_act = gspaces.Rot2dOnR2(N)
         self.img_conv = torch.nn.Sequential(
             # 128x128
             nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
@@ -100,11 +100,11 @@ class EquivariantSACCritic(torch.nn.Module):
         return out1, out2
 
 class EquivariantSACActor(torch.nn.Module):
-    def __init__(self, obs_channel=2, action_dim=5, initialize=True):
+    def __init__(self, obs_channel=2, action_dim=5, initialize=True, N=4):
         super().__init__()
         self.obs_channel = obs_channel
         self.action_dim = action_dim
-        self.c4_act = gspaces.Rot2dOnR2(4)
+        self.c4_act = gspaces.Rot2dOnR2(N)
         self.conv = torch.nn.Sequential(
             # 128x128
             nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
