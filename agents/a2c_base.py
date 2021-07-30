@@ -46,8 +46,8 @@ class A2CBase(BaseAgent):
     def initNetwork(self, actor, critic, initialize_target=True):
         self.actor = actor
         self.critic = critic
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr, weight_decay=1e-5)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr, weight_decay=1e-5)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr[0], weight_decay=1e-5)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr[1], weight_decay=1e-5)
         if initialize_target:
             self.actor_target = deepcopy(actor)
             self.critic_target = deepcopy(critic)

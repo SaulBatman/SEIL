@@ -56,6 +56,7 @@ def createAgent(test=False):
         agent.initNetwork(net, initialize_target=not test)
 
     elif alg == 'ddpg':
+        lr = (actor_lr, critic_lr)
         agent = DDPG(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence), tau=tau)
         if model == 'cnn':
             actor = Actor(len(action_sequence)).to(device)
@@ -68,6 +69,7 @@ def createAgent(test=False):
         agent.initNetwork(actor, critic, initialize_target=not test)
 
     elif alg == 'sac':
+        lr = (actor_lr, critic_lr, alpha_lr)
         agent = SAC(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
                     tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True)
         if model == 'cnn':

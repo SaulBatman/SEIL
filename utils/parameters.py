@@ -31,6 +31,9 @@ training_group = parser.add_argument_group('training')
 training_group.add_argument('--alg', default='dqn')
 training_group.add_argument('--model', type=str, default='resucat')
 training_group.add_argument('--lr', type=float, default=5e-5)
+training_group.add_argument('--actor_lr', type=float, default=None)
+training_group.add_argument('--critic_lr', type=float, default=None)
+training_group.add_argument('--alpha_lr', type=float, default=None)
 training_group.add_argument('--gamma', type=float, default=0.9)
 training_group.add_argument('--explore', type=int, default=10000)
 training_group.add_argument('--fixed_eps', action='store_true')
@@ -115,6 +118,16 @@ action_space = [0, heightmap_size]
 alg = args.alg
 model = args.model
 lr = args.lr
+actor_lr = args.actor_lr
+critic_lr = args.critic_lr
+alpha_lr = args.alpha_lr
+if actor_lr is None:
+    actor_lr = lr
+if critic_lr is None:
+    critic_lr = lr
+if alpha_lr is None:
+    alpha_lr = lr
+
 gamma = args.gamma
 explore = args.explore
 fixed_eps = args.fixed_eps

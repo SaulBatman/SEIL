@@ -18,15 +18,15 @@ class SAC(A2CBase):
                 # self.target_entropy = -torch.prod(torch.Tensor(action_space.shape).to(self.device)).item()
                 self.target_entropy = -n_a
                 self.log_alpha = torch.tensor(np.log(self.alpha), requires_grad=True, device=self.device)
-                self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=lr)
+                self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self.lr[2])
 
         self.num_update = 0
 
     def initNetwork(self, actor, critic, initialize_target=True):
         self.actor = actor
         self.critic = critic
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr, weight_decay=1e-5)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr, weight_decay=1e-5)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr[0], weight_decay=1e-5)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr[1], weight_decay=1e-5)
         if initialize_target:
             self.critic_target = deepcopy(critic)
             self.target_networks.append(self.critic_target)
