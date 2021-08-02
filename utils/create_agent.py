@@ -10,7 +10,7 @@ from networks.cnn import Actor, Critic
 from agents.sac import SAC
 from agents.sacfd import SACfD
 from networks.sac_networks import DeterministicPolicy, GaussianPolicy, SACCritic
-from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic
+from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
 
 def createAgent(test=False):
@@ -92,6 +92,11 @@ def createAgent(test=False):
         elif model == 'equi_both':
             actor = EquivariantSACActor(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
             critic = EquivariantSACCritic(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+        elif model == 'equi_both_2':
+            actor = EquivariantSACActor2(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize,
+                                         N=equi_n).to(device)
+            critic = EquivariantSACCritic(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize,
+                                          N=equi_n).to(device)
 
 
         else:
