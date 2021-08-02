@@ -90,7 +90,7 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
 
     # plt.plot([0, ep], [1.450, 1.450], label='planner')
     plt.legend(loc=0, facecolor='w', fontsize='x-large')
-    plt.xlabel('number of episodes')
+    plt.xlabel('number of training steps')
     # if base.find('bbp') > -1:
     plt.ylabel('discounted reward')
     # plt.xlim((-100, step+100))
@@ -396,7 +396,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/close_loop/bp_r_ddpg_0729'
+    base = '/media/dian/hdd/close_loop/bp_r_smallstep_sac_0728/vs'
     plotLearningCurve(base, 10000, window=500)
     plotEvalCurve(base, 50000, freq=1000)
     showPerformance(base)

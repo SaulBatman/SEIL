@@ -69,14 +69,19 @@ def createAgent(test=False):
             raise NotImplementedError
         agent.initNetwork(actor, critic, initialize_target=not test)
 
-    elif alg in ['sac', 'sacfd']:
+    elif alg in ['sac', 'sacfd', 'sacfd_mean']:
         sac_lr = (actor_lr, critic_lr, alpha_lr)
         if alg == 'sac':
             agent = SAC(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
                         tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True)
-        else:
+        elif alg == 'sacfd':
             agent = SACfD(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
-                        tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True, demon_w=demon_w)
+                          tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True,
+                          demon_w=demon_w)
+        elif alg == 'sacfd_mean':
+            agent = SACfD(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
+                          tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True,
+                          demon_w=demon_w, demon_l='mean')
         if model == 'cnn':
             actor = GaussianPolicy(len(action_sequence)).to(device)
             # actor = DeterministicPolicy(len(action_sequence)).to(device)
