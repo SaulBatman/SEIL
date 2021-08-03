@@ -216,12 +216,12 @@ def train():
                 states_[idx] = reset_states_[j]
                 obs_[idx] = reset_obs_[j]
 
-
-        for i in range(num_processes):
-            replay_buffer.add(
-                ExpertTransition(states[i], obs[i], actions_star_idx[i], rewards[i], states_[i],
-                                 obs_[i], dones[i], steps_lefts[i], torch.tensor(is_expert))
-            )
+        if not alg[:2] == 'bc':
+            for i in range(num_processes):
+                replay_buffer.add(
+                    ExpertTransition(states[i], obs[i], actions_star_idx[i], rewards[i], states_[i],
+                                     obs_[i], dones[i], steps_lefts[i], torch.tensor(is_expert))
+                )
         logger.stepBookkeeping(rewards.numpy(), steps_lefts.numpy(), dones.numpy())
 
         states = copy.copy(states_)
@@ -240,7 +240,7 @@ def train():
             pbar.update(logger.num_training_steps-pbar.n)
         logger.num_steps += num_processes
 
-        if logger.num_training_steps > 0 and logger.num_training_steps % eval_freq == 0:
+        if logger.num_training_steps > 0 and eval_freq > 0 and logger.num_training_steps % eval_freq == 0:
             evaluate(eval_envs, agent, logger)
 
         if logger.num_steps % (num_processes * save_freq) == 0:

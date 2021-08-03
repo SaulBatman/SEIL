@@ -9,8 +9,9 @@ from networks.cnn import Actor, Critic
 
 from agents.sac import SAC
 from agents.sacfd import SACfD
+from agents.bc_continuous import BehaviorCloningContinuous
 from networks.sac_networks import DeterministicPolicy, GaussianPolicy, SACCritic
-from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2
+from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
 
 def createAgent(test=False):
@@ -97,13 +98,21 @@ def createAgent(test=False):
                                          N=equi_n).to(device)
             critic = EquivariantSACCritic(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize,
                                           N=equi_n).to(device)
-
-
         else:
             raise NotImplementedError
         agent.initNetwork(actor, critic, not test)
 
+    elif alg in ['bc_con']:
+        agent = BehaviorCloningContinuous(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
+                                          n_a=len(action_sequence))
 
+        if model == 'equi':
+            policy = EquivariantPolicy(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+        elif model == 'cnn':
+            policy = Actor(len(action_sequence)).to(device)
+        else:
+            raise NotImplementedError
+        agent.initNetwork(policy)
 
     else:
         raise NotImplementedError

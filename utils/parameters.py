@@ -26,6 +26,7 @@ env_group.add_argument('--num_eval_processes', type=int, default=5)
 env_group.add_argument('--render', type=strToBool, default=False)
 env_group.add_argument('--workspace_size', type=float, default=0.4)
 env_group.add_argument('--heightmap_size', type=int, default=128)
+env_group.add_argument('--view_type', type=str, default='camera_center_xyzr')
 
 training_group = parser.add_argument_group('training')
 training_group.add_argument('--alg', default='dqn')
@@ -115,6 +116,7 @@ heightmap_size = args.heightmap_size
 
 heightmap_resolution = workspace_size/heightmap_size
 action_space = [0, heightmap_size]
+view_type = args.view_type
 
 ######################################################################################
 # training
@@ -199,7 +201,7 @@ env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size'
               'fast_mode': fast_mode,  'action_sequence': action_sequence, 'render': render, 'num_objects': num_objects,
               'random_orientation':random_orientation, 'reward_type': reward_type, 'robot': robot,
               'workspace_check': 'point', 'object_scale_range': (1, 1),
-              'hard_reset_freq': 1000, 'physics_mode' : 'fast'}
+              'hard_reset_freq': 1000, 'physics_mode' : 'fast', 'view_type': view_type}
 planner_config = {'random_orientation':random_orientation, 'dpos': dpos, 'drot': drot}
 if seed is not None:
     env_config['seed'] = seed

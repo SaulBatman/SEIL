@@ -193,6 +193,32 @@ class EquivariantSACActor2(torch.nn.Module):
         mean = torch.tanh(mean)
         return action, log_prob, mean
 
+class EquivariantPolicy(torch.nn.Module):
+    def __init__(self, obs_channel=2, action_dim=5, n_hidden=128, initialize=True, N=4):
+        super().__init__()
+        self.N = N
+        self.obs_channel = obs_channel
+        self.action_dim = action_dim
+        self.c4_act = gspaces.Rot2dOnR2(N)
+        self.conv = torch.nn.Sequential(
+            EquivariantEncoder(obs_channel, n_hidden, initialize, N),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act,
+                                   1 * [self.c4_act.irrep(1)] +
+                                   1 * [self.c4_act.regular_repr] +
+                                   (action_dim - 3) * [self.c4_act.trivial_repr]),
+                      kernel_size=1, padding=0, initialize=initialize)
+        )
+
+    def forward(self, obs):
+        batch_size = obs.shape[0]
+        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel * [self.c4_act.trivial_repr]))
+        conv_out = self.conv(obs_geo).tensor.reshape(batch_size, -1)
+        dxy = conv_out[:, 0:2]
+        dtheta = conv_out[:, 2:3]
+        inv_act = conv_out[:, 2 + self.N:2 + self.N + self.action_dim - 3]
+        mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:], dtheta), dim=1)
+        return torch.tanh(mean)
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
