@@ -17,7 +17,7 @@ class BehaviorCloningContinuous(A2CBase):
     def update(self, batch):
         self._loadBatchToDevice(batch)
         batch_size, states, obs, action, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
-
+        assert is_experts.all()
         pi = self.forwardActor(states, obs)
 
         policy_loss = F.mse_loss(pi, action)

@@ -88,16 +88,21 @@ def createAgent(test=False):
             # actor = DeterministicPolicy(len(action_sequence)).to(device)
             critic = SACCritic(len(action_sequence)).to(device)
         elif model == 'equi_actor':
-            actor = EquivariantSACActor(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+            actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
             critic = SACCritic(len(action_sequence)).to(device)
         elif model == 'equi_both':
-            actor = EquivariantSACActor(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
-            critic = EquivariantSACCritic(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+            actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+            critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
         elif model == 'equi_both_2':
-            actor = EquivariantSACActor2(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize,
+            actor = EquivariantSACActor2((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize,
                                          N=equi_n).to(device)
-            critic = EquivariantSACCritic(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize,
+            critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize,
                                           N=equi_n).to(device)
+        elif model == 'equi_both_enc_2':
+            actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence),
+                                        n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
+            critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence),
+                                          n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(actor, critic, not test)
@@ -107,7 +112,7 @@ def createAgent(test=False):
                                           n_a=len(action_sequence))
 
         if model == 'equi':
-            policy = EquivariantPolicy(obs_channel, len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+            policy = EquivariantPolicy((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
         elif model == 'cnn':
             policy = Actor(len(action_sequence)).to(device)
         else:
