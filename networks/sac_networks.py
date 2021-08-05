@@ -18,7 +18,7 @@ class SACEncoder(nn.Module):
         if obs_shape[1] == 128:
             self.conv = torch.nn.Sequential(
                 # 128x128
-                nn.Conv2d(obs_shape[0], kernel_size=3, padding=1),
+                nn.Conv2d(obs_shape[0], 32, kernel_size=3, padding=1),
                 nn.ReLU(inplace=True),
                 nn.MaxPool2d(2),
                 # 64x64

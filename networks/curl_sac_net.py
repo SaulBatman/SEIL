@@ -32,9 +32,8 @@ class CURLSACEncoder(nn.Module):
             nn.Conv2d(256, 512, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Flatten(),
-            torch.nn.Linear(512 * 8 * 8, 1024),
-            nn.ReLU(inplace=True),
-            torch.nn.Linear(1024, output_dim),
+            torch.nn.Linear(512 * 8 * 8, output_dim),
+            nn.LayerNorm(output_dim)
         )
 
     def forward(self, x):

@@ -130,17 +130,19 @@ class Logger(object):
     def saveLearningCurve(self, n=100):
         ''' Plot the rewards over timesteps and save to logging dir '''
         n = min(n, len(self.rewards))
-        avg_reward = np.mean(list(windowed(self.rewards, n)), axis=1)
-        xs = np.arange(n, (len(avg_reward))+n)
-        plt.plot(xs, np.mean(list(windowed(self.rewards, n)), axis=1))
-        plt.savefig(os.path.join(self.info_dir, 'learning_curve.pdf'))
-        plt.close()
+        if n > 0:
+            avg_reward = np.mean(list(windowed(self.rewards, n)), axis=1)
+            xs = np.arange(n, (len(avg_reward))+n)
+            plt.plot(xs, np.mean(list(windowed(self.rewards, n)), axis=1))
+            plt.savefig(os.path.join(self.info_dir, 'learning_curve.pdf'))
+            plt.close()
 
     def saveStepLeftCurve(self, n=100):
         n = min(n, len(self.steps_left))
-        plt.plot(np.mean(list(windowed(self.steps_left, n)), axis=1))
-        plt.savefig(os.path.join(self.info_dir, 'steps_left_curve.pdf'))
-        plt.close()
+        if n > 0:
+            plt.plot(np.mean(list(windowed(self.steps_left, n)), axis=1))
+            plt.savefig(os.path.join(self.info_dir, 'steps_left_curve.pdf'))
+            plt.close()
 
     def saveLossCurve(self, n=100):
         losses = np.array(self.losses)
@@ -161,16 +163,18 @@ class Logger(object):
 
     def saveTdErrorCurve(self, n=100):
         n = min(n, len(self.td_errors))
-        plt.plot(np.mean(list(windowed(self.td_errors, n)), axis=1))
-        plt.yscale('log')
-        plt.savefig(os.path.join(self.info_dir, 'td_error_curve.pdf'))
-        plt.close()
+        if n > 0:
+            plt.plot(np.mean(list(windowed(self.td_errors, n)), axis=1))
+            plt.yscale('log')
+            plt.savefig(os.path.join(self.info_dir, 'td_error_curve.pdf'))
+            plt.close()
 
     def saveEvalCurve(self):
-        xs = np.arange(eval_freq, (len(self.eval_rewards)+1) * eval_freq, eval_freq)
-        plt.plot(xs, self.eval_rewards)
-        plt.savefig(os.path.join(self.info_dir, 'eval_curve.pdf'))
-        plt.close()
+        if len(self.eval_rewards) > 0:
+            xs = np.arange(eval_freq, (len(self.eval_rewards)+1) * eval_freq, eval_freq)
+            plt.plot(xs, self.eval_rewards)
+            plt.savefig(os.path.join(self.info_dir, 'eval_curve.pdf'))
+            plt.close()
 
     def saveModel(self, iteration, name, agent):
         '''
@@ -302,6 +306,7 @@ class Logger(object):
 
     def saveExpertSampleCurve(self, n=100):
         n = min(n, len(self.expert_samples))
-        plt.plot(np.mean(list(windowed(self.expert_samples, n)), axis=1))
-        plt.savefig(os.path.join(self.info_dir, 'expert_sample_curve.pdf'))
-        plt.close()
+        if n > 0:
+            plt.plot(np.mean(list(windowed(self.expert_samples, n)), axis=1))
+            plt.savefig(os.path.join(self.info_dir, 'expert_sample_curve.pdf'))
+            plt.close()

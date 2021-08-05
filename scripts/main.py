@@ -55,10 +55,10 @@ def saveModelAndInfo(logger, agent):
     logger.saveTdErrorCurve(100)
     logger.saveStepLeftCurve(100)
     logger.saveExpertSampleCurve(100)
+    logger.saveEvalCurve()
     logger.saveRewards()
     logger.saveLosses()
     logger.saveTdErrors()
-    logger.saveEvalCurve()
     logger.saveEvalRewards()
 
 def evaluate(envs, agent, logger):
