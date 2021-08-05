@@ -12,34 +12,65 @@ LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
 epsilon = 1e-6
 
-class SACCritic(nn.Module):
-    def __init__(self, action_dim=5):
+class SACEncoder(nn.Module):
+    def __init__(self, obs_shape=(2, 128, 128), out_dim=1024):
         super().__init__()
-        self.state_conv_1 = torch.nn.Sequential(
-            # 128x128
-            nn.Conv2d(2, 32, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            # 64x64
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            # 32x32
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            # 16x16
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            # 8x8
-            nn.Conv2d(256, 512, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
+        if obs_shape[1] == 128:
+            self.conv = torch.nn.Sequential(
+                # 128x128
+                nn.Conv2d(obs_shape[0], kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                # 64x64
+                nn.Conv2d(32, 64, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                # 32x32
+                nn.Conv2d(64, 128, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                # 16x16
+                nn.Conv2d(128, 256, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                # 8x8
+                nn.Conv2d(256, 512, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
 
-            nn.Flatten(),
-            torch.nn.Linear(512 * 8 * 8, 1024),
-            nn.ReLU(inplace=True),
-        )
+                nn.Flatten(),
+                torch.nn.Linear(512 * 8 * 8, out_dim),
+                nn.ReLU(inplace=True),
+            )
+        else:
+            self.conv = torch.nn.Sequential(
+                # 64x64
+                nn.Conv2d(obs_shape[0], 64, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                # 32x32
+                nn.Conv2d(64, 128, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                # 16x16
+                nn.Conv2d(128, 256, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                # 8x8
+                nn.Conv2d(256, 512, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+
+                nn.Flatten(),
+                torch.nn.Linear(512 * 8 * 8, out_dim),
+                nn.ReLU(inplace=True),
+            )
+
+    def forward(self, x):
+        return self.conv(x)
+
+class SACCritic(nn.Module):
+    def __init__(self, obs_shape=(2, 128, 128), action_dim=5):
+        super().__init__()
+        self.state_conv_1 = SACEncoder(obs_shape, 1024)
 
         # Q1
         self.critic_fc_1 = torch.nn.Sequential(
@@ -65,34 +96,10 @@ class SACCritic(nn.Module):
 
 
 class GaussianPolicy(nn.Module):
-    def __init__(self, action_dim, action_space=None):
+    def __init__(self, obs_shape=(2, 128, 128), action_dim=5, action_space=None):
         super(GaussianPolicy, self).__init__()
 
-        self.conv = torch.nn.Sequential(
-            # 128x128
-            nn.Conv2d(2, 32, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            # 64x64
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            # 32x32
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            # 16x16
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            # 8x8
-            nn.Conv2d(256, 512, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-
-            nn.Flatten(),
-            torch.nn.Linear(512*8*8, 1024),
-            nn.ReLU(inplace=True),
-        )
+        self.conv = SACEncoder(obs_shape, 1024)
 
         self.mean_linear = nn.Linear(1024, action_dim)
         self.log_std_linear = nn.Linear(1024, action_dim)
@@ -136,34 +143,9 @@ class GaussianPolicy(nn.Module):
         return super(GaussianPolicy, self).to(device)
 
 class DeterministicPolicy(nn.Module):
-    def __init__(self, action_dim, action_space=None):
+    def __init__(self, obs_shape=(2, 128, 128), action_dim=5, action_space=None):
         super(DeterministicPolicy, self).__init__()
-        self.conv = torch.nn.Sequential(
-            # 128x128
-            nn.Conv2d(2, 32, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            # 64x64
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            # 32x32
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            # 16x16
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            # 8x8
-            nn.Conv2d(256, 512, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-
-            nn.Flatten(),
-            torch.nn.Linear(512 * 8 * 8, 1024),
-            nn.ReLU(inplace=True),
-        )
-
+        self.conv = SACEncoder(obs_shape, 1024)
         self.mean = nn.Linear(1024, action_dim)
         self.noise = torch.Tensor(action_dim)
 

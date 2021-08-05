@@ -43,6 +43,11 @@ def train_step(agent, replay_buffer, logger, p_beta_schedule):
     if logger.num_training_steps % target_update_freq == 0:
         agent.updateTarget()
 
+def preTrainCURLStep(agent, replay_buffer, logger):
+    batch = replay_buffer.sample(batch_size)
+    loss = agent.updateCURLOnly(batch)
+    logger.trainingBookkeeping(loss, 0)
+
 def saveModelAndInfo(logger, agent):
     logger.saveModel(logger.num_steps, env, agent)
     logger.saveLearningCurve(100)
@@ -184,6 +189,15 @@ def train():
             if not no_bar:
                 planner_bar.set_description('{:.3f}/{}, AVG: {:.3f}'.format(s, j, float(s)/j if j != 0 else 0))
                 planner_bar.update(dones.sum().item())
+
+        if alg.find('curl') > -1:
+            if not no_bar:
+                pre_train_bar = tqdm(total=1000)
+            while j < 1000:
+                preTrainCURLStep(agent, replay_buffer, logger)
+                j += 1
+                if not no_bar:
+                    pre_train_bar.update(1)
 
     if not no_bar:
         pbar = tqdm(total=max_train_step)
