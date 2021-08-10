@@ -23,12 +23,10 @@ def createAgent(test=False):
         initialize = False
     else:
         initialize = True
-    if env in ['close_loop_block_picking', 'close_loop_block_stacking']:
-        n_p = 2
-    elif env in ['close_loop_block_reaching']:
+    if env in ['close_loop_block_reaching']:
         n_p = 1
     else:
-        raise NotImplementedError
+        n_p = 2
     if not random_orientation:
         n_theta = 1
     else:

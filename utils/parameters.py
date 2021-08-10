@@ -110,7 +110,7 @@ robot = args.robot
 
 
 workspace_size = args.workspace_size
-workspace = np.asarray([[0.5-workspace_size/2, 0.5+workspace_size/2],
+workspace = np.asarray([[0.45-workspace_size/2, 0.45+workspace_size/2],
                         [0-workspace_size/2, 0+workspace_size/2],
                         [0.01, 0.25]])
 heightmap_size = args.heightmap_size

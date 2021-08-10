@@ -21,13 +21,16 @@ class CURLSACEncoder(nn.Module):
     def __init__(self, input_shape=(2, 64, 64), output_dim=50):
         super().__init__()
         self.conv = torch.nn.Sequential(
-            nn.Conv2d(input_shape[0], 32, kernel_size=3, stride=2),
+            nn.Conv2d(input_shape[0], 64, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(32, 32, kernel_size=3),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(32, 32, kernel_size=3),
+            nn.MaxPool2d(2),
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(32, 32, kernel_size=3),
+            nn.MaxPool2d(2),
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Flatten(),
         )
