@@ -18,15 +18,15 @@ class SAC(A2CBase):
                 # self.target_entropy = -torch.prod(torch.Tensor(action_space.shape).to(self.device)).item()
                 self.target_entropy = -n_a
                 self.log_alpha = torch.tensor(np.log(self.alpha), requires_grad=True, device=self.device)
-                self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self.lr[2])
+                self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=1e-4, betas=(0.5, 0.999))
 
         self.num_update = 0
 
     def initNetwork(self, actor, critic, initialize_target=True):
         self.actor = actor
         self.critic = critic
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr[0], weight_decay=1e-5)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr[1], weight_decay=1e-5)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr[0])
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr[1])
         if initialize_target:
             self.critic_target = deepcopy(critic)
             self.target_networks.append(self.critic_target)
@@ -34,6 +34,19 @@ class SAC(A2CBase):
         self.networks.append(self.critic)
         self.optimizers.append(self.actor_optimizer)
         self.optimizers.append(self.critic_optimizer)
+        self.optimizers.append(self.alpha_optim)
+
+    def getSaveState(self):
+        state = super().getSaveState()
+        state['alpha'] = self.alpha
+        state['log_alpha'] = self.log_alpha
+        state['alpha_optimizer'] = self.alpha_optim
+
+    def loadFromState(self, save_state):
+        super().loadFromState(save_state)
+        self.alpha = save_state['alpha']
+        self.log_alpha = save_state['log_alpha']
+        self.alpha_optim = save_state['alpha_optimizer']
 
     def targetSoftUpdate(self):
         """Soft-update: target = tau*local + (1-tau)*target."""
@@ -112,7 +125,7 @@ class SAC(A2CBase):
             alpha_loss = torch.tensor(0.).to(self.device)
             alpha_tlogs = torch.tensor(self.alpha) # For TensorboardX logs
 
-
+        self.num_update += 1
         if self.num_update % self.target_update_interval == 0:
             self.targetSoftUpdate()
 

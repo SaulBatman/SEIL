@@ -8,46 +8,52 @@ from utils.torch_utils import randomCrop, centerCrop
 
 class CURLSAC(SAC):
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi / 16, n_a=5, tau=0.001,
-                 alpha=0.01, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=False, z_dim=1024):
+                 alpha=0.01, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=False, z_dim=50, crop_size=64):
         super().__init__(lr, gamma, device, dx, dy, dz, dr, n_a, tau, alpha, policy_type, target_update_interval, automatic_entropy_tuning)
         self.z_dim = z_dim
-        self.encoder = None
-        self.encoder_target = None
+        self.crop_size = crop_size
         self.encoder_optimizer = None
         self.curl = None
         self.curl_optimizer = None
 
+        self.encoder_tau = 0.05
+
     def encoderTargetSoftUpdate(self):
         """Soft-update: target = tau*local + (1-tau)*target."""
-        tau = self.tau
+        for t_param, l_param in zip(
+                self.critic_target.encoder.parameters(), self.critic.encoder.parameters()
+        ):
+            t_param.data.copy_(self.encoder_tau * l_param.data + (1.0 - self.encoder_tau) * t_param.data)
+
+    def targetSoftUpdate(self):
+        for t_param, l_param in zip(
+                self.critic_target.q1.parameters(), self.critic.q1.parameters()
+        ):
+            t_param.data.copy_(self.tau * l_param.data + (1.0 - self.tau) * t_param.data)
 
         for t_param, l_param in zip(
-                self.encoder_target.parameters(), self.encoder.parameters()
+                self.critic_target.q2.parameters(), self.critic.q2.parameters()
         ):
-            t_param.data.copy_(tau * l_param.data + (1.0 - tau) * t_param.data)
+            t_param.data.copy_(self.tau * l_param.data + (1.0 - self.tau) * t_param.data)
 
-    def initNetwork(self, encoder, actor, critic, initialize_target=True):
-        self.encoder = encoder
-        self.encoder_target = deepcopy(encoder)
-        self.encoder_optimizer = torch.optim.Adam(self.encoder.parameters(), lr=self.lr[0], weight_decay=1e-5)
+        self.encoderTargetSoftUpdate()
 
-        self.curl = CURL(self.z_dim, self.encoder, self.encoder_target).to(self.device)
-        self.curl_optimizer = torch.optim.Adam(self.curl.parameters(), lr=self.lr[1], weight_decay=1e-5)
-
+    def initNetwork(self, actor, critic, initialize_target=True):
         self.actor = actor
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr[2], weight_decay=1e-5)
-
         self.critic = critic
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr[3], weight_decay=1e-5)
-
         self.critic_target = deepcopy(critic)
 
-        self.setEncoders()
+        self.actor.encoder.copyConvWeightsFrom(self.critic.encoder)
 
-        self.target_networks.append(self.encoder_target)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr[0])
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.lr[1])
+        self.encoder_optimizer = torch.optim.Adam(self.critic.encoder.parameters(), lr=self.lr[2])
+
+        self.curl = CURL(self.z_dim, self.critic.encoder, self.critic_target.encoder).to(self.device)
+        self.curl_optimizer = torch.optim.Adam(self.curl.parameters(), lr=self.lr[3])
+
         self.target_networks.append(self.critic_target)
 
-        self.networks.append(self.encoder)
         self.networks.append(self.curl)
         self.networks.append(self.actor)
         self.networks.append(self.critic)
@@ -57,25 +63,20 @@ class CURLSAC(SAC):
         self.optimizers.append(self.actor_optimizer)
         self.optimizers.append(self.critic_optimizer)
 
-    def setEncoders(self):
-        self.actor.encoder = self.encoder
-        self.critic.encoder = self.encoder
-        self.critic_target.encoder = self.encoder_target
-
     def loadFromState(self, save_state):
         super().loadFromState(save_state)
-        self.setEncoders()
+        self.actor.encoder.copyConvWeightsFrom(self.critic.encoder)
 
     def loadModel(self, path_pre):
         super().loadModel(path_pre)
-        self.setEncoders()
+        self.actor.encoder.copyConvWeightsFrom(self.critic.encoder)
 
     def updateCURL(self, update_target=False):
         batch_size, states, obs, action, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
         state_tile = states.reshape(states.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])
         stacked = torch.cat([obs, state_tile], dim=1).to(self.device)
-        obs_anchor = centerCrop(stacked)
-        obs_pos = randomCrop(stacked)
+        obs_anchor = randomCrop(stacked, out=self.crop_size)
+        obs_pos = randomCrop(stacked, out=self.crop_size)
 
         z_a = self.curl.encode(obs_anchor)
         z_pos = self.curl.encode(obs_pos, ema=True)
@@ -101,7 +102,7 @@ class CURLSAC(SAC):
             state_tile = state.reshape(state.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])
             stacked = torch.cat([obs, state_tile], dim=1).to(self.device)
 
-            stacked = centerCrop(stacked)
+            stacked = centerCrop(stacked, out=self.crop_size)
 
             if evaluate is False:
                 action, _, _ = self.actor.sample(stacked)
@@ -119,14 +120,12 @@ class CURLSAC(SAC):
     def update(self, batch):
         self._loadBatchToDevice(batch)
 
-        curl_loss = self.updateCURL(update_target=False)
-
         batch_size, states, obs, action, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
         next_state_batch = torch.cat([next_obs, next_states.reshape(next_states.size(0), 1, 1, 1).repeat(1, 1, next_obs.shape[2], next_obs.shape[3])], dim=1)
         state_batch = torch.cat([obs, states.reshape(states.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])], dim=1)
 
-        next_state_batch = randomCrop(next_state_batch)
-        state_batch = randomCrop(state_batch)
+        next_state_batch = randomCrop(next_state_batch, out=self.crop_size)
+        state_batch = randomCrop(state_batch, out=self.crop_size)
 
         with torch.no_grad():
             next_state_action, next_state_log_pi, _ = self.actor.sample(next_state_batch)
@@ -147,9 +146,9 @@ class CURLSAC(SAC):
         qf_loss.backward()
         self.critic_optimizer.step()
 
-        pi, log_pi, _ = self.actor.sample(state_batch)
+        pi, log_pi, _ = self.actor.sample(state_batch, detach_encoder=True)
+        qf1_pi, qf2_pi = self.critic(state_batch, pi, detach_encoder=True)
 
-        qf1_pi, qf2_pi = self.critic(state_batch, pi)
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
 
         policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean() # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
@@ -171,9 +170,11 @@ class CURLSAC(SAC):
             alpha_loss = torch.tensor(0.).to(self.device)
             alpha_tlogs = torch.tensor(self.alpha) # For TensorboardX logs
 
-
+        self.num_update += 1
         if self.num_update % self.target_update_interval == 0:
             self.targetSoftUpdate()
+
+        curl_loss = self.updateCURL(update_target=False)
 
         with torch.no_grad():
             td_error = 0.5 * (torch.abs(qf2 - next_q_value) + torch.abs(qf1 - next_q_value))

@@ -88,7 +88,6 @@ def createAgent(test=False):
                           demon_w=demon_w, demon_l='mean')
         if model == 'cnn':
             actor = GaussianPolicy((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
-            # actor = DeterministicPolicy(len(action_sequence)).to(device)
             critic = SACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
         elif model == 'equi_actor':
             actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
@@ -123,16 +122,16 @@ def createAgent(test=False):
         agent.initNetwork(policy)
 
     elif alg in ['curl_sac']:
-        curl_sac_lr = [lr, lr, actor_lr, critic_lr]
+        curl_sac_lr = [actor_lr, critic_lr, lr, lr]
         agent = CURLSAC(lr=curl_sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
-                        tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True)
+                        tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True,
+                        crop_size=curl_crop_size)
         if model == 'cnn':
-            encoder = CURLSACEncoder((obs_channel, 64, 64)).to(device)
-            actor = CURLSACGaussianPolicy(None, action_dim=len(action_sequence)).to(device)
-            critic = CURLSACCritic(None, action_dim=len(action_sequence)).to(device)
+            actor = CURLSACGaussianPolicy(CURLSACEncoder((obs_channel, curl_crop_size, curl_crop_size)).to(device), action_dim=len(action_sequence)).to(device)
+            critic = CURLSACCritic(CURLSACEncoder((obs_channel, curl_crop_size, curl_crop_size)).to(device), action_dim=len(action_sequence)).to(device)
         else:
             raise NotImplementedError
-        agent.initNetwork(encoder, actor, critic)
+        agent.initNetwork(actor, critic)
 
     elif alg in ['sac_aug']:
         sac_lr = (actor_lr, critic_lr, alpha_lr)

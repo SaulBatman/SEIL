@@ -35,7 +35,7 @@ training_group.add_argument('--lr', type=float, default=1e-3)
 training_group.add_argument('--actor_lr', type=float, default=None)
 training_group.add_argument('--critic_lr', type=float, default=None)
 training_group.add_argument('--alpha_lr', type=float, default=None)
-training_group.add_argument('--gamma', type=float, default=0.9)
+training_group.add_argument('--gamma', type=float, default=0.99)
 training_group.add_argument('--explore', type=int, default=10000)
 training_group.add_argument('--fixed_eps', action='store_true')
 training_group.add_argument('--init_eps', type=float, default=1.0)
@@ -62,6 +62,7 @@ training_group.add_argument('--drot_n', type=int, default=32)
 training_group.add_argument('--demon_w', type=float, default=0.1)
 training_group.add_argument('--equi_n', type=int, default=4)
 training_group.add_argument('--n_hidden', type=int, default=128)
+training_group.add_argument('--curl_crop_size', type=int, default=64)
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -159,6 +160,8 @@ init_temp = args.init_temp
 demon_w = args.demon_w
 equi_n = args.equi_n
 n_hidden = args.n_hidden
+
+curl_crop_size = args.curl_crop_size
 
 # eval
 eval_freq = args.eval_freq
