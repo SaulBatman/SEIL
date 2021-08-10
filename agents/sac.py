@@ -41,6 +41,7 @@ class SAC(A2CBase):
         state['alpha'] = self.alpha
         state['log_alpha'] = self.log_alpha
         state['alpha_optimizer'] = self.alpha_optim
+        return state
 
     def loadFromState(self, save_state):
         super().loadFromState(save_state)
