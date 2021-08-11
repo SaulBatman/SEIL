@@ -156,3 +156,7 @@ class BaseAgent:
             self.optimizers[i].load_state_dict(save_state['{}_optimizer'.format(i)])
         for i in range(len(self.target_networks)):
             self.target_networks[i].load_state_dict(save_state['{}_target'.format(i)])
+
+    def copyNetworksFrom(self, from_agent):
+        for i in range(len(self.networks)):
+            self.networks[i].load_state_dict(from_agent.networks[i].state_dict())

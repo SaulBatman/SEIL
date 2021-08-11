@@ -20,7 +20,7 @@ from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussian
 
 def createAgent(test=False):
     obs_channel = 2
-    if load_sub is not None or load_model_pre is not None:
+    if load_sub is not None or load_model_pre is not None or test:
         initialize = False
     else:
         initialize = True

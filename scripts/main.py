@@ -15,6 +15,7 @@ from utils.schedules import LinearSchedule
 from utils.env_wrapper import EnvWrapper
 
 from utils.create_agent import createAgent
+import threading
 
 ExpertTransition = collections.namedtuple('ExpertTransition', 'state obs action reward next_state next_obs done step_left expert')
 
@@ -92,6 +93,7 @@ def evaluate(envs, agent, logger):
         eval_bar.close()
 
 def train():
+    eval_thread = None
     start_time = time.time()
     if seed is not None:
         set_seed(seed)
@@ -101,6 +103,7 @@ def train():
 
     # setup agent
     agent = createAgent()
+    eval_agent = createAgent(test=True)
 
     agent.train()
     if load_model_pre:
@@ -255,7 +258,12 @@ def train():
         logger.num_steps += num_processes
 
         if logger.num_training_steps > 0 and eval_freq > 0 and logger.num_training_steps % eval_freq == 0:
-            evaluate(eval_envs, agent, logger)
+            if eval_thread is not None:
+                eval_thread.join()
+            eval_agent.copyNetworksFrom(agent)
+            eval_thread = threading.Thread(target=evaluate, args=(eval_envs, eval_agent, logger))
+            eval_thread.start()
+            # evaluate(eval_envs, agent, logger)
 
         if logger.num_steps % (num_processes * save_freq) == 0:
             saveModelAndInfo(logger, agent)
