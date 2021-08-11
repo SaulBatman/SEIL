@@ -8,7 +8,6 @@ from agents.ddpg import DDPG
 from networks.cnn import Actor, Critic
 
 from agents.sac import SAC
-from agents.sac_vec import SACVec
 from agents.sacfd import SACfD
 from agents.curl_sac import CURLSAC
 from agents.sac_aug import SACAug
@@ -75,49 +74,56 @@ def createAgent(test=False):
     elif alg in ['sac', 'sacfd', 'sacfd_mean']:
         sac_lr = (actor_lr, critic_lr)
         if alg == 'sac':
-            agent = SAC(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
-                        tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True)
+            agent = SAC(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
+                        n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
+                        target_update_interval=1, automatic_entropy_tuning=True, obs_type=obs_type)
         elif alg == 'sacfd':
-            agent = SACfD(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
-                          tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True,
+            agent = SACfD(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
+                          n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
+                          target_update_interval=1, automatic_entropy_tuning=True, obs_type=obs_type,
                           demon_w=demon_w)
         elif alg == 'sacfd_mean':
-            agent = SACfD(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
-                          tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True,
+            agent = SACfD(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
+                          n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
+                          target_update_interval=1, automatic_entropy_tuning=True, obs_type=obs_type,
                           demon_w=demon_w, demon_l='mean')
-        if model == 'cnn':
-            actor = GaussianPolicy((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
-            critic = SACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
-        elif model == 'equi_actor':
-            actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
-            critic = SACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
-        elif model == 'equi_both':
-            actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
-            critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
-        elif model == 'equi_both_2':
-            actor = EquivariantSACActor2((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize,
-                                         N=equi_n).to(device)
-            critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize,
-                                          N=equi_n).to(device)
-        elif model == 'equi_both_enc_2':
-            actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence),
-                                        n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
-            critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence),
-                                          n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
         else:
             raise NotImplementedError
-        agent.initNetwork(actor, critic, not test)
-
-    elif alg in ['sac_vec']:
-        sac_lr = (actor_lr, critic_lr)
-        agent = SACVec(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
-                       tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True)
-        if model == 'cnn':
-            actor = SACVecGaussianPolicy(obs_dim, len(action_sequence)).to(device)
-            critic = SACVecCritic(obs_dim, len(action_sequence)).to(device)
-        elif model == 'equi_both':
-            actor = EquivariantSACVecGaussianPolicy(obs_dim=obs_dim, action_dim=len(action_sequence), n_hidden=n_hidden, initialize=initialize).to(device)
-            critic = EquivariantSACVecCritic(obs_dim=obs_dim, action_dim=len(action_sequence), n_hidden=n_hidden, initialize=initialize).to(device)
+        # pixel observation
+        if obs_type == 'pixel':
+            if model == 'cnn':
+                actor = GaussianPolicy((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
+                critic = SACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
+            elif model == 'equi_actor':
+                actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+                critic = SACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
+            elif model == 'equi_both':
+                actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+                critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+            elif model == 'equi_both_2':
+                actor = EquivariantSACActor2((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize,
+                                             N=equi_n).to(device)
+                critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize,
+                                              N=equi_n).to(device)
+            elif model == 'equi_both_enc_2':
+                actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence),
+                                            n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
+                critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence),
+                                              n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
+            else:
+                raise NotImplementedError
+        # vector observation
+        elif obs_type == 'vec':
+            if model == 'cnn':
+                actor = SACVecGaussianPolicy(obs_dim, len(action_sequence)).to(device)
+                critic = SACVecCritic(obs_dim, len(action_sequence)).to(device)
+            elif model == 'equi_both':
+                actor = EquivariantSACVecGaussianPolicy(obs_dim=obs_dim, action_dim=len(action_sequence),
+                                                        n_hidden=n_hidden, initialize=initialize).to(device)
+                critic = EquivariantSACVecCritic(obs_dim=obs_dim, action_dim=len(action_sequence), n_hidden=n_hidden,
+                                                 initialize=initialize).to(device)
+            else:
+                raise NotImplementedError
         else:
             raise NotImplementedError
         agent.initNetwork(actor, critic, not test)

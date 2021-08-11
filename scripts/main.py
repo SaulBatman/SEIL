@@ -104,8 +104,9 @@ def train():
     # setup agent
     agent = createAgent()
     eval_agent = createAgent(test=True)
-
+    # .train() is required for equivariant network
     agent.train()
+    eval_agent.train()
     if load_model_pre:
         agent.loadModel(load_model_pre)
 
@@ -268,9 +269,12 @@ def train():
         if logger.num_steps % (num_processes * save_freq) == 0:
             saveModelAndInfo(logger, agent)
 
+    if eval_thread is not None:
+        eval_thread.join()
     saveModelAndInfo(logger, agent)
     logger.saveCheckPoint(args, envs, agent, replay_buffer)
     envs.close()
+    eval_envs.close()
     print('training finished')
     if not no_bar:
         pbar.close()

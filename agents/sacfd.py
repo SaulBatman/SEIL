@@ -7,8 +7,9 @@ from copy import deepcopy
 class SACfD(SAC):
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/16, n_a=5, tau=0.001,
                  alpha=0.01, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=False,
-                 demon_w=0.1, demon_l='pi'):
-        super().__init__(lr, gamma, device, dx, dy, dz, dr, n_a, tau, alpha, policy_type, target_update_interval, automatic_entropy_tuning)
+                 obs_type='pixel', demon_w=0.1, demon_l='pi'):
+        super().__init__(lr, gamma, device, dx, dy, dz, dr, n_a, tau, alpha, policy_type, target_update_interval,
+                         automatic_entropy_tuning, obs_type)
         self.demon_w = demon_w
         assert demon_l in ['mean', 'pi']
         self.demon_l = demon_l
