@@ -8,12 +8,13 @@ from agents.ddpg import DDPG
 from networks.cnn import Actor, Critic
 
 from agents.sac import SAC
+from agents.sac_vec import SACVec
 from agents.sacfd import SACfD
 from agents.curl_sac import CURLSAC
 from agents.sac_aug import SACAug
 from agents.bc_continuous import BehaviorCloningContinuous
-from networks.sac_networks import DeterministicPolicy, GaussianPolicy, SACCritic
-from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy
+from networks.sac_networks import DeterministicPolicy, GaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy
+from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
 from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy
 
@@ -72,7 +73,7 @@ def createAgent(test=False):
         agent.initNetwork(actor, critic, initialize_target=not test)
 
     elif alg in ['sac', 'sacfd', 'sacfd_mean']:
-        sac_lr = (actor_lr, critic_lr, alpha_lr)
+        sac_lr = (actor_lr, critic_lr)
         if alg == 'sac':
             agent = SAC(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
                         tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True)
@@ -107,6 +108,20 @@ def createAgent(test=False):
             raise NotImplementedError
         agent.initNetwork(actor, critic, not test)
 
+    elif alg in ['sac_vec']:
+        sac_lr = (actor_lr, critic_lr)
+        agent = SACVec(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
+                       tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True)
+        if model == 'cnn':
+            actor = SACVecGaussianPolicy(obs_dim, len(action_sequence)).to(device)
+            critic = SACVecCritic(obs_dim, len(action_sequence)).to(device)
+        elif model == 'equi_both':
+            actor = EquivariantSACVecGaussianPolicy(obs_dim=obs_dim, action_dim=len(action_sequence), n_hidden=n_hidden, initialize=initialize).to(device)
+            critic = EquivariantSACVecCritic(obs_dim=obs_dim, action_dim=len(action_sequence), n_hidden=n_hidden, initialize=initialize).to(device)
+        else:
+            raise NotImplementedError
+        agent.initNetwork(actor, critic, not test)
+
     elif alg in ['bc_con']:
         agent = BehaviorCloningContinuous(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
                                           n_a=len(action_sequence))
@@ -132,7 +147,7 @@ def createAgent(test=False):
         agent.initNetwork(actor, critic)
 
     elif alg in ['sac_aug']:
-        sac_lr = (actor_lr, critic_lr, alpha_lr)
+        sac_lr = (actor_lr, critic_lr)
         agent = SACAug(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
                        tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True)
         if model == 'cnn':

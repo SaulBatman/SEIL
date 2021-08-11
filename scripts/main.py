@@ -263,6 +263,8 @@ def train():
     saveModelAndInfo(logger, agent)
     logger.saveCheckPoint(args, envs, agent, replay_buffer)
     envs.close()
+    if not no_bar:
+        pbar.close()
 
 if __name__ == '__main__':
     train()

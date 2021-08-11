@@ -77,37 +77,36 @@ class SAC(A2CBase):
             action = action.to('cpu')
             return self.decodeActions(*[action[:, i] for i in range(self.n_a)])
 
-    def update(self, batch):
-        self._loadBatchToDevice(batch)
+    def _loadLossCalcDict(self):
+        """
+        get the loaded batch data in self.loss_calc_dict
+        :return: batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts
+        """
+        batch_size = self.loss_calc_dict['batch_size']
+        states = self.loss_calc_dict['states']
+        obs = self.loss_calc_dict['obs']
+        action_idx = self.loss_calc_dict['action_idx']
+        rewards = self.loss_calc_dict['rewards']
+        next_states = self.loss_calc_dict['next_states']
+        next_obs = self.loss_calc_dict['next_obs']
+        non_final_masks = self.loss_calc_dict['non_final_masks']
+        step_lefts = self.loss_calc_dict['step_lefts']
+        is_experts = self.loss_calc_dict['is_experts']
+
+        # stack state as the second channel of the obs
+        obs = torch.cat([obs, states.reshape(states.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])], dim=1)
+        next_obs = torch.cat([next_obs, next_states.reshape(next_states.size(0), 1, 1, 1).repeat(1, 1, next_obs.shape[2], next_obs.shape[3])], dim=1)
+
+        return batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts
+
+    def updateActorAndAlpha(self):
         batch_size, states, obs, action, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
-        next_state_batch = torch.cat([next_obs, next_states.reshape(next_states.size(0), 1, 1, 1).repeat(1, 1, next_obs.shape[2], next_obs.shape[3])], dim=1)
-        state_batch = torch.cat([obs, states.reshape(states.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])], dim=1)
+        pi, log_pi, _ = self.actor.sample(obs)
 
-        with torch.no_grad():
-            next_state_action, next_state_log_pi, _ = self.actor.sample(next_state_batch)
-            next_state_log_pi = next_state_log_pi.reshape(batch_size)
-            qf1_next_target, qf2_next_target = self.critic_target(next_state_batch, next_state_action)
-            qf1_next_target = qf1_next_target.reshape(batch_size)
-            qf2_next_target = qf2_next_target.reshape(batch_size)
-            min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - self.alpha * next_state_log_pi
-            next_q_value = rewards + non_final_masks * self.gamma * min_qf_next_target
-        qf1, qf2 = self.critic(state_batch, action)  # Two Q-functions to mitigate positive bias in the policy improvement step
-        qf1 = qf1.reshape(batch_size)
-        qf2 = qf2.reshape(batch_size)
-        qf1_loss = F.mse_loss(qf1, next_q_value)  # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
-        qf2_loss = F.mse_loss(qf2, next_q_value)  # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
-        qf_loss = qf1_loss + qf2_loss
-
-        self.critic_optimizer.zero_grad()
-        qf_loss.backward()
-        self.critic_optimizer.step()
-
-        pi, log_pi, _ = self.actor.sample(state_batch)
-
-        qf1_pi, qf2_pi = self.critic(state_batch, pi)
+        qf1_pi, qf2_pi = self.critic(obs, pi)
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
 
-        policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean() # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
+        policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean()  # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
 
         self.actor_optimizer.zero_grad()
         policy_loss.backward()
@@ -121,16 +120,46 @@ class SAC(A2CBase):
             self.alpha_optim.step()
 
             self.alpha = self.log_alpha.exp()
-            alpha_tlogs = self.alpha.clone() # For TensorboardX logs
+            alpha_tlogs = self.alpha.clone()  # For TensorboardX logs
         else:
             alpha_loss = torch.tensor(0.).to(self.device)
-            alpha_tlogs = torch.tensor(self.alpha) # For TensorboardX logs
+            alpha_tlogs = torch.tensor(self.alpha)  # For TensorboardX logs
+
+        return policy_loss, alpha_loss, alpha_tlogs
+
+    def updateCritic(self):
+        batch_size, states, obs, action, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
+        with torch.no_grad():
+            next_state_action, next_state_log_pi, _ = self.actor.sample(next_obs)
+            next_state_log_pi = next_state_log_pi.reshape(batch_size)
+            qf1_next_target, qf2_next_target = self.critic_target(next_obs, next_state_action)
+            qf1_next_target = qf1_next_target.reshape(batch_size)
+            qf2_next_target = qf2_next_target.reshape(batch_size)
+            min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - self.alpha * next_state_log_pi
+            next_q_value = rewards + non_final_masks * self.gamma * min_qf_next_target
+        qf1, qf2 = self.critic(obs, action)  # Two Q-functions to mitigate positive bias in the policy improvement step
+        qf1 = qf1.reshape(batch_size)
+        qf2 = qf2.reshape(batch_size)
+        qf1_loss = F.mse_loss(qf1, next_q_value)  # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
+        qf2_loss = F.mse_loss(qf2, next_q_value)  # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
+        qf_loss = qf1_loss + qf2_loss
+
+        self.critic_optimizer.zero_grad()
+        qf_loss.backward()
+        self.critic_optimizer.step()
+
+        with torch.no_grad():
+            td_error = 0.5 * (torch.abs(qf2 - next_q_value) + torch.abs(qf1 - next_q_value))
+
+        return qf1_loss, qf2_loss, td_error
+
+    def update(self, batch):
+        self._loadBatchToDevice(batch)
+        qf1_loss, qf2_loss, td_error = self.updateCritic()
+        policy_loss, alpha_loss, alpha_tlogs = self.updateActorAndAlpha()
 
         self.num_update += 1
         if self.num_update % self.target_update_interval == 0:
             self.targetSoftUpdate()
-
-        with torch.no_grad():
-            td_error = 0.5 * (torch.abs(qf2 - next_q_value) + torch.abs(qf1 - next_q_value))
 
         return (qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item(), alpha_tlogs.item()), td_error
