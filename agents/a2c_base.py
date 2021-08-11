@@ -80,7 +80,6 @@ class A2CBase(BaseAgent):
         unscaled_p, unscaled_dx, unscaled_dy, unscaled_dz = args[0], args[1], args[2], args[3]
 
         p = 0.5 * (unscaled_p + 1) * (self.p_range[1] - self.p_range[0]) + self.p_range[0]
-        p = p.round()
         dx = 0.5 * (unscaled_dx + 1) * (self.dx_range[1] - self.dx_range[0]) + self.dx_range[0]
         dy = 0.5 * (unscaled_dy + 1) * (self.dy_range[1] - self.dy_range[0]) + self.dy_range[0]
         dz = 0.5 * (unscaled_dz + 1) * (self.dz_range[1] - self.dz_range[0]) + self.dz_range[0]

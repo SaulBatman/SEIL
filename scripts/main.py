@@ -263,6 +263,7 @@ def train():
     saveModelAndInfo(logger, agent)
     logger.saveCheckPoint(args, envs, agent, replay_buffer)
     envs.close()
+    print('training finished')
     if not no_bar:
         pbar.close()
 
