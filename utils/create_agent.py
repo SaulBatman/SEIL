@@ -119,9 +119,9 @@ def createAgent(test=False):
                 critic = SACVecCritic(obs_dim, len(action_sequence)).to(device)
             elif model == 'equi_both':
                 actor = EquivariantSACVecGaussianPolicy(obs_dim=obs_dim, action_dim=len(action_sequence),
-                                                        n_hidden=n_hidden, initialize=initialize).to(device)
+                                                        n_hidden=n_hidden, N=equi_n, initialize=initialize).to(device)
                 critic = EquivariantSACVecCritic(obs_dim=obs_dim, action_dim=len(action_sequence), n_hidden=n_hidden,
-                                                 initialize=initialize).to(device)
+                                                 N=equi_n, initialize=initialize).to(device)
             else:
                 raise NotImplementedError
         else:

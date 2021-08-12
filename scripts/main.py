@@ -161,7 +161,7 @@ def train():
         logger.saveModel(0, 'pretrain', agent)
         # agent.sl = sl
 
-    if planner_episode > 0:
+    if planner_episode > 0 and not load_sub:
         j = 0
         states, obs = eval_envs.reset()
         s = 0

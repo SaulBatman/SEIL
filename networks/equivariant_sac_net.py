@@ -477,10 +477,14 @@ if __name__ == '__main__':
     # actor = EquivariantSACActor2(obs_shape=(2, 64, 64), action_dim=5, n_hidden=64, initialize=False)
     # out3 = actor(o)
 
-    critic = EquivariantSACVecCritic(obs_dim=9, action_dim=5, initialize=False)
-    obs = torch.zeros(2, 9)
-    act = torch.zeros(2, 5)
+    critic = EquivariantSACVecCritic(obs_dim=5, action_dim=5, n_hidden=64, initialize=True)
+    obs = torch.zeros(1, 5)
+    obs[0, 1] = 1
+    obs[0, 2] = 0
+    act = torch.zeros(1, 5)
+    act[0, 1] = 1
+    act[0, 2] = 0
     out4 = critic(obs, act)
 
-    actor = EquivariantSACVecGaussianPolicy(obs_dim=9, action_dim=5, initialize=False)
+    actor = EquivariantSACVecGaussianPolicy(obs_dim=5, action_dim=5, n_hidden=64, initialize=False)
     out5 = actor(obs)

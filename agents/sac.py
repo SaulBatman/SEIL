@@ -42,14 +42,14 @@ class SAC(A2CBase):
         state = super().getSaveState()
         state['alpha'] = self.alpha
         state['log_alpha'] = self.log_alpha
-        state['alpha_optimizer'] = self.alpha_optim
+        state['alpha_optimizer'] = self.alpha_optim.state_dict()
         return state
 
     def loadFromState(self, save_state):
         super().loadFromState(save_state)
         self.alpha = save_state['alpha']
         self.log_alpha = save_state['log_alpha']
-        self.alpha_optim = save_state['alpha_optimizer']
+        self.alpha_optim.load_state_dict(save_state['alpha_optimizer'])
 
     def targetSoftUpdate(self):
         """Soft-update: target = tau*local + (1-tau)*target."""
