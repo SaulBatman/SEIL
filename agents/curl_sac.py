@@ -73,10 +73,8 @@ class CURLSAC(SAC):
 
     def updateCURL(self, update_target=False):
         batch_size, states, obs, action, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
-        state_tile = states.reshape(states.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])
-        stacked = torch.cat([obs, state_tile], dim=1).to(self.device)
-        obs_anchor = randomCrop(stacked, out=self.crop_size)
-        obs_pos = randomCrop(stacked, out=self.crop_size)
+        obs_anchor = randomCrop(obs, out=self.crop_size)
+        obs_pos = randomCrop(obs, out=self.crop_size)
 
         z_a = self.curl.encode(obs_anchor)
         z_pos = self.curl.encode(obs_pos, ema=True)
