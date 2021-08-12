@@ -5,6 +5,8 @@ from torch.distributions import Normal
 from e2cnn import gspaces
 from e2cnn import nn
 
+from networks.sac_networks import SACGaussianPolicyBase
+
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
 epsilon = 1e-6
@@ -213,7 +215,7 @@ class EquivariantSACCritic(torch.nn.Module):
         out2 = self.critic_2(cat_geo).tensor.reshape(batch_size, 1)
         return out1, out2
 
-class EquivariantSACActor(torch.nn.Module):
+class EquivariantSACActor(SACGaussianPolicyBase):
     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, enc_id=1):
         super().__init__()
         assert obs_shape[1] in [128, 64]
@@ -239,23 +241,8 @@ class EquivariantSACActor(torch.nn.Module):
         log_std = torch.clamp(log_std, min=LOG_SIG_MIN, max=LOG_SIG_MAX)
         return mean, log_std
 
-    def sample(self, x):
-        mean, log_std = self.forward(x)
-        std = log_std.exp()
-        normal = Normal(mean, std)
-        x_t = normal.rsample()  # for reparameterization trick (mean + std * N(0,1))
-        y_t = torch.tanh(x_t)
-        # action = y_t * self.action_scale + self.action_bias
-        action = y_t
-        log_prob = normal.log_prob(x_t)
-        # Enforcing Action Bound
-        log_prob -= torch.log((1 - y_t.pow(2)) + epsilon)
-        log_prob = log_prob.sum(1, keepdim=True)
-        mean = torch.tanh(mean)
-        return action, log_prob, mean
-
 # non-equi non-inv theta
-class EquivariantSACActor2(torch.nn.Module):
+class EquivariantSACActor2(SACGaussianPolicyBase):
     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, enc_id=1):
         super().__init__()
         assert obs_shape[1] in [128, 64]
@@ -286,21 +273,6 @@ class EquivariantSACActor2(torch.nn.Module):
         log_std = torch.clamp(log_std, min=LOG_SIG_MIN, max=LOG_SIG_MAX)
         return mean, log_std
 
-    def sample(self, x):
-        mean, log_std = self.forward(x)
-        std = log_std.exp()
-        normal = Normal(mean, std)
-        x_t = normal.rsample()  # for reparameterization trick (mean + std * N(0,1))
-        y_t = torch.tanh(x_t)
-        # action = y_t * self.action_scale + self.action_bias
-        action = y_t
-        log_prob = normal.log_prob(x_t)
-        # Enforcing Action Bound
-        log_prob -= torch.log((1 - y_t.pow(2)) + epsilon)
-        log_prob = log_prob.sum(1, keepdim=True)
-        mean = torch.tanh(mean)
-        return action, log_prob, mean
-
 class EquivariantPolicy(torch.nn.Module):
     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, enc_id=1):
         super().__init__()
@@ -326,42 +298,16 @@ class EquivariantPolicy(torch.nn.Module):
         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:]), dim=1)
         return torch.tanh(mean)
 
-class EquivariantSACVecCritic(torch.nn.Module):
-    def __init__(self, obs_dim=7, action_dim=5, n_hidden=1024, N=4, initialize=True):
+class EquivariantSACVecCriticBase(torch.nn.Module):
+    def __init__(self, obs_dim, action_dim):
         super().__init__()
-        self.c4_act = gspaces.Rot2dOnR2(N)
         self.obs_dim = obs_dim
         self.action_dim = action_dim
         self.num_obs_rho1 = (obs_dim - 1) // 4
         self.num_obs_inv = obs_dim - 2*self.num_obs_rho1
-        self.q1 = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.c4_act, (self.num_obs_rho1 + 1) * [self.c4_act.irrep(1)] + (self.num_obs_inv + self.action_dim-2) * [self.c4_act.trivial_repr]),
-                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      kernel_size=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      kernel_size=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
-            nn.GroupPooling(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr])),
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]),
-                      nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-        )
-        self.q2 = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.c4_act, (self.num_obs_rho1 + 1) * [self.c4_act.irrep(1)] + (self.num_obs_inv + self.action_dim - 2) * [self.c4_act.trivial_repr]),
-                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      kernel_size=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      kernel_size=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
-            nn.GroupPooling(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr])),
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]),
-                      nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-        )
+        self.act = None
+        self.q1 = None
+        self.q2 = None
 
     def forward(self, obs, act):
         batch_size = obs.shape[0]
@@ -378,12 +324,45 @@ class EquivariantSACVecCritic(torch.nn.Module):
         inv_act = torch.cat((act[:, 0:1], act[:, 3:]), dim=1)
 
         inp = torch.cat((dxy, obs_rho1s, inv_act, obs_p, obs_invs), dim=1).reshape(batch_size, -1, 1, 1)
-        inp_geo = nn.GeometricTensor(inp, nn.FieldType(self.c4_act, (self.num_obs_rho1 + 1) * [self.c4_act.irrep(1)] + (self.num_obs_inv + self.action_dim-2) * [self.c4_act.trivial_repr]))
+        inp_geo = nn.GeometricTensor(inp, nn.FieldType(self.act, (self.num_obs_rho1 + 1) * [self.act.irrep(1)] + (self.num_obs_inv + self.action_dim - 2) * [self.act.trivial_repr]))
         out1 = self.q1(inp_geo).tensor.reshape(batch_size, 1)
         out2 = self.q2(inp_geo).tensor.reshape(batch_size, 1)
         return out1, out2
 
-class EquivariantSACVecGaussianPolicy(torch.nn.Module):
+class EquivariantSACVecCritic(EquivariantSACVecCriticBase):
+    def __init__(self, obs_dim=7, action_dim=5, n_hidden=1024, N=4, initialize=True):
+        super().__init__(obs_dim, action_dim)
+        self.act = gspaces.Rot2dOnR2(N)
+        self.q1 = torch.nn.Sequential(
+            nn.R2Conv(nn.FieldType(self.act, (self.num_obs_rho1 + 1) * [self.act.irrep(1)] + (self.num_obs_inv + self.action_dim - 2) * [self.act.trivial_repr]),
+                      nn.FieldType(self.act, n_hidden * [self.act.regular_repr]),
+                      kernel_size=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.act, n_hidden * [self.act.regular_repr]), inplace=True),
+            nn.R2Conv(nn.FieldType(self.act, n_hidden * [self.act.regular_repr]),
+                      nn.FieldType(self.act, n_hidden * [self.act.regular_repr]),
+                      kernel_size=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.act, n_hidden * [self.act.regular_repr]), inplace=True),
+            nn.GroupPooling(nn.FieldType(self.act, n_hidden * [self.act.regular_repr])),
+            nn.R2Conv(nn.FieldType(self.act, n_hidden * [self.act.trivial_repr]),
+                      nn.FieldType(self.act, 1 * [self.act.trivial_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+        )
+        self.q2 = torch.nn.Sequential(
+            nn.R2Conv(nn.FieldType(self.act, (self.num_obs_rho1 + 1) * [self.act.irrep(1)] + (self.num_obs_inv + self.action_dim - 2) * [self.act.trivial_repr]),
+                      nn.FieldType(self.act, n_hidden * [self.act.regular_repr]),
+                      kernel_size=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.act, n_hidden * [self.act.regular_repr]), inplace=True),
+            nn.R2Conv(nn.FieldType(self.act, n_hidden * [self.act.regular_repr]),
+                      nn.FieldType(self.act, n_hidden * [self.act.regular_repr]),
+                      kernel_size=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.act, n_hidden * [self.act.regular_repr]), inplace=True),
+            nn.GroupPooling(nn.FieldType(self.act, n_hidden * [self.act.regular_repr])),
+            nn.R2Conv(nn.FieldType(self.act, n_hidden * [self.act.trivial_repr]),
+                      nn.FieldType(self.act, 1 * [self.act.trivial_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+        )
+
+class EquivariantSACVecGaussianPolicy(SACGaussianPolicyBase):
     def __init__(self, obs_dim=7, action_dim=5, n_hidden=1024, N=4, initialize=True):
         super().__init__()
         self.c4_act = gspaces.Rot2dOnR2(N)
@@ -424,22 +403,6 @@ class EquivariantSACVecGaussianPolicy(torch.nn.Module):
         log_std = conv_out[:, self.action_dim:]
         log_std = torch.clamp(log_std, min=LOG_SIG_MIN, max=LOG_SIG_MAX)
         return mean, log_std
-
-    def sample(self, x):
-        mean, log_std = self.forward(x)
-        std = log_std.exp()
-        normal = Normal(mean, std)
-        x_t = normal.rsample()  # for reparameterization trick (mean + std * N(0,1))
-        y_t = torch.tanh(x_t)
-        # action = y_t * self.action_scale + self.action_bias
-        action = y_t
-        log_prob = normal.log_prob(x_t)
-        # Enforcing Action Bound
-        log_prob -= torch.log((1 - y_t.pow(2)) + epsilon)
-        log_prob = log_prob.sum(1, keepdim=True)
-        mean = torch.tanh(mean)
-        return action, log_prob, mean
-
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
@@ -484,7 +447,23 @@ if __name__ == '__main__':
     act = torch.zeros(1, 5)
     act[0, 1] = 1
     act[0, 2] = 0
-    out4 = critic(obs, act)
+    out1 = critic(obs, act)
+
+    obs = torch.zeros(1, 5)
+    obs[0, 1] = 0
+    obs[0, 2] = 1
+    act = torch.zeros(1, 5)
+    act[0, 1] = 0
+    act[0, 2] = 1
+    out2 = critic(obs, act)
+
+    obs = torch.zeros(1, 5)
+    obs[0, 1] = 1
+    obs[0, 2] = 0
+    act = torch.zeros(1, 5)
+    act[0, 1] = 0
+    act[0, 2] = 1
+    out3 = critic(obs, act)
 
     actor = EquivariantSACVecGaussianPolicy(obs_dim=5, action_dim=5, n_hidden=64, initialize=False)
     out5 = actor(obs)

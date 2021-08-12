@@ -12,7 +12,7 @@ from agents.sacfd import SACfD
 from agents.curl_sac import CURLSAC
 from agents.sac_aug import SACAug
 from agents.bc_continuous import BehaviorCloningContinuous
-from networks.sac_networks import DeterministicPolicy, GaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy
+from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy
 from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
 from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy
@@ -92,7 +92,7 @@ def createAgent(test=False):
         # pixel observation
         if obs_type == 'pixel':
             if model == 'cnn':
-                actor = GaussianPolicy((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
+                actor = SACGaussianPolicy((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
                 critic = SACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
             elif model == 'equi_actor':
                 actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
@@ -157,7 +157,7 @@ def createAgent(test=False):
         agent = SACAug(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
                        tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True)
         if model == 'cnn':
-            actor = GaussianPolicy((obs_channel, 64, 64), len(action_sequence)).to(device)
+            actor = SACGaussianPolicy((obs_channel, 64, 64), len(action_sequence)).to(device)
             critic = SACCritic((obs_channel, 64, 64), len(action_sequence)).to(device)
         elif model == 'equi_both':
             actor = EquivariantSACActor((obs_channel, 64, 64), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
