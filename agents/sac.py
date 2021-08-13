@@ -20,7 +20,8 @@ class SAC(A2CBase):
                 # self.target_entropy = -torch.prod(torch.Tensor(action_space.shape).to(self.device)).item()
                 self.target_entropy = -n_a
                 self.log_alpha = torch.tensor(np.log(self.alpha), requires_grad=True, device=self.device)
-                self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=1e-4, betas=(0.5, 0.999))
+                # self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=1e-4, betas=(0.5, 0.999))
+                self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=1e-3)
 
         self.num_update = 0
 
