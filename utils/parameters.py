@@ -123,7 +123,7 @@ if env in ['close_loop_block_reaching', 'close_loop_block_picking']:
     obs_dim = 1 + 4 + 4
 elif env in ['close_loop_block_pulling']:
     obs_dim = 1 + 4 + 4*2
-elif env in ['close_loop_block_stacking']:
+elif env in ['close_loop_block_stacking', 'close_loop_house_building_1']:
     obs_dim = 1 + 4 + 4 * num_objects
 else:
     raise NotImplementedError
