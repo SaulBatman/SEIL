@@ -79,7 +79,7 @@ buffer_group.add_argument('--buffer', default='normal', choices=['normal', 'per'
 buffer_group.add_argument('--per_eps', type=float, default=1e-6, help='Epsilon parameter for PER')
 buffer_group.add_argument('--per_alpha', type=float, default=0.6, help='Alpha parameter for PER')
 buffer_group.add_argument('--per_beta', type=float, default=0.4, help='Initial beta parameter for PER')
-buffer_group.add_argument('--per_expert_eps', type=float, default=0.1)
+buffer_group.add_argument('--per_expert_eps', type=float, default=1)
 buffer_group.add_argument('--batch_size', type=int, default=32)
 buffer_group.add_argument('--buffer_size', type=int, default=100000)
 

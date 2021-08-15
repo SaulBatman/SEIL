@@ -45,7 +45,10 @@ def train_step(agent, replay_buffer, logger, p_beta_schedule):
         agent.updateTarget()
 
 def preTrainCURLStep(agent, replay_buffer, logger):
-    batch = replay_buffer.sample(batch_size)
+    if buffer_type == 'per' or buffer_type == 'per_expert':
+        batch, weights, batch_idxes = replay_buffer.sample(batch_size, per_beta)
+    else:
+        batch = replay_buffer.sample(batch_size)
     loss = agent.updateCURLOnly(batch)
     logger.trainingBookkeeping(loss, 0)
 

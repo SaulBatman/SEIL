@@ -10,6 +10,7 @@ from networks.cnn import Actor, Critic
 from agents.sac import SAC
 from agents.sacfd import SACfD
 from agents.curl_sac import CURLSAC
+from agents.curl_sacfd import CURLSACfD
 from agents.sac_aug import SACAug
 from agents.bc_continuous import BehaviorCloningContinuous
 from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy
@@ -140,11 +141,24 @@ def createAgent(test=False):
             raise NotImplementedError
         agent.initNetwork(policy)
 
-    elif alg in ['curl_sac']:
+    elif alg in ['curl_sac', 'curl_sacfd', 'curl_sacfd_mean']:
         curl_sac_lr = [actor_lr, critic_lr, lr, lr]
-        agent = CURLSAC(lr=curl_sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
-                        tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True,
-                        crop_size=curl_crop_size)
+        if alg == 'curl_sac':
+            agent = CURLSAC(lr=curl_sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
+                            tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True,
+                            crop_size=curl_crop_size)
+        elif alg == 'curl_sacfd':
+            agent = CURLSACfD(lr=curl_sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
+                              n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
+                              target_update_interval=1, automatic_entropy_tuning=True, crop_size=curl_crop_size,
+                              demon_w=demon_w, demon_l='pi')
+        elif alg == 'curl_sacfd_mean':
+            agent = CURLSACfD(lr=curl_sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
+                              n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
+                              target_update_interval=1, automatic_entropy_tuning=True, crop_size=curl_crop_size,
+                              demon_w=demon_w, demon_l='mean')
+        else:
+            raise NotImplementedError
         if model == 'cnn':
             actor = CURLSACGaussianPolicy(CURLSACEncoder((obs_channel, curl_crop_size, curl_crop_size)).to(device), action_dim=len(action_sequence)).to(device)
             critic = CURLSACCritic(CURLSACEncoder((obs_channel, curl_crop_size, curl_crop_size)).to(device), action_dim=len(action_sequence)).to(device)
