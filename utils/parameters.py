@@ -41,7 +41,7 @@ training_group.add_argument('--fixed_eps', action='store_true')
 training_group.add_argument('--init_eps', type=float, default=1.0)
 training_group.add_argument('--final_eps', type=float, default=0.)
 training_group.add_argument('--training_iters', type=int, default=1)
-training_group.add_argument('--training_offset', type=int, default=1000)
+training_group.add_argument('--training_offset', type=int, default=100)
 training_group.add_argument('--max_train_step', type=int, default=50000)
 training_group.add_argument('--device_name', type=str, default='cuda')
 training_group.add_argument('--target_update_freq', type=int, default=100)
@@ -63,6 +63,8 @@ training_group.add_argument('--demon_w', type=float, default=1)
 training_group.add_argument('--equi_n', type=int, default=4)
 training_group.add_argument('--n_hidden', type=int, default=128)
 training_group.add_argument('--curl_crop_size', type=int, default=64)
+training_group.add_argument('--aug', type=strToBool, default=False)
+training_group.add_argument('--aug_type', type=str, choices=['se2', 'cn', 't'], default='se2')
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -75,7 +77,7 @@ margin_group.add_argument('--margin_weight', type=float, default=0.1)
 margin_group.add_argument('--margin_beta', type=float, default=100)
 
 buffer_group = parser.add_argument_group('buffer')
-buffer_group.add_argument('--buffer', default='normal', choices=['normal', 'per', 'expert', 'per_expert'])
+buffer_group.add_argument('--buffer', default='normal', choices=['normal', 'per', 'expert', 'per_expert', 'per_expert_aug'])
 buffer_group.add_argument('--per_eps', type=float, default=1e-6, help='Epsilon parameter for PER')
 buffer_group.add_argument('--per_alpha', type=float, default=0.6, help='Alpha parameter for PER')
 buffer_group.add_argument('--per_beta', type=float, default=0.4, help='Initial beta parameter for PER')
@@ -168,6 +170,9 @@ equi_n = args.equi_n
 n_hidden = args.n_hidden
 
 curl_crop_size = args.curl_crop_size
+
+aug = args.aug
+aug_type = args.aug_type
 
 # eval
 eval_freq = args.eval_freq

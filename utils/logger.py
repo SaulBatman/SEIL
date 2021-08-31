@@ -18,7 +18,7 @@ from utils.torch_utils import rand_perlin_2d, rand_perlin_2d_octaves
 from utils.parameters import *
 
 # Transition object
-ExpertTransition = namedtuple('ExpertTransition', 'state obs action reward next_state next_obs done step_left expert')
+from utils.torch_utils import ExpertTransition
 
 plt.style.use('ggplot')
 

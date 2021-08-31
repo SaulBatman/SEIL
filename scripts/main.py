@@ -10,6 +10,7 @@ sys.path.append('..')
 from utils.parameters import *
 from storage.buffer import QLearningBufferExpert, QLearningBuffer
 from storage.per_buffer import PrioritizedQLearningBuffer, EXPERT, NORMAL
+from storage.per_aug_buffer import PrioritizedQLearningBufferAug
 from utils.logger import Logger
 from utils.schedules import LinearSchedule
 from utils.env_wrapper import EnvWrapper
@@ -17,7 +18,7 @@ from utils.env_wrapper import EnvWrapper
 from utils.create_agent import createAgent
 import threading
 
-ExpertTransition = collections.namedtuple('ExpertTransition', 'state obs action reward next_state next_obs done step_left expert')
+from utils.torch_utils import ExpertTransition
 
 def set_seed(s):
     np.random.seed(s)
@@ -27,7 +28,7 @@ def set_seed(s):
     torch.backends.cudnn.benchmark = False
 
 def train_step(agent, replay_buffer, logger, p_beta_schedule):
-    if buffer_type == 'per' or buffer_type == 'per_expert':
+    if buffer_type.find('per') > -1:
         beta = p_beta_schedule.value(logger.num_training_steps)
         batch, weights, batch_idxes = replay_buffer.sample(batch_size, beta)
         loss, td_error = agent.update(batch)
@@ -45,7 +46,7 @@ def train_step(agent, replay_buffer, logger, p_beta_schedule):
         agent.updateTarget()
 
 def preTrainCURLStep(agent, replay_buffer, logger):
-    if buffer_type == 'per' or buffer_type == 'per_expert':
+    if buffer_type.find('per') > -1:
         batch, weights, batch_idxes = replay_buffer.sample(batch_size, per_beta)
     else:
         batch = replay_buffer.sample(batch_size)
@@ -134,6 +135,8 @@ def train():
         replay_buffer = QLearningBufferExpert(buffer_size)
     elif buffer_type == 'normal':
         replay_buffer = QLearningBuffer(buffer_size)
+    elif buffer_type == 'per_expert_aug':
+        replay_buffer = PrioritizedQLearningBufferAug(buffer_size, per_alpha, EXPERT)
     else:
         raise NotImplementedError
     exploration = LinearSchedule(schedule_timesteps=explore, initial_p=init_eps, final_p=final_eps)

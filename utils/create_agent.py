@@ -183,5 +183,6 @@ def createAgent(test=False):
 
     else:
         raise NotImplementedError
-
+    agent.aug = aug
+    agent.aug_type = aug_type
     return agent

@@ -88,16 +88,7 @@ class SAC(A2CBase):
         get the loaded batch data in self.loss_calc_dict
         :return: batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts
         """
-        batch_size = self.loss_calc_dict['batch_size']
-        states = self.loss_calc_dict['states']
-        obs = self.loss_calc_dict['obs']
-        action_idx = self.loss_calc_dict['action_idx']
-        rewards = self.loss_calc_dict['rewards']
-        next_states = self.loss_calc_dict['next_states']
-        next_obs = self.loss_calc_dict['next_obs']
-        non_final_masks = self.loss_calc_dict['non_final_masks']
-        step_lefts = self.loss_calc_dict['step_lefts']
-        is_experts = self.loss_calc_dict['is_experts']
+        batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = super()._loadLossCalcDict()
 
         if self.obs_type is 'pixel':
             # stack state as the second channel of the obs

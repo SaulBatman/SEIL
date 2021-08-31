@@ -5,10 +5,14 @@ import torch.nn.functional as F
 # import torchvision.transforms as transforms
 # import torchvision.transforms.functional as TF
 from torch.autograd import Variable
-
 import numpy as np
+import cv2
+import collections
 
 from collections import OrderedDict
+from scipy.ndimage import affine_transform
+
+ExpertTransition = collections.namedtuple('ExpertTransition', 'state obs action reward next_state next_obs done step_left expert')
 
 def featureExtractor():
   '''Creates a CNN module used for feature extraction'''
@@ -218,3 +222,102 @@ def centerCrop(imgs, out=64):
 
   imgs = imgs[:, :, top:top + out, left:left + out]
   return imgs
+
+def bbox(img, threshold=0.011):
+  rows = np.any(img>threshold, axis=1)
+  cols = np.any(img>threshold, axis=0)
+  rmin, rmax = np.where(rows)[0][[0, -1]]
+  cmin, cmax = np.where(cols)[0][[0, -1]]
+
+  return rmin, rmax, cmin, cmax
+
+def get_image_transform(theta, trans, pivot=(0, 0)):
+  """Compute composite 2D rigid transformation matrix."""
+  # Get 2D rigid transformation matrix that rotates an image by theta (in
+  # radians) around pivot (in pixels) and translates by trans vector (in
+  # pixels)
+  pivot_t_image = np.array([[1., 0., -pivot[0]], [0., 1., -pivot[1]],
+                            [0., 0., 1.]])
+  image_t_pivot = np.array([[1., 0., pivot[0]], [0., 1., pivot[1]],
+                            [0., 0., 1.]])
+  transform = np.array([[np.cos(theta), -np.sin(theta), trans[0]],
+                        [np.sin(theta), np.cos(theta), trans[1]], [0., 0., 1.]])
+  return np.dot(image_t_pivot, np.dot(transform, pivot_t_image))
+
+def get_random_image_transform_params(image_size):
+  theta = np.random.random() * 2*np.pi
+  trans = np.random.randint(0, image_size[0]//10, 2) - image_size[0]//20
+  pivot = (image_size[1] / 2, image_size[0] / 2)
+  return theta, trans, pivot
+
+def perturb(current_image, next_image, dxy, set_theta_zero=False, set_trans_zero=False):
+  image_size = current_image.shape[:2]
+
+  # Compute random rigid transform.
+  theta, trans, pivot = get_random_image_transform_params(image_size)
+  if set_theta_zero:
+    theta = 0.
+  if set_trans_zero:
+    trans = [0., 0.]
+  transform = get_image_transform(theta, trans, pivot)
+  transform_params = theta, trans, pivot
+
+  rot = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+  rotated_dxy = rot.dot(dxy)
+  rotated_dxy = np.clip(rotated_dxy, -1, 1)
+
+  # Apply rigid transform to image and pixel labels.
+  current_image = affine_transform(current_image, np.linalg.inv(transform), mode='nearest')
+  if next_image is not None:
+    next_image = affine_transform(next_image, np.linalg.inv(transform), mode='nearest')
+
+  return current_image, next_image, rotated_dxy, transform_params
+
+
+def augmentTransitionCn(d):
+  obs, next_obs, dxy, transform_params = perturb(d.obs[0].clone().numpy(),
+                                                 d.next_obs[0].clone().numpy(),
+                                                 d.action[1:3].clone().numpy(),
+                                                 set_trans_zero=True)
+  obs = obs.reshape(1, *obs.shape)
+  next_obs = next_obs.reshape(1, *next_obs.shape)
+  action = d.action
+  action[1] = dxy[0]
+  action[2] = dxy[1]
+  return ExpertTransition(d.state, torch.tensor(obs), action, d.reward, d.next_state,
+                          torch.tensor(next_obs), d.done, d.step_left, d.expert)
+
+
+def augmentTransitionSE2(d):
+  obs, next_obs, dxy, transform_params = perturb(d.obs[0].clone().numpy(),
+                                                 d.next_obs[0].clone().numpy(),
+                                                 d.action[1:3].clone().numpy())
+  obs = obs.reshape(1, *obs.shape)
+  next_obs = next_obs.reshape(1, *next_obs.shape)
+  action = d.action
+  action[1] = dxy[0]
+  action[2] = dxy[1]
+  return ExpertTransition(d.state, torch.tensor(obs), action, d.reward, d.next_state,
+                          torch.tensor(next_obs), d.done, d.step_left, d.expert)
+
+
+def augmentTransitionTranslate(d):
+  obs, next_obs, dxy, transform_params = perturb(d.obs[0].clone().numpy(),
+                                                 d.next_obs[0].clone().numpy(),
+                                                 d.action[1:3].clone().numpy(),
+                                                 set_theta_zero=True)
+  obs = obs.reshape(1, *obs.shape)
+  next_obs = next_obs.reshape(1, *next_obs.shape)
+  return ExpertTransition(d.state, torch.tensor(obs), d.action, d.reward, d.next_state,
+                          torch.tensor(next_obs), d.done, d.step_left, d.expert)
+
+
+def augmentTransition(d, aug_type):
+  if aug_type == 'se2':
+    return augmentTransitionSE2(d)
+  elif aug_type == 'cn':
+    return augmentTransitionCn(d)
+  elif aug_type == 't':
+    return augmentTransitionTranslate(d)
+  else:
+    raise NotImplementedError

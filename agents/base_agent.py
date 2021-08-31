@@ -1,7 +1,7 @@
-from copy import deepcopy
 import numpy as np
 import torch
-import torch.nn.functional as F
+from utils.torch_utils import augmentTransition
+from itertools import repeat
 
 class BaseAgent:
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/32):
@@ -19,6 +19,9 @@ class BaseAgent:
 
         self.loss_calc_dict = {}
 
+        self.aug = False
+        self.aug_type = 'se2'
+
     def update(self, batch):
         raise NotImplementedError
 
@@ -29,6 +32,9 @@ class BaseAgent:
         return self.getEGreedyActions(state, obs, 0)
 
     def _loadBatchToDevice(self, batch):
+        if self.aug:
+            batch = list(map(augmentTransition, batch, repeat(self.aug_type)))
+
         states = []
         images = []
         xys = []
