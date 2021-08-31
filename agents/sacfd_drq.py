@@ -1,10 +1,10 @@
-from agents.sac import SAC
+from agents.sac_drq import SACDrQ
 import numpy as np
 import torch
 import torch.nn.functional as F
 from copy import deepcopy
 
-class SACfD(SAC):
+class SACfDDrQ(SACDrQ):
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/16, n_a=5, tau=0.001,
                  alpha=0.01, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=False,
                  obs_type='pixel', demon_w=0.1, demon_l='pi'):
