@@ -281,7 +281,7 @@ def augmentTransitionCn(d):
                                                  set_trans_zero=True)
   obs = obs.reshape(1, *obs.shape)
   next_obs = next_obs.reshape(1, *next_obs.shape)
-  action = d.action
+  action = d.action.clone()
   action[1] = dxy[0]
   action[2] = dxy[1]
   return ExpertTransition(d.state, torch.tensor(obs), action, d.reward, d.next_state,
@@ -294,7 +294,7 @@ def augmentTransitionSE2(d):
                                                  d.action[1:3].clone().numpy())
   obs = obs.reshape(1, *obs.shape)
   next_obs = next_obs.reshape(1, *next_obs.shape)
-  action = d.action
+  action = d.action.clone()
   action[1] = dxy[0]
   action[2] = dxy[1]
   return ExpertTransition(d.state, torch.tensor(obs), action, d.reward, d.next_state,
@@ -344,5 +344,5 @@ def DrQAugment(obs, action_idx, aug_type='cn'):
                                                     set_theta_zero=set_theta_zero)
     aug_action = action_idx
     if action_idx is not None:
-      aug_action[1], aug_action[2] = dxy[0], dxy[1]
+      aug_action[1], aug_action[2] = aug_dxy[0], aug_dxy[1]
     return aug_obs, aug_action
