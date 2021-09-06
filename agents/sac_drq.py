@@ -28,7 +28,6 @@ class SACDrQ(SAC):
             for i in range(batch_size):
                 aug_obs, aug_action = DrQAugment(obs[i, 0].cpu().numpy(), action[i].cpu().numpy(), aug_type=self.aug_type)
                 aug_obs = torch.tensor(aug_obs.reshape(1, 1, *aug_obs.shape)).to(self.device)
-                aug_obs = torch.cat([aug_obs, obs[i:i+1, 1:2]], dim=1)
                 aug_obss.append(aug_obs)
                 aug_actions.append(aug_action)
             aug_obss = torch.cat(aug_obss, dim=0).to(self.device)
@@ -68,7 +67,6 @@ class SACDrQ(SAC):
                 for i in range(batch_size):
                     aug_next_obs, _ = DrQAugment(next_obs[i, 0].cpu().numpy(), action_idx=None, aug_type=self.aug_type)
                     aug_next_obs = torch.tensor(aug_next_obs.reshape(1, 1, *aug_next_obs.shape)).to(self.device)
-                    aug_next_obs = torch.cat([aug_next_obs, next_obs[i:i+1, 1:2]], dim=1)
                     aug_next_obss.append(aug_next_obs)
                 aug_next_obss = torch.cat(aug_next_obss, dim=0)
                 next_state_action, next_state_log_pi, _ = self.actor.sample(aug_next_obss)
@@ -88,7 +86,6 @@ class SACDrQ(SAC):
             for i in range(batch_size):
                 aug_obs, aug_action = DrQAugment(obs[i, 0].cpu().numpy(), action[i].cpu().numpy(), aug_type=self.aug_type)
                 aug_obs = torch.tensor(aug_obs.reshape(1, 1, *aug_obs.shape)).to(self.device)
-                aug_obs = torch.cat([aug_obs, obs[i:i+1, 1:2]], dim=1)
                 aug_obss.append(aug_obs)
                 aug_actions.append(aug_action)
             aug_obss = torch.cat(aug_obss, dim=0).to(self.device)

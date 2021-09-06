@@ -70,11 +70,7 @@ class SAC(A2CBase):
 
     def getSACAction(self, state, obs, evaluate):
         with torch.no_grad():
-            if self.obs_type is 'pixel':
-                state_tile = state.reshape(state.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])
-                obs = torch.cat([obs, state_tile], dim=1).to(self.device)
-            else:
-                obs = obs.to(self.device)
+            obs = obs.to(self.device)
 
             if evaluate is False:
                 action, _, _ = self.actor.sample(obs)
@@ -82,20 +78,6 @@ class SAC(A2CBase):
                 _, _, action = self.actor.sample(obs)
             action = action.to('cpu')
             return self.decodeActions(*[action[:, i] for i in range(self.n_a)])
-
-    def _loadLossCalcDict(self):
-        """
-        get the loaded batch data in self.loss_calc_dict
-        :return: batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts
-        """
-        batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = super()._loadLossCalcDict()
-
-        if self.obs_type is 'pixel':
-            # stack state as the second channel of the obs
-            obs = torch.cat([obs, states.reshape(states.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])], dim=1)
-            next_obs = torch.cat([next_obs, next_states.reshape(next_states.size(0), 1, 1, 1).repeat(1, 1, next_obs.shape[2], next_obs.shape[3])], dim=1)
-
-        return batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts
 
     def calcActorLoss(self):
         batch_size, states, obs, action, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
