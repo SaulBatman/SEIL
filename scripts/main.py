@@ -168,19 +168,14 @@ def train():
         # agent.sl = sl
 
     if planner_episode > 0 and not load_sub:
+        planner_envs = envs
+        planner_num_process = num_processes
         j = 0
-        states, obs = eval_envs.reset()
+        states, obs = planner_envs.reset()
         s = 0
         if not no_bar:
             planner_bar = tqdm(total=planner_episode)
         while j < planner_episode:
-            if num_processes > num_eval_processes:
-                planner_envs = envs
-                planner_num_process = num_processes
-            else:
-                planner_envs = eval_envs
-                planner_num_process = num_eval_processes
-
             plan_actions = planner_envs.getNextAction()
             planner_actions_star_idx, planner_actions_star = agent.getActionFromPlan(plan_actions)
             states_, obs_, rewards, dones = planner_envs.step(planner_actions_star, auto_reset=True)
