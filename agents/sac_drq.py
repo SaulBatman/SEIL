@@ -79,5 +79,5 @@ class SACDrQ(SAC):
         qf1_loss = F.mse_loss(qf1, next_q_value)
         qf2_loss = F.mse_loss(qf2, next_q_value)
         with torch.no_grad():
-            td_error = (0.5 * torch.abs(qf2 - next_q_value) + 0.5 * torch.abs(qf1 - next_q_value)).reshape(self.M, batch_size).mean(dim=0)
+            td_error = (0.5 * (torch.abs(qf2 - next_q_value) + torch.abs(qf1 - next_q_value))).reshape(self.M, batch_size).mean(dim=0)
         return qf1_loss, qf2_loss, td_error
