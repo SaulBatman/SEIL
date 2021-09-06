@@ -321,28 +321,3 @@ def augmentTransition(d, aug_type):
     return augmentTransitionTranslate(d)
   else:
     raise NotImplementedError
-
-def DrQAugment(obs, action_idx, aug_type='cn'):
-  if aug_type in ['cn', 't', 'se2']:
-    if action_idx is None:
-      dxy = [0, 0]
-    else:
-      dxy = action_idx[1:3]
-    if aug_type == 'cn':
-      set_trans_zero = True
-      set_theta_zero = False
-    elif aug_type == 't':
-      set_trans_zero = False
-      set_theta_zero = True
-    elif aug_type == 'se2':
-      set_trans_zero = False
-      set_theta_zero = False
-    else:
-      raise NotImplementedError
-
-    aug_obs, _, aug_dxy, transform_params = perturb(obs, None, dxy, set_trans_zero=set_trans_zero,
-                                                    set_theta_zero=set_theta_zero)
-    aug_action = action_idx
-    if action_idx is not None:
-      aug_action[1], aug_action[2] = aug_dxy[0], aug_dxy[1]
-    return aug_obs, aug_action
