@@ -34,7 +34,7 @@ class SACDrQ(SAC):
             aug_obss = torch.cat(aug_obss, dim=0).to(self.device)
             aug_actions = torch.tensor(aug_actions).to(self.device)
             pi, log_pi, mean = self.actor.sample(aug_obss)
-            qf1_pi, qf2_pi = self.critic(obs, pi)
+            qf1_pi, qf2_pi = self.critic(aug_obss, pi)
             min_qf_pi = torch.min(qf1_pi, qf2_pi)
             pis.append(pi)
             means.append(mean)
