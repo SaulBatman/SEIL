@@ -267,9 +267,9 @@ def perturb(current_image, next_image, dxy, set_theta_zero=False, set_trans_zero
   rotated_dxy = np.clip(rotated_dxy, -1, 1)
 
   # Apply rigid transform to image and pixel labels.
-  current_image = affine_transform(current_image, np.linalg.inv(transform), mode='nearest')
+  current_image = affine_transform(current_image, np.linalg.inv(transform), mode='nearest', order=1)
   if next_image is not None:
-    next_image = affine_transform(next_image, np.linalg.inv(transform), mode='nearest')
+    next_image = affine_transform(next_image, np.linalg.inv(transform), mode='nearest', order=1)
 
   return current_image, next_image, rotated_dxy, transform_params
 

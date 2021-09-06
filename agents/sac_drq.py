@@ -13,22 +13,19 @@ class SACDrQ(SAC):
         self.aug_type = 'cn'
 
     def _loadBatchToDevice(self, batch):
-        K_batch = []
-        M_batch = []
-        for _ in range(self.K):
-            for d in batch:
-                K_batch.append(augmentTransition(d, self.aug_type))
-        for _ in range(self.M):
-            for d in batch:
-                M_batch.append(augmentTransition(d, self.aug_type))
         K_next_obs = []
         M_obs = []
         M_action = []
-        for d in K_batch:
-            K_next_obs.append(d.next_obs)
-        for d in M_batch:
-            M_obs.append(d.obs)
-            M_action.append(d.action)
+        for _ in range(self.K):
+            for d in batch:
+                K_aug_d = augmentTransition(d, self.aug_type)
+                K_next_obs.append(K_aug_d.next_obs)
+        for _ in range(self.M):
+            for d in batch:
+                M_aug_d = augmentTransition(d, self.aug_type)
+                M_obs.append(M_aug_d.obs)
+                M_action.append(M_aug_d.action)
+
         K_next_obs_tensor = torch.stack(K_next_obs).to(self.device)
         M_obs_tensor = torch.stack(M_obs).to(self.device)
         M_action_tensor = torch.stack(M_action).to(self.device)
