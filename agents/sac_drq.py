@@ -13,6 +13,7 @@ class SACDrQ(SAC):
         self.aug_type = 'cn'
 
     def _loadBatchToDevice(self, batch):
+        states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = super()._loadBatchToDevice(batch)
         K_next_obs = []
         M_obs = []
         M_action = []
@@ -27,7 +28,9 @@ class SACDrQ(SAC):
                 M_action.append(M_aug_d.action)
 
         K_next_obs_tensor = torch.stack(K_next_obs).to(self.device)
+        K_next_obs_tensor = torch.cat([K_next_obs_tensor, next_states.reshape(next_states.size(0), 1, 1, 1).repeat(self.K, 1, K_next_obs_tensor.shape[2], K_next_obs_tensor.shape[3])], dim=1)
         M_obs_tensor = torch.stack(M_obs).to(self.device)
+        M_obs_tensor = torch.cat([M_obs_tensor, states.reshape(states.size(0), 1, 1, 1).repeat(self.M, 1, M_obs_tensor.shape[2], M_obs_tensor.shape[3])], dim=1)
         M_action_tensor = torch.stack(M_action).to(self.device)
 
         self.loss_calc_dict['K_next_obs'] = K_next_obs_tensor
