@@ -396,9 +396,9 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop/0901_aug/sacfd_br_planner10_demon10'
-    plotLearningCurve(base, 10000, window=500)
-    plotEvalCurve(base, 20000, freq=1000)
+    base = '/media/dian/hdd/mrun_results/close_loop/0907_temp_iter/bp_iter2_temp'
+    plotLearningCurve(base, 2000, window=100)
+    plotEvalCurve(base, 10000, freq=1000)
     showPerformance(base)
     # plotLoss(base, 30000)
 

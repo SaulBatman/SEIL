@@ -274,6 +274,8 @@ def train():
         eval_thread.join()
     saveModelAndInfo(logger, agent)
     logger.saveCheckPoint(args, envs, agent, replay_buffer)
+    if logger.num_training_steps >= max_train_step:
+        logger.saveResult()
     envs.close()
     eval_envs.close()
     print('training finished')

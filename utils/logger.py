@@ -310,3 +310,11 @@ class Logger(object):
             plt.plot(np.mean(list(windowed(self.expert_samples, n)), axis=1))
             plt.savefig(os.path.join(self.info_dir, 'expert_sample_curve.pdf'))
             plt.close()
+
+    def saveResult(self):
+        result_dir = os.path.join(self.base_dir, 'result')
+        os.makedirs(result_dir)
+        np.save(os.path.join(result_dir, 'rewards.npy'), self.rewards)
+        np.save(os.path.join(result_dir, 'losses.npy'), self.losses)
+        np.save(os.path.join(result_dir, 'td_errors.npy'), self.td_errors)
+        np.save(os.path.join(result_dir, 'eval_rewards.npy'), self.eval_rewards)
