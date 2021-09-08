@@ -65,6 +65,7 @@ training_group.add_argument('--n_hidden', type=int, default=128)
 training_group.add_argument('--curl_crop_size', type=int, default=64)
 training_group.add_argument('--aug', type=strToBool, default=False)
 training_group.add_argument('--aug_type', type=str, choices=['se2', 'cn', 't'], default='se2')
+training_group.add_argument('--buffer_aug_n', type=int, default=9)
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -173,6 +174,7 @@ curl_crop_size = args.curl_crop_size
 
 aug = args.aug
 aug_type = args.aug_type
+buffer_aug_n = args.buffer_aug_n
 
 # eval
 eval_freq = args.eval_freq

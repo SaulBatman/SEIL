@@ -136,7 +136,7 @@ def train():
     elif buffer_type == 'normal':
         replay_buffer = QLearningBuffer(buffer_size)
     elif buffer_type == 'per_expert_aug':
-        replay_buffer = PrioritizedQLearningBufferAug(buffer_size, per_alpha, EXPERT)
+        replay_buffer = PrioritizedQLearningBufferAug(buffer_size, per_alpha, EXPERT, aug_n=buffer_aug_n)
     else:
         raise NotImplementedError
     exploration = LinearSchedule(schedule_timesteps=explore, initial_p=init_eps, final_p=final_eps)
