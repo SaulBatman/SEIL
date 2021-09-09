@@ -122,7 +122,7 @@ heightmap_resolution = workspace_size/heightmap_size
 action_space = [0, heightmap_size]
 view_type = args.view_type
 obs_type = args.obs_type
-if env in ['close_loop_block_reaching', 'close_loop_block_picking']:
+if env in ['close_loop_block_reaching', 'close_loop_block_picking', 'close_loop_block_picking_corner']:
     obs_dim = 1 + 4 + 4
 elif env in ['close_loop_block_pulling']:
     obs_dim = 1 + 4 + 4*2
