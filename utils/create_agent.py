@@ -22,10 +22,7 @@ from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussian
 
 def createAgent(test=False):
     obs_channel = 2
-    if load_sub is not None or load_model_pre is not None or test:
-        initialize = False
-    else:
-        initialize = True
+    initialize = True
     if env in ['close_loop_block_reaching']:
         n_p = 1
     else:
@@ -48,7 +45,7 @@ def createAgent(test=False):
             net = EquivariantCNNFac3(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         else:
             raise NotImplementedError
-        agent.initNetwork(net, initialize_target=not test)
+        agent.initNetwork(net)
     elif alg == 'dqn_com':
         agent = DQNAgentCom(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p, n_theta=n_theta)
         if model == 'cnn':
@@ -59,7 +56,7 @@ def createAgent(test=False):
             net = EquivariantCNNCom2(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         else:
             raise NotImplementedError
-        agent.initNetwork(net, initialize_target=not test)
+        agent.initNetwork(net)
 
     elif alg == 'ddpg':
         ddpg_lr = (actor_lr, critic_lr)
@@ -72,7 +69,7 @@ def createAgent(test=False):
             critic = EquivariantDDPGCritic(len(action_sequence), initialize=initialize).to(device)
         else:
             raise NotImplementedError
-        agent.initNetwork(actor, critic, initialize_target=not test)
+        agent.initNetwork(actor, critic)
 
     elif alg in ['sac', 'sacfd', 'sacfd_mean', 'sac_drq', 'sacfd_drq']:
         sac_lr = (actor_lr, critic_lr)
@@ -140,7 +137,7 @@ def createAgent(test=False):
                 raise NotImplementedError
         else:
             raise NotImplementedError
-        agent.initNetwork(actor, critic, not test)
+        agent.initNetwork(actor, critic)
 
     elif alg in ['bc_con']:
         agent = BehaviorCloningContinuous(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
@@ -191,7 +188,7 @@ def createAgent(test=False):
             critic = EquivariantSACCritic((obs_channel, 64, 64), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
         else:
             raise NotImplementedError
-        agent.initNetwork(actor, critic, not test)
+        agent.initNetwork(actor, critic)
 
 
     else:
