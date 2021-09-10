@@ -32,10 +32,10 @@ def train_step(agent, replay_buffer, logger, p_beta_schedule):
         beta = p_beta_schedule.value(logger.num_training_steps)
         batch, weights, batch_idxes = replay_buffer.sample(batch_size, beta)
         loss, td_error = agent.update(batch)
-        new_priorities = np.abs(td_error.cpu()) + torch.stack([t.expert for t in batch]) * per_expert_eps + per_eps
+        new_priorities = np.abs(td_error.cpu()) + np.stack([t.expert for t in batch]) * per_expert_eps + per_eps
         replay_buffer.update_priorities(batch_idxes, new_priorities)
         logger.expertSampleBookkeeping(
-            torch.tensor(list(zip(*batch))[-1]).sum().float().item() / batch_size)
+            np.stack(list(zip(*batch))[-1]).sum() / batch_size)
     else:
         batch = replay_buffer.sample(batch_size)
         loss, td_error = agent.update(batch)
@@ -183,8 +183,9 @@ def train():
             steps_lefts = planner_envs.getStepLeft()
             for i in range(planner_num_process):
                 replay_buffer.add(
-                    ExpertTransition(states[i], obs[i], planner_actions_star_idx[i], rewards[i], states_[i],
-                                     obs_[i], dones[i], steps_lefts[i], torch.tensor(1))
+                    ExpertTransition(states[i].numpy(), obs[i].numpy(), planner_actions_star_idx[i].numpy(),
+                                     rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
+                                     steps_lefts[i].numpy(), np.array(1))
                 )
             states = copy.copy(states_)
             obs = copy.copy(obs_)
@@ -239,8 +240,9 @@ def train():
         if not alg[:2] == 'bc':
             for i in range(num_processes):
                 replay_buffer.add(
-                    ExpertTransition(states[i], obs[i], actions_star_idx[i], rewards[i], states_[i],
-                                     obs_[i], dones[i], steps_lefts[i], torch.tensor(is_expert))
+                    ExpertTransition(states[i].numpy(), obs[i].numpy(), actions_star_idx[i].numpy(),
+                                     rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
+                                     steps_lefts[i].numpy(), np.array(1))
                 )
         logger.stepBookkeeping(rewards.numpy(), steps_lefts.numpy(), dones.numpy())
 

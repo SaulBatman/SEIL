@@ -20,12 +20,12 @@ class SACDrQ(SAC):
         for _ in range(self.K):
             for d in batch:
                 K_aug_d = augmentTransition(d, self.aug_type)
-                K_next_obs.append(K_aug_d.next_obs)
+                K_next_obs.append(torch.tensor(K_aug_d.next_obs))
         for _ in range(self.M):
             for d in batch:
                 M_aug_d = augmentTransition(d, self.aug_type)
-                M_obs.append(M_aug_d.obs)
-                M_action.append(M_aug_d.action)
+                M_obs.append(torch.tensor(M_aug_d.obs))
+                M_action.append(torch.tensor(M_aug_d.action))
 
         K_next_obs_tensor = torch.stack(K_next_obs).to(self.device)
         K_next_obs_tensor = torch.cat([K_next_obs_tensor, next_states.reshape(next_states.size(0), 1, 1, 1).repeat(self.K, 1, K_next_obs_tensor.shape[2], K_next_obs_tensor.shape[3])], dim=1)
