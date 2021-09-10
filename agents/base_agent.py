@@ -146,10 +146,14 @@ class BaseAgent:
         """
         state = {}
         for i in range(len(self.networks)):
+            self.networks[i].to('cpu')
             state['{}'.format(i)] = self.networks[i].state_dict()
             state['{}_optimizer'.format(i)] = self.optimizers[i].state_dict()
+            self.networks[i].to(self.device)
         for i in range(len(self.target_networks)):
+            self.target_networks[i].to('cpu')
             state['{}_target'.format(i)] = self.target_networks[i].state_dict()
+            self.target_networks[i].to(self.device)
         return state
 
     def loadFromState(self, save_state):
@@ -158,10 +162,14 @@ class BaseAgent:
         :param save_state: the loading state dictionary
         """
         for i in range(len(self.networks)):
+            self.networks[i].to('cpu')
             self.networks[i].load_state_dict(save_state['{}'.format(i)])
+            self.networks[i].to(self.device)
             self.optimizers[i].load_state_dict(save_state['{}_optimizer'.format(i)])
         for i in range(len(self.target_networks)):
+            self.target_networks[i].to('cpu')
             self.target_networks[i].load_state_dict(save_state['{}_target'.format(i)])
+            self.target_networks[i].to(self.device)
 
     def copyNetworksFrom(self, from_agent):
         for i in range(len(self.networks)):
