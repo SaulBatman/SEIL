@@ -21,6 +21,7 @@ from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGC
 from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy
 
 def createAgent(test=False):
+    print('initializing agent')
     obs_channel = 2
     initialize = True
     if env in ['close_loop_block_reaching']:
@@ -195,4 +196,5 @@ def createAgent(test=False):
         raise NotImplementedError
     agent.aug = aug
     agent.aug_type = aug_type
+    print('initialized agent')
     return agent

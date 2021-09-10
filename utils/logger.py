@@ -298,6 +298,7 @@ class Logger(object):
         # if not success:
         #   raise EnvironmentError
 
+        print('loaded checkpoint')
         return args
 
     def expertSampleBookkeeping(self, expert_ratio):
