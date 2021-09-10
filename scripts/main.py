@@ -102,6 +102,7 @@ def train():
     if seed is not None:
         set_seed(seed)
     # setup env
+    print('creating envs')
     envs = EnvWrapper(num_processes, simulator, env, env_config, planner_config)
     eval_envs = EnvWrapper(num_eval_processes, simulator, env, env_config, planner_config)
 
