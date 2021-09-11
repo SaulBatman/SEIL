@@ -242,7 +242,7 @@ def train():
                 replay_buffer.add(
                     ExpertTransition(states[i].numpy(), obs[i].numpy(), actions_star_idx[i].numpy(),
                                      rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
-                                     steps_lefts[i].numpy(), np.array(1))
+                                     steps_lefts[i].numpy(), np.array(is_expert))
                 )
         logger.stepBookkeeping(rewards.numpy(), steps_lefts.numpy(), dones.numpy())
 
