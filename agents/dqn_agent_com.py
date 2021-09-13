@@ -62,6 +62,8 @@ class DQNAgentCom(DQNBase):
 
         q = self.forwardNetwork(states, obs)
         q_pred = q[torch.arange(batch_size), dxy_id, dz_id, dtheta_id, p_id]
+        self.loss_calc_dict['q_output'] = q
+        self.loss_calc_dict['q_pred'] = q_pred
         td_loss = F.smooth_l1_loss(q_pred, q_target)
         with torch.no_grad():
             td_error = torch.abs(q_pred - q_target)

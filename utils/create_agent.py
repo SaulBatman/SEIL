@@ -1,6 +1,7 @@
 from utils.parameters import *
 from agents.dqn_agent_fac import DQNAgentFac
 from agents.dqn_agent_com import DQNAgentCom
+from agents.sdqfd_agent_com import SDQfDCom
 from networks.cnn import CNNFac, CNNCom
 from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, EquivariantCNNFac3, EquivariantCNNCom, EquivariantCNNCom2
 
@@ -50,11 +51,15 @@ def createAgent(test=False):
         else:
             raise NotImplementedError
         agent.initNetwork(net, initialize_target=not test)
-    elif alg == 'dqn_com':
-        agent = DQNAgentCom(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p, n_theta=n_theta)
+    elif alg in ['dqn_com', 'sdqfd_com']:
+        if alg == 'dqn_com':
+            agent = DQNAgentCom(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p, n_theta=n_theta)
+        else:
+            agent = SDQfDCom(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
+                             n_theta=n_theta, l=margin_l, w=margin_weight)
         if model == 'cnn':
             net = CNNCom(n_p=n_p, n_theta=n_theta).to(device)
-        elif model == 'equi_1':
+        elif model == 'equi':
             net = EquivariantCNNCom(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_2':
             net = EquivariantCNNCom2(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)

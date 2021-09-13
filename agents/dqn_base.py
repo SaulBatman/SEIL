@@ -35,10 +35,10 @@ class DQNBase(BaseAgent):
         self.policy_net = network
         if initialize_target:
             self.target_net = deepcopy(network)
+            self.target_networks.append(self.target_net)
         self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=self.lr, weight_decay=1e-5)
 
         self.networks.append(self.policy_net)
-        self.target_networks.append(self.target_net)
         self.optimizers.append(self.optimizer)
 
     def decodeActions(self, p_id, dxy_id, dz_id, dtheta_id):

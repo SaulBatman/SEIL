@@ -273,6 +273,43 @@ def perturb(current_image, next_image, dxy, set_theta_zero=False, set_trans_zero
 
     return current_image, next_image, rotated_dxy, transform_params
 
+def augmentDQNTransitionC4(d):
+    t1_map = np.array([6, 3, 0,
+                       7, 4, 1,
+                       8, 5, 2])
+    t2_map = np.array([8, 7, 6,
+                       5, 4, 3,
+                       2, 1, 0])
+    t3_map = np.array([2, 5, 8,
+                       1, 4, 7,
+                       0, 3, 6])
+    current_image = d.obs[0].copy()
+    next_image = d.next_obs[0].copy()
+    image_size = current_image.shape[-2:]
+
+    # Compute random rigid transform.
+    theta_id = np.random.randint(0, 4)
+    theta = theta_id * np.pi/2
+    trans = [0., 0.]
+    pivot = (image_size[1] / 2, image_size[0] / 2)
+    transform = get_image_transform(theta, trans, pivot)
+
+    # Apply rigid transform to image and pixel labels.
+    current_image = affine_transform(current_image, np.linalg.inv(transform), mode='nearest', order=1)
+    if next_image is not None:
+        next_image = affine_transform(next_image, np.linalg.inv(transform), mode='nearest', order=1)
+
+    action = d.action.copy()
+    if theta_id == 1:
+        action[1] = t1_map[action[1]]
+    elif theta_id == 2:
+        action[1] = t2_map[action[1]]
+    elif theta_id == 3:
+        action[1] = t3_map[action[1]]
+    obs = current_image.reshape(1, *current_image.shape)
+    next_obs = next_image.reshape(1, *next_image.shape)
+    return ExpertTransition(d.state, obs, action, d.reward, d.next_state,
+                            next_obs, d.done, d.step_left, d.expert)
 
 def augmentTransitionCn(d):
     obs, next_obs, dxy, transform_params = perturb(d.obs[0].copy(),
@@ -319,5 +356,7 @@ def augmentTransition(d, aug_type):
         return augmentTransitionCn(d)
     elif aug_type == 't':
         return augmentTransitionTranslate(d)
+    elif aug_type == 'dqn_c4':
+        return augmentDQNTransitionC4(d)
     else:
         raise NotImplementedError

@@ -64,7 +64,7 @@ training_group.add_argument('--equi_n', type=int, default=4)
 training_group.add_argument('--n_hidden', type=int, default=128)
 training_group.add_argument('--curl_crop_size', type=int, default=64)
 training_group.add_argument('--aug', type=strToBool, default=False)
-training_group.add_argument('--aug_type', type=str, choices=['se2', 'cn', 't'], default='se2')
+training_group.add_argument('--aug_type', type=str, choices=['se2', 'cn', 't', 'dqn_c4'], default='se2')
 training_group.add_argument('--buffer_aug_n', type=int, default=4)
 
 eval_group = parser.add_argument_group('eval')
