@@ -267,12 +267,12 @@ class Logger(object):
 
     def loadCheckPoint(self, checkpoint_dir, envs, agent, buffer):
         print('loading checkpoint')
-
         checkpoint = torch.load(os.path.join(checkpoint_dir, 'checkpoint.pt'))
-        args = checkpoint['args']
+        print('agent loading')
         agent.loadFromState(checkpoint['agent'])
+        print('buffer loading')
         buffer.loadFromState(checkpoint['buffer_state'])
-
+        print('logger loading')
         self.env = checkpoint['logger']['env']
         self.num_envs = checkpoint['logger']['num_envs']
         # self.max_episode = checkpoint['logger']['max_episode']
@@ -299,7 +299,6 @@ class Logger(object):
         #   raise EnvironmentError
 
         print('loaded checkpoint')
-        return args
 
     def expertSampleBookkeeping(self, expert_ratio):
         self.expert_samples.append(expert_ratio)

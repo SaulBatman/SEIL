@@ -54,20 +54,20 @@ class BaseAgent:
             dones.append(d.done)
             step_lefts.append(d.step_left)
             is_experts.append(d.expert)
-        states_tensor = torch.stack(states).long().to(self.device)
-        image_tensor = torch.stack(images).to(self.device)
+        states_tensor = torch.tensor(np.stack(states)).long().to(self.device)
+        image_tensor = torch.tensor(np.stack(images)).to(self.device)
         if len(image_tensor.shape) == 3:
             image_tensor = image_tensor.unsqueeze(1)
-        xy_tensor = torch.stack(xys).to(self.device)
-        rewards_tensor = torch.stack(rewards).to(self.device)
-        next_states_tensor = torch.stack(next_states).long().to(self.device)
-        next_obs_tensor = torch.stack(next_obs).to(self.device)
+        xy_tensor = torch.tensor(np.stack(xys)).to(self.device)
+        rewards_tensor = torch.tensor(np.stack(rewards)).to(self.device)
+        next_states_tensor = torch.tensor(np.stack(next_states)).long().to(self.device)
+        next_obs_tensor = torch.tensor(np.stack(next_obs)).to(self.device)
         if len(next_obs_tensor.shape) == 3:
             next_obs_tensor = next_obs_tensor.unsqueeze(1)
-        dones_tensor = torch.stack(dones).int()
+        dones_tensor = torch.tensor(np.stack(dones)).int()
         non_final_masks = (dones_tensor ^ 1).float().to(self.device)
-        step_lefts_tensor = torch.stack(step_lefts).to(self.device)
-        is_experts_tensor = torch.stack(is_experts).bool().to(self.device)
+        step_lefts_tensor = torch.tensor(np.stack(step_lefts)).to(self.device)
+        is_experts_tensor = torch.tensor(np.stack(is_experts)).bool().to(self.device)
 
         self.loss_calc_dict['batch_size'] = len(batch)
         self.loss_calc_dict['states'] = states_tensor
@@ -146,10 +146,14 @@ class BaseAgent:
         """
         state = {}
         for i in range(len(self.networks)):
+            self.networks[i].to('cpu')
             state['{}'.format(i)] = self.networks[i].state_dict()
             state['{}_optimizer'.format(i)] = self.optimizers[i].state_dict()
+            self.networks[i].to(self.device)
         for i in range(len(self.target_networks)):
+            self.target_networks[i].to('cpu')
             state['{}_target'.format(i)] = self.target_networks[i].state_dict()
+            self.target_networks[i].to(self.device)
         return state
 
     def loadFromState(self, save_state):
@@ -158,10 +162,14 @@ class BaseAgent:
         :param save_state: the loading state dictionary
         """
         for i in range(len(self.networks)):
+            self.networks[i].to('cpu')
             self.networks[i].load_state_dict(save_state['{}'.format(i)])
+            self.networks[i].to(self.device)
             self.optimizers[i].load_state_dict(save_state['{}_optimizer'.format(i)])
         for i in range(len(self.target_networks)):
+            self.target_networks[i].to('cpu')
             self.target_networks[i].load_state_dict(save_state['{}_target'.format(i)])
+            self.target_networks[i].to(self.device)
 
     def copyNetworksFrom(self, from_agent):
         for i in range(len(self.networks)):
