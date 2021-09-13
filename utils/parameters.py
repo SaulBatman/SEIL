@@ -65,7 +65,7 @@ training_group.add_argument('--n_hidden', type=int, default=128)
 training_group.add_argument('--curl_crop_size', type=int, default=64)
 training_group.add_argument('--aug', type=strToBool, default=False)
 training_group.add_argument('--aug_type', type=str, choices=['se2', 'cn', 't'], default='se2')
-training_group.add_argument('--buffer_aug_n', type=int, default=9)
+training_group.add_argument('--buffer_aug_n', type=int, default=4)
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -122,7 +122,7 @@ heightmap_resolution = workspace_size/heightmap_size
 action_space = [0, heightmap_size]
 view_type = args.view_type
 obs_type = args.obs_type
-if env in ['close_loop_block_reaching', 'close_loop_block_picking', 'close_loop_block_picking_corner']:
+if env in ['close_loop_block_reaching', 'close_loop_block_picking', 'close_loop_block_picking_corner', 'close_loop_drawer_opening']:
     obs_dim = 1 + 4 + 4
 elif env in ['close_loop_block_pulling']:
     obs_dim = 1 + 4 + 4*2

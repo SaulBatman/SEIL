@@ -76,7 +76,7 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
         rs = []
         for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
             try:
-                r = np.load(os.path.join(base, method, run, 'result/eval_rewards.npy'))
+                r = np.load(os.path.join(base, method, run, 'info/eval_rewards.npy'))
                 rs.append(r[:step//freq])
             except Exception as e:
                 print(e)
@@ -265,7 +265,7 @@ def plotLearningCurve(base, ep=50000, use_default_cm=False, window=1000):
         rs = []
         for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
             try:
-                r = np.load(os.path.join(base, method, run, 'result/rewards.npy'))
+                r = np.load(os.path.join(base, method, run, 'info/rewards.npy'))
                 if method.find('BC') >= 0 or method.find('tp') >= 0:
                     rs.append(r[-window:].mean())
                 else:
@@ -307,7 +307,7 @@ def showPerformance(base):
         rs = []
         for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
             try:
-                r = np.load(os.path.join(base, method, run, 'result/rewards.npy'))
+                r = np.load(os.path.join(base, method, run, 'info/rewards.npy'))
                 rs.append(r[-1000:].mean())
             except Exception as e:
                 print(e)
@@ -337,7 +337,7 @@ def plotTDErrors():
             continue
         for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
             try:
-                r = np.load(os.path.join(base, method, run, 'result/td_errors.npy'))
+                r = np.load(os.path.join(base, method, run, 'info/td_errors.npy'))
                 rs.append(getRewardsSingle(r[:120000], window=1000))
             except Exception as e:
                 continue
@@ -375,7 +375,7 @@ def plotLoss(base, step):
         rs = []
         for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
             try:
-                r = np.load(os.path.join(base, method, run, 'result/losses.npy'))[:, 1]
+                r = np.load(os.path.join(base, method, run, 'info/losses.npy'))[:, 1]
                 rs.append(getRewardsSingle(r[:step], window=1000))
             except Exception as e:
                 continue
@@ -396,9 +396,9 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop/0908_5p/5p_vs_1p/bpull'
+    base = '/media/dian/hdd/mrun_results/close_loop/0906_aug/br_equi_vs_cnn'
     plotLearningCurve(base, 2000, window=100)
-    plotEvalCurve(base, 20000, freq=1000)
+    plotEvalCurve(base, 50000, freq=1000)
     showPerformance(base)
     # plotLoss(base, 30000)
 

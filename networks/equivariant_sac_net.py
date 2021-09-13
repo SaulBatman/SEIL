@@ -11,6 +11,44 @@ LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
 epsilon = 1e-6
 
+class EquiResBlock(torch.nn.Module):
+    def __init__(self, input_channels, hidden_dim, kernel_size, N, initialize=True):
+        super(EquiResBlock, self).__init__()
+        r2_act = gspaces.Rot2dOnR2(N=N)
+        rep = r2_act.regular_repr
+
+        feat_type_in = nn.FieldType(r2_act, input_channels * [rep])
+        feat_type_hid = nn.FieldType(r2_act, hidden_dim * [rep])
+
+        self.layer1 = nn.SequentialModule(
+            nn.R2Conv(feat_type_in, feat_type_hid, kernel_size=kernel_size, padding=(kernel_size - 1) // 2, initialize=initialize),
+            nn.ReLU(feat_type_hid, inplace=True)
+        )
+
+        self.layer2 = nn.SequentialModule(
+            nn.R2Conv(feat_type_hid, feat_type_hid, kernel_size=kernel_size, padding=(kernel_size - 1) // 2, initialize=initialize),
+
+        )
+        self.relu = nn.ReLU(feat_type_hid, inplace=True)
+
+        self.upscale = None
+        if input_channels != hidden_dim:
+            self.upscale = nn.SequentialModule(
+                nn.R2Conv(feat_type_in, feat_type_hid, kernel_size=kernel_size, padding=(kernel_size - 1) // 2, initialize=initialize),
+            )
+
+    def forward(self, xx):
+        residual = xx
+        out = self.layer1(xx)
+        out = self.layer2(out)
+        if self.upscale:
+            out += self.upscale(residual)
+        else:
+            out += residual
+        out = self.relu(out)
+
+        return out
+
 class EquivariantEncoder128(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
         super().__init__()
@@ -47,6 +85,47 @@ class EquivariantEncoder128(torch.nn.Module):
                       kernel_size=3, padding=1, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, n_out*2 * [self.c4_act.regular_repr]), inplace=True),
 
+            nn.R2Conv(nn.FieldType(self.c4_act, n_out*2 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]), 2),
+            # 3x3
+            nn.R2Conv(nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]), inplace=True),
+            # 1x1
+        )
+
+    def forward(self, geo):
+        # geo = nn.GeometricTensor(x, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
+        return self.conv(geo)
+
+class EquivariantEncoder128Res(torch.nn.Module):
+    def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
+        super().__init__()
+        self.obs_channel = obs_channel
+        self.c4_act = gspaces.Rot2dOnR2(N)
+        self.conv = torch.nn.Sequential(
+            nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, n_out // 8 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_out // 8 * [self.c4_act.regular_repr]), inplace=True),
+            # 128x128
+            EquiResBlock(n_out//8, n_out//8, 3, N, initialize),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_out//8 * [self.c4_act.regular_repr]), 2),
+            # 64x64
+            EquiResBlock(n_out//8, n_out//4, 3, N, initialize),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_out//4 * [self.c4_act.regular_repr]), 2),
+            # 32x32
+            EquiResBlock(n_out//4, n_out//2, 3, N, initialize),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_out//2 * [self.c4_act.regular_repr]), 2),
+            # 16x16
+            EquiResBlock(n_out//2, n_out, 3, N, initialize),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]), 2),
+            # 8x8
+            EquiResBlock(n_out, n_out*2, 3, N, initialize),
             nn.R2Conv(nn.FieldType(self.c4_act, n_out*2 * [self.c4_act.regular_repr]),
                       nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]),
                       kernel_size=3, padding=0, initialize=initialize),
@@ -162,7 +241,10 @@ def getEnc(obs_size, enc_id):
     assert obs_size in [128, 64]
     assert enc_id in [1, 2]
     if obs_size == 128:
-        return EquivariantEncoder128
+        if enc_id == 1:
+            return EquivariantEncoder128
+        else:
+            return EquivariantEncoder128Res
     else:
         if enc_id == 1:
             return EquivariantEncoder64_1
@@ -406,20 +488,21 @@ class EquivariantSACVecGaussianPolicy(SACGaussianPolicyBase):
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    # critic = EquivariantSACCritic(obs_shape=(2, 128, 128), action_dim=4, n_hidden=64, initialize=False)
-    # o = torch.zeros(1, 2, 128, 128)
-    # o[0, 0, 10:20, 10:20] = 1
-    # a = torch.zeros(1, 4)
-    # a[0, 1:3] = torch.tensor([-1., -1.])
-    #
-    # o2 = torch.rot90(o, 1, [2, 3])
-    # a2 = torch.zeros(1, 4)
-    # a2[0, 1:3] = torch.tensor([1., -1.])
-    #
-    # out = critic(o, a)
-    #
-    # actor = EquivariantSACActor(obs_shape=(2, 128, 128), action_dim=5, n_hidden=64, initialize=False)
-    # out2 = actor(o)
+    critic = EquivariantSACCritic(obs_shape=(2, 128, 128), action_dim=5, n_hidden=64, initialize=False, N=4, enc_id=2)
+    o = torch.zeros(1, 2, 128, 128)
+    o[0, 0, 10:20, 10:20] = 1
+    a = torch.zeros(1, 5)
+    a[0, 1:3] = torch.tensor([-1., -1.])
+
+    o2 = torch.rot90(o, 1, [2, 3])
+    a2 = torch.zeros(1, 5)
+    a2[0, 1:3] = torch.tensor([1., -1.])
+
+    out = critic(o, a)
+
+    actor = EquivariantSACActor(obs_shape=(2, 128, 128), action_dim=5, n_hidden=64, initialize=False, N=4, enc_id=2)
+    out2 = actor(o)
+    print(1)
     # actor = EquivariantSACActor2(obs_shape=(2, 128, 128), action_dim=5, n_hidden=64, initialize=False)
     # out3 = actor(o)
     #

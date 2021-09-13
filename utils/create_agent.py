@@ -149,6 +149,8 @@ def createAgent(test=False):
 
         if model == 'equi':
             policy = EquivariantPolicy((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+        elif model == 'equi_enc_2':
+            policy = EquivariantPolicy((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
         elif model == 'cnn':
             policy = Actor(len(action_sequence)).to(device)
         else:
