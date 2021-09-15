@@ -360,3 +360,14 @@ def augmentTransition(d, aug_type):
         return augmentDQNTransitionC4(d)
     else:
         raise NotImplementedError
+
+def normalizeTransition(d: ExpertTransition):
+    obs = np.clip(d.obs, 0, 0.32)
+    obs = obs/0.4*255
+    obs = obs.astype(np.uint8)
+
+    next_obs = np.clip(d.next_obs, 0, 0.32)
+    next_obs = next_obs/0.4*255
+    next_obs = next_obs.astype(np.uint8)
+
+    return ExpertTransition(d.state, obs, d.action, d.reward, d.next_state, next_obs, d.done, d.step_left, d.expert)

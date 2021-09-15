@@ -18,7 +18,7 @@ from utils.env_wrapper import EnvWrapper
 from utils.create_agent import createAgent
 import threading
 
-from utils.torch_utils import ExpertTransition
+from utils.torch_utils import ExpertTransition, normalizeTransition
 
 def set_seed(s):
     np.random.seed(s)
@@ -183,9 +183,9 @@ def train():
             steps_lefts = planner_envs.getStepLeft()
             for i in range(planner_num_process):
                 replay_buffer.add(
-                    ExpertTransition(states[i].numpy(), obs[i].numpy(), planner_actions_star_idx[i].numpy(),
-                                     rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
-                                     steps_lefts[i].numpy(), np.array(1))
+                    normalizeTransition(ExpertTransition(states[i].numpy(), obs[i].numpy(), planner_actions_star_idx[i].numpy(),
+                                                         rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
+                                                         steps_lefts[i].numpy(), np.array(1)))
                 )
             states = copy.copy(states_)
             obs = copy.copy(obs_)
@@ -240,9 +240,9 @@ def train():
         if not alg[:2] == 'bc':
             for i in range(num_processes):
                 replay_buffer.add(
-                    ExpertTransition(states[i].numpy(), obs[i].numpy(), actions_star_idx[i].numpy(),
-                                     rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
-                                     steps_lefts[i].numpy(), np.array(is_expert))
+                    normalizeTransition(ExpertTransition(states[i].numpy(), obs[i].numpy(), actions_star_idx[i].numpy(),
+                                                         rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
+                                                         steps_lefts[i].numpy(), np.array(is_expert)))
                 )
         logger.stepBookkeeping(rewards.numpy(), steps_lefts.numpy(), dones.numpy())
 
