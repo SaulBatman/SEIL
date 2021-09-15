@@ -20,20 +20,45 @@ def tieWeights(src, trg):
 class CURLSACEncoder(nn.Module):
     def __init__(self, input_shape=(2, 64, 64), output_dim=50):
         super().__init__()
-        self.conv = torch.nn.Sequential(
-            nn.Conv2d(input_shape[0], 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-            nn.Conv2d(256, 512, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Flatten(),
-        )
+        assert input_shape[1] in [64, 128]
+        if input_shape[1] == 128:
+            self.conv = torch.nn.Sequential(
+                # 128x128
+                nn.Conv2d(input_shape[0], 32, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                # 64x64
+                nn.Conv2d(32, 64, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                # 32x32
+                nn.Conv2d(64, 128, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                # 16x16
+                nn.Conv2d(128, 256, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                # 8x8
+                nn.Conv2d(256, 512, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Flatten(),
+            )
+        else:
+            self.conv = torch.nn.Sequential(
+                nn.Conv2d(input_shape[0], 64, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                nn.Conv2d(64, 128, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                nn.Conv2d(128, 256, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                nn.Conv2d(256, 512, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Flatten(),
+            )
 
         x = torch.randn([1] + list(input_shape))
         conv_out_dim = self.conv(x).reshape(-1).shape[-1]
