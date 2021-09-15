@@ -30,10 +30,7 @@ def createAgent(test=False):
         initialize = False
     else:
         initialize = True
-    if env in ['close_loop_block_reaching']:
-        n_p = 1
-    else:
-        n_p = 2
+    n_p = 2
     if not random_orientation:
         n_theta = 1
     else:
@@ -44,7 +41,7 @@ def createAgent(test=False):
         agent = DQNAgentFac(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p, n_theta=n_theta)
         if model == 'cnn':
             net = CNNFac(n_p=n_p, n_theta=n_theta).to(device)
-        elif model == 'equi_1':
+        elif model == 'equi':
             net = EquivariantCNNFac(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_2':
             net = EquivariantCNNFac2(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)

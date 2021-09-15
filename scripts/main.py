@@ -28,7 +28,7 @@ def set_seed(s):
     torch.backends.cudnn.benchmark = False
 
 def train_step(agent, replay_buffer, logger, p_beta_schedule):
-    if buffer_type.find('per') > -1:
+    if buffer_type[:3] == 'per':
         beta = p_beta_schedule.value(logger.num_training_steps)
         batch, weights, batch_idxes = replay_buffer.sample(batch_size, beta)
         loss, td_error = agent.update(batch)

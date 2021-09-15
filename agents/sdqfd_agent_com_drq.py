@@ -14,6 +14,13 @@ class SDQfDComDrQ(DQNAgentComDrQ):
 
     def calcMarginLoss(self):
         batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
+        action_idx = self.loss_calc_dict['M_action']
+        p_id = action_idx[:, 0]
+        dxy_id = action_idx[:, 1]
+        dz_id = action_idx[:, 2]
+        dtheta_id = action_idx[:, 3]
+        dense_id = dxy_id*self.n_z*self.n_theta*self.n_p+dz_id*self.n_theta*self.n_p+dtheta_id*self.n_p+p_id
+
         batch_size = batch_size * self.M
         is_experts = is_experts.repeat(self.M)
         q_output = self.loss_calc_dict['q_output']
@@ -30,7 +37,8 @@ class SDQfDComDrQ(DQNAgentComDrQ):
 
             qe = q_pred[j]
             q_all = q_output[j]
-            over = q_all[q_all > qe - self.margin_l]
+            ae_id = dense_id[j]
+            over = q_all[(q_all > qe - self.margin_l) * (torch.arange(0, q_all.shape[0]).to(self.device)!=ae_id)]
             if over.shape[0] == 0:
                 margin_losses.append(torch.tensor(0).float().to(q_output.device))
             else:
@@ -48,6 +56,8 @@ class SDQfDComDrQ(DQNAgentComDrQ):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+        self.targetSoftUpdate()
 
         self.loss_calc_dict = {}
 

@@ -25,6 +25,18 @@ class DQNBase(BaseAgent):
                                        [dx, -dy], [dx, 0], [dx, dy]])
         self.dz_range = torch.tensor([-dz, 0, dz])
 
+    def targetSoftUpdate(self):
+        """Soft-update: target = tau*local + (1-tau)*target."""
+        tau = 1e-2
+
+        for t_param, l_param in zip(
+                self.target_net.parameters(), self.policy_net.parameters()
+        ):
+            t_param.data.copy_(tau * l_param.data + (1.0 - tau) * t_param.data)
+
+    def updateTarget(self):
+        pass
+
     def forwardNetwork(self, state, obs, target_net=False, to_cpu=False):
         raise NotImplementedError
 
@@ -70,6 +82,8 @@ class DQNBase(BaseAgent):
         self.optimizer.zero_grad()
         td_loss.backward()
         self.optimizer.step()
+
+        self.targetSoftUpdate()
 
         self.loss_calc_dict = {}
 
