@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from utils.torch_utils import augmentTransition
 from itertools import repeat
+from utils.parameters import obs_type
 
 class BaseAgent:
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/32):
@@ -69,8 +70,9 @@ class BaseAgent:
         step_lefts_tensor = torch.tensor(np.stack(step_lefts)).to(self.device)
         is_experts_tensor = torch.tensor(np.stack(is_experts)).bool().to(self.device)
 
-        image_tensor = image_tensor/255*0.4
-        next_obs_tensor = next_obs_tensor/255*0.4
+        if obs_type is 'pixel':
+            image_tensor = image_tensor/255*0.4
+            next_obs_tensor = next_obs_tensor/255*0.4
 
         self.loss_calc_dict['batch_size'] = len(batch)
         self.loss_calc_dict['states'] = states_tensor

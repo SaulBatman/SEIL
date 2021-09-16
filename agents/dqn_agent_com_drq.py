@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from agents.dqn_agent_com import DQNAgentCom
 from utils import torch_utils
 from utils.torch_utils import augmentTransition
+from utils.parameters import obs_type
 
 class DQNAgentComDrQ(DQNAgentCom):
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/32, n_p=1, n_theta=1):
@@ -30,8 +31,9 @@ class DQNAgentComDrQ(DQNAgentCom):
         M_obs_tensor = torch.stack(M_obs).to(self.device)
         M_action_tensor = torch.stack(M_action).to(self.device)
 
-        K_next_obs_tensor = K_next_obs_tensor/255*0.4
-        M_obs_tensor = M_obs_tensor/255*0.4
+        if obs_type is 'pixel':
+            K_next_obs_tensor = K_next_obs_tensor/255*0.4
+            M_obs_tensor = M_obs_tensor/255*0.4
 
         self.loss_calc_dict['K_next_obs'] = K_next_obs_tensor
         self.loss_calc_dict['M_obs'] = M_obs_tensor

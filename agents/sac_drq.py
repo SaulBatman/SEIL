@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from utils.torch_utils import augmentTransition
+from utils.parameters import obs_type
 
 class SACDrQ(SAC):
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi / 16, n_a=5, tau=0.001,
@@ -33,8 +34,9 @@ class SACDrQ(SAC):
         M_obs_tensor = torch.cat([M_obs_tensor, states.reshape(states.size(0), 1, 1, 1).repeat(self.M, 1, M_obs_tensor.shape[2], M_obs_tensor.shape[3])], dim=1)
         M_action_tensor = torch.stack(M_action).to(self.device)
 
-        K_next_obs_tensor = K_next_obs_tensor/255*0.4
-        M_obs_tensor = M_obs_tensor/255*0.4
+        if obs_type is 'pixel':
+            K_next_obs_tensor = K_next_obs_tensor/255*0.4
+            M_obs_tensor = M_obs_tensor/255*0.4
 
         self.loss_calc_dict['K_next_obs'] = K_next_obs_tensor
         self.loss_calc_dict['M_obs'] = M_obs_tensor

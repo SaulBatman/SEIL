@@ -182,11 +182,12 @@ def train():
             states_, obs_, rewards, dones = planner_envs.step(planner_actions_star, auto_reset=True)
             steps_lefts = planner_envs.getStepLeft()
             for i in range(planner_num_process):
-                replay_buffer.add(
-                    normalizeTransition(ExpertTransition(states[i].numpy(), obs[i].numpy(), planner_actions_star_idx[i].numpy(),
-                                                         rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
-                                                         steps_lefts[i].numpy(), np.array(1)))
-                )
+                transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), planner_actions_star_idx[i].numpy(),
+                                              rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
+                                              steps_lefts[i].numpy(), np.array(1))
+                if obs_type == 'pixel':
+                    transition = normalizeTransition(transition)
+                replay_buffer.add(transition)
             states = copy.copy(states_)
             obs = copy.copy(obs_)
 
@@ -239,11 +240,12 @@ def train():
 
         if not alg[:2] == 'bc':
             for i in range(num_processes):
-                replay_buffer.add(
-                    normalizeTransition(ExpertTransition(states[i].numpy(), obs[i].numpy(), actions_star_idx[i].numpy(),
-                                                         rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
-                                                         steps_lefts[i].numpy(), np.array(is_expert)))
-                )
+                transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), actions_star_idx[i].numpy(),
+                                              rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
+                                              steps_lefts[i].numpy(), np.array(is_expert))
+                if obs_type == 'pixel':
+                    transition = normalizeTransition(transition)
+                replay_buffer.add(transition)
         logger.stepBookkeeping(rewards.numpy(), steps_lefts.numpy(), dones.numpy())
 
         states = copy.copy(states_)
