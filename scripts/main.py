@@ -46,7 +46,7 @@ def train_step(agent, replay_buffer, logger, p_beta_schedule):
         agent.updateTarget()
 
 def preTrainCURLStep(agent, replay_buffer, logger):
-    if buffer_type.find('per') > -1:
+    if buffer_type[:3] == 'per':
         batch, weights, batch_idxes = replay_buffer.sample(batch_size, per_beta)
     else:
         batch = replay_buffer.sample(batch_size)

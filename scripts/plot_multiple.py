@@ -62,13 +62,37 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
         color_map = {}
     else:
         color_map = {
+            'equi+bufferaug': 'b',
+            'equi': 'b',
+            'cnn+bufferaug': 'g',
+            'cnn': 'g',
+            'cnn+rad': 'r',
+            'cnn+drq': 'purple',
+            'cnn+curl': 'orange',
         }
 
     linestyle_map = {
-    }
-    name_map = {}
 
-    sequence = {}
+    }
+    name_map = {
+        'equi+bufferaug': 'Equivariant',
+        'equi': 'Equivariant',
+        'cnn+bufferaug': 'CNN',
+        'cnn': 'CNN',
+        'cnn+rad': 'RAD',
+        'cnn+drq': 'DrQ',
+        'cnn+curl': 'FERM',
+    }
+
+    sequence = {
+        'equi+bufferaug': '0',
+        'equi': '0',
+        'cnn+bufferaug': '1',
+        'cnn': '1',
+        'cnn+rad': '2',
+        'cnn+drq': '3',
+        'cnn+curl': '4',
+    }
 
     i = 0
     methods = filter(lambda x: x[0] != '.', get_immediate_subdirectories(base))
@@ -92,7 +116,7 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
     plt.legend(loc=0, facecolor='w', fontsize='x-large')
     plt.xlabel('number of training steps')
     # if base.find('bbp') > -1:
-    plt.ylabel('discounted reward')
+    plt.ylabel('eval discounted reward')
     # plt.xlim((-100, step+100))
     # plt.yticks(np.arange(0., 1.05, 0.1))
 
@@ -119,80 +143,22 @@ def plotLearningCurve(base, ep=50000, use_default_cm=False, window=1000):
         color_map = {}
     else:
         color_map = {
-            'equi+equi': 'b',
-            'cnn+cnn': 'g',
-            'tp': 'r',
-            'equi_fcn_asr': 'purple',
-            'cnn+cnn+aug': 'orange',
-
-            'equi+deictic': 'purple',
-            'cnn+deictic': 'r',
-
-            'equi_fcn': 'b',
-            'fcn_si': 'g',
-            'fcn_si_aug': 'orange',
-            'fcn': 'purple',
-
-            'q1_equi+q2_equi': 'b',
-            'q1_equi+q2_cnn': 'g',
-            'q1_cnn+q2_equi': 'r',
-            'q1_cnn+q2_cnn': 'purple',
-
-            'q1_equi+q2_deictic': 'g',
-            'q1_cnn+q2_deictic': 'r',
-
-
-            'df': 'b',
-            'exp': 'g',
-
-            'equi_fcn_': 'g',
-
-            '5l_equi_equi': 'b',
-            '5l_equi_deictic': 'g',
-            '5l_equi_cnn': 'r',
-            '5l_cnn_cnn': 'purple',
-            '5l_cnn_deictic': 'orange',
-            '5l_cnn_equi': 'y',
-
+            'equi+bufferaug': 'b',
+            'cnn+bufferaug': 'g',
+            'cnn+rad': 'r',
+            'cnn+drq': 'purple',
+            'cnn+curl': 'orange',
         }
 
     linestyle_map = {
 
     }
     name_map = {
-        'equi+equi': 'Equivariant ASR',
-        'cnn+cnn': 'Conventional ASR',
-        'cnn+cnn+aug': 'Soft Equivariant ASR',
-        'equi_fcn_asr': 'Equivariant FCN',
-        'tp': 'Transporter',
-
-        '5l_equi_equi': 'Equi+Equi+Deic',
-        '5l_equi_deictic': 'Equi+Deic+Deic',
-        '5l_equi_cnn': 'Equi+Conv+Conv',
-        '5l_cnn_equi': 'Conv+Equi+Deic',
-        '5l_cnn_deictic': 'Conv+Deic+Deic',
-        '5l_cnn_cnn': 'Conv+Conv+Conv',
-
-        'equi+deictic': 'Equivariant Deictic ASR',
-        'cnn+deictic': 'Conventional Deictic ASR',
-
-        'equi_fcn': 'Equivariant FCN',
-        'fcn_si': 'Conventional FCN',
-        'fcn_si_aug': 'Soft Equivariant FCN',
-        'fcn': 'Rot FCN',
-
-        'q1_equi+q2_equi': 'Equivariant q1 + Equivariant q2',
-        'q1_equi+q2_cnn': 'Equivariant q1 + Conventional q2',
-        'q1_cnn+q2_equi': 'Conventional q1 + Equivariant q2',
-        'q1_cnn+q2_cnn': 'Conventional q1 + Conventional q2',
-
-        'df': 'Dynamic Filter',
-        'exp': 'Lift Expansion',
-
-        'equi_fcn_': 'Equivariant FCN',
-
-        'q1_equi+q2_deictic': 'Equivariant q1 + Deictic q2',
-        'q1_cnn+q2_deictic': 'Conventional q1 + Deictic q2',
+        'equi+bufferaug': 'Equivariant',
+        'cnn+bufferaug': 'CNN',
+        'cnn+rad': 'RAD',
+        'cnn+drq': 'DrQ',
+        'cnn+curl': 'FERM',
     }
 
     sequence = {
@@ -396,7 +362,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop/0914_500/h1'
+    base = '/media/dian/hdd/mrun_results/close_loop/0915_sdqfd/bs'
     plotLearningCurve(base, 2000, window=100)
     plotEvalCurve(base, 20000, freq=500)
     showPerformance(base)

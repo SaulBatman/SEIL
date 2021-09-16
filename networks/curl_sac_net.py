@@ -160,6 +160,24 @@ class CURLSACGaussianPolicy(nn.Module):
         mean = torch.tanh(mean) * self.action_scale + self.action_bias
         return action, log_prob, mean
 
+class CURLCNNCom(nn.Module):
+    def __init__(self, encoder, encoder_output_dim=50, hidden_dim=1024, n_p=2, n_theta=1):
+        super().__init__()
+        self.encoder = encoder
+        self.fc = torch.nn.Sequential(
+            torch.nn.Linear(encoder_output_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            torch.nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            torch.nn.Linear(hidden_dim, 9 * 3 * n_theta * n_p)
+        )
+
+        self.apply(torch_utils.weights_init)
+
+    def forward(self, x, detach_encoder=False):
+        x = self.encoder(x, detach=detach_encoder)
+        q = self.fc(x)
+        return q
 
 class CURL(nn.Module):
     """

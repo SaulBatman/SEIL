@@ -4,6 +4,8 @@ from agents.dqn_agent_com import DQNAgentCom
 from agents.dqn_agent_com_drq import DQNAgentComDrQ
 from agents.sdqfd_agent_com import SDQfDCom
 from agents.sdqfd_agent_com_drq import SDQfDComDrQ
+from agents.curl_dqn_com import CURLDQNCom
+from agents.curl_sdqfd_com import CURLSDQfDCom
 from networks.cnn import CNNFac, CNNCom
 from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, EquivariantCNNFac3, EquivariantCNNCom, EquivariantCNNCom2
 
@@ -21,7 +23,7 @@ from agents.sacfd_drq import SACfDDrQ
 from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy
 from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
-from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy
+from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy, CURLCNNCom
 
 def createAgent(test=False):
     print('initializing agent')
@@ -71,6 +73,21 @@ def createAgent(test=False):
         else:
             raise NotImplementedError
         agent.initNetwork(net, initialize_target=not test)
+
+    elif alg in ['curl_dqn_com', 'curl_sdqfd_com']:
+        if alg == 'curl_dqn_com':
+            agent = CURLDQNCom(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
+                               n_theta=n_theta, crop_size=curl_crop_size)
+        elif alg == 'curl_sdqfd_com':
+            agent = CURLSDQfDCom(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
+                                 n_theta=n_theta, crop_size=curl_crop_size, l=margin_l, w=margin_weight)
+        else:
+            raise NotImplementedError
+        if model == 'cnn':
+            net = CURLCNNCom(CURLSACEncoder((obs_channel, curl_crop_size, curl_crop_size)).to(device), n_p=n_p, n_theta=n_theta).to(device)
+        else:
+            raise NotImplementedError
+        agent.initNetwork(net)
 
     elif alg == 'ddpg':
         ddpg_lr = (actor_lr, critic_lr)
