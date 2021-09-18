@@ -273,6 +273,53 @@ def perturb(current_image, next_image, dxy, set_theta_zero=False, set_trans_zero
 
     return current_image, next_image, rotated_dxy, transform_params
 
+def perturbVec(current_state, next_state, dxy, set_theta_zero=False, set_trans_zero=False):
+    assert not set_theta_zero
+    assert set_trans_zero
+
+    aug_current_state = current_state.copy()
+    aug_next_state = next_state.copy()
+
+    n_pose = (current_state.shape[0] - 1) // 4
+
+    theta = np.random.random() * 2 * np.pi - np.pi
+    rot = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+
+    rotated_dxy = rot.dot(dxy)
+    rotated_dxy = np.clip(rotated_dxy, -1, 1)
+
+    for i in range(n_pose):
+        aug_current_state[1+i*4: 1+i*4+2] = rot.dot(current_state[1+i*4: 1+i*4+2])
+        aug_next_state[1+i*4: 1+i*4+2] = rot.dot(next_state[1+i*4: 1+i*4+2])
+
+        scaled_current_theta = current_state[1+i*4+3]
+        unscaled_current_theta = (scaled_current_theta+1) * np.pi
+        unscaled_aug_current_theta = unscaled_current_theta + theta
+        if unscaled_aug_current_theta > np.pi:
+            unscaled_aug_current_theta -= 2* np.pi
+        if unscaled_aug_current_theta < -np.pi:
+            unscaled_aug_current_theta += 2* np.pi
+        aug_current_state[1 + i * 4 + 3] = 2 * (unscaled_aug_current_theta - -np.pi) / (2*np.pi) - 1
+
+        scaled_next_theta = next_state[1+i*4+3]
+        unscaled_next_theta = (scaled_next_theta+1) * np.pi
+        unscaled_aug_next_theta = unscaled_next_theta + theta
+        if unscaled_aug_next_theta > np.pi:
+            unscaled_aug_next_theta -= 2* np.pi
+        if unscaled_aug_next_theta < -np.pi:
+            unscaled_aug_next_theta += 2* np.pi
+        aug_next_state[1 + i * 4 + 3] = 2 * (unscaled_aug_next_theta - -np.pi) / (2*np.pi) - 1
+
+
+        # aug_current_state[1+i*4+3] = (current_state[1+i*4+3]+1) * np.pi + theta
+        # if aug_current_state[1+i*4+3] > np.pi:
+        #     aug_current_state[1 + i * 4 + 3] -= 2* np.pi
+        # if aug_current_state[1+i*4+3] < -np.pi:
+        #     aug_current_state[1 + i * 4 + 3] += 2* np.pi
+        # aug_next_state[1+i*4+3] = next_state[1+i*4+3] + theta
+
+    return aug_current_state, aug_next_state, rotated_dxy, theta
+
 def augmentDQNTransitionC4(d):
     t1_map = np.array([6, 3, 0,
                        7, 4, 1,
@@ -348,6 +395,16 @@ def augmentTransitionTranslate(d):
     return ExpertTransition(d.state, obs, d.action, d.reward, d.next_state,
                             next_obs, d.done, d.step_left, d.expert)
 
+def augmentTransitionCnVec(d):
+    obs, next_obs, dxy, transform_params = perturbVec(d.obs.copy(),
+                                                      d.next_obs.copy(),
+                                                      d.action[1:3].copy(),
+                                                      set_trans_zero=True)
+    action = d.action.copy()
+    action[1] = dxy[0]
+    action[2] = dxy[1]
+    return ExpertTransition(d.state, obs, action, d.reward, d.next_state,
+                            next_obs, d.done, d.step_left, d.expert)
 
 def augmentTransition(d, aug_type):
     if aug_type == 'se2':
@@ -358,6 +415,8 @@ def augmentTransition(d, aug_type):
         return augmentTransitionTranslate(d)
     elif aug_type == 'dqn_c4':
         return augmentDQNTransitionC4(d)
+    elif aug_type == 'cn_vec':
+        return augmentTransitionCnVec(d)
     else:
         raise NotImplementedError
 
