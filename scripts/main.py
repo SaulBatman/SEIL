@@ -10,6 +10,7 @@ sys.path.append('..')
 from utils.parameters import *
 from storage.buffer import QLearningBufferExpert, QLearningBuffer
 from storage.per_buffer import PrioritizedQLearningBuffer, EXPERT, NORMAL
+from storage.aug_buffer import QLearningBufferAug
 from storage.per_aug_buffer import PrioritizedQLearningBufferAug
 from utils.logger import Logger
 from utils.schedules import LinearSchedule
@@ -136,6 +137,8 @@ def train():
         replay_buffer = QLearningBufferExpert(buffer_size)
     elif buffer_type == 'normal':
         replay_buffer = QLearningBuffer(buffer_size)
+    elif buffer_type == 'aug':
+        replay_buffer = QLearningBufferAug(buffer_size, aug_n=buffer_aug_n)
     elif buffer_type == 'per_expert_aug':
         replay_buffer = PrioritizedQLearningBufferAug(buffer_size, per_alpha, EXPERT, aug_n=buffer_aug_n)
     else:

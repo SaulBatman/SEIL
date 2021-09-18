@@ -78,7 +78,7 @@ margin_group.add_argument('--margin_weight', type=float, default=0.1)
 margin_group.add_argument('--margin_beta', type=float, default=100)
 
 buffer_group = parser.add_argument_group('buffer')
-buffer_group.add_argument('--buffer', default='normal', choices=['normal', 'per', 'expert', 'per_expert', 'per_expert_aug'])
+buffer_group.add_argument('--buffer', default='normal', choices=['normal', 'per', 'expert', 'per_expert', 'aug', 'per_expert_aug'])
 buffer_group.add_argument('--per_eps', type=float, default=1e-6, help='Epsilon parameter for PER')
 buffer_group.add_argument('--per_alpha', type=float, default=0.6, help='Alpha parameter for PER')
 buffer_group.add_argument('--per_beta', type=float, default=0.4, help='Initial beta parameter for PER')
