@@ -63,6 +63,7 @@ training_group.add_argument('--demon_w', type=float, default=1)
 training_group.add_argument('--equi_n', type=int, default=4)
 training_group.add_argument('--n_hidden', type=int, default=128)
 training_group.add_argument('--curl_crop_size', type=int, default=128)
+training_group.add_argument('--curl_z', type=int, default=50)
 training_group.add_argument('--aug', type=strToBool, default=False)
 training_group.add_argument('--aug_type', type=str, choices=['se2', 'cn', 't', 'dqn_c4', 'cn_vec'], default='cn')
 training_group.add_argument('--buffer_aug_n', type=int, default=4)
@@ -171,6 +172,7 @@ equi_n = args.equi_n
 n_hidden = args.n_hidden
 
 curl_crop_size = args.curl_crop_size
+curl_z = args.curl_z
 
 aug = args.aug
 aug_type = args.aug_type

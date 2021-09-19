@@ -77,14 +77,14 @@ def createAgent(test=False):
     elif alg in ['curl_dqn_com', 'curl_sdqfd_com']:
         if alg == 'curl_dqn_com':
             agent = CURLDQNCom(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
-                               n_theta=n_theta, crop_size=curl_crop_size)
+                               n_theta=n_theta, z_dim=curl_z, crop_size=curl_crop_size)
         elif alg == 'curl_sdqfd_com':
             agent = CURLSDQfDCom(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
-                                 n_theta=n_theta, crop_size=curl_crop_size, l=margin_l, w=margin_weight)
+                                 n_theta=n_theta, z_dim=curl_z, crop_size=curl_crop_size, l=margin_l, w=margin_weight)
         else:
             raise NotImplementedError
         if model == 'cnn':
-            net = CURLCNNCom(CURLSACEncoder((obs_channel, curl_crop_size, curl_crop_size)).to(device), n_p=n_p, n_theta=n_theta).to(device)
+            net = CURLCNNCom(CURLSACEncoder((obs_channel, curl_crop_size, curl_crop_size), output_dim=curl_z).to(device), encoder_output_dim=curl_z, n_p=n_p, n_theta=n_theta).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(net)
