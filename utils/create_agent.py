@@ -24,6 +24,7 @@ from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SAC
 from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
 from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy, CURLCNNCom
+from networks.cnn import DQNComCURL
 
 def createAgent(test=False):
     print('initializing agent')
@@ -77,14 +78,12 @@ def createAgent(test=False):
     elif alg in ['curl_dqn_com', 'curl_sdqfd_com']:
         if alg == 'curl_dqn_com':
             agent = CURLDQNCom(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
-                               n_theta=n_theta, z_dim=curl_z, crop_size=curl_crop_size)
-        elif alg == 'curl_sdqfd_com':
-            agent = CURLSDQfDCom(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
-                                 n_theta=n_theta, z_dim=curl_z, crop_size=curl_crop_size, l=margin_l, w=margin_weight)
+                               n_theta=n_theta)
         else:
             raise NotImplementedError
         if model == 'cnn':
-            net = CURLCNNCom(CURLSACEncoder((obs_channel, curl_crop_size, curl_crop_size), output_dim=curl_z).to(device), encoder_output_dim=curl_z, n_p=n_p, n_theta=n_theta).to(device)
+            # net = CURLCNNCom(CURLSACEncoder((obs_channel, curl_crop_size, curl_crop_size), output_dim=curl_z).to(device), encoder_output_dim=curl_z, n_p=n_p, n_theta=n_theta).to(device)
+            net = DQNComCURL(n_p, n_theta, curl_z=128).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(net)

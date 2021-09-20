@@ -5,81 +5,57 @@ import torch.nn.functional as F
 from copy import deepcopy
 from networks.curl_sac_net import CURL
 from utils.torch_utils import randomCrop, centerCrop
+# import kornia.augmentation as aug
+import torch.nn as nn
+
+# random_shift = nn.Sequential(aug.RandomCrop((124, 124)), nn.ReplicationPad2d(4), aug.RandomCrop((128, 128)))
+# aug = random_shift
 
 class CURLDQNCom(DQNAgentCom):
-    def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/32, n_p=1, n_theta=1, z_dim=50, crop_size=64):
+    def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/32, n_p=1, n_theta=1):
         super().__init__(lr, gamma, device, dx, dy, dz, dr, n_p, n_theta)
-        self.z_dim = z_dim
-        self.crop_size = crop_size
-        self.encoder_optimizer = None
-        self.curl = None
-        self.curl_optimizer = None
+        self.momentum_net = None
+        # self.coeff = 1
+        self.coeff = 0.01
+        self.crop_size = 128
 
-        self.encoder_tau = 0.05
+    def initialize_momentum_net(self):
+        for param_q, param_k in zip(self.policy_net.parameters(), self.momentum_net.parameters()):
+            param_k.data.copy_(param_q.data)  # update
+            param_k.requires_grad = False  # not update by gradient
 
-    def encoderTargetSoftUpdate(self):
-        """Soft-update: target = tau*local + (1-tau)*target."""
-        for t_param, l_param in zip(
-                self.target_net.encoder.parameters(), self.policy_net.encoder.parameters()
-        ):
-            t_param.data.copy_(self.encoder_tau * l_param.data + (1.0 - self.encoder_tau) * t_param.data)
-
-    def targetSoftUpdate(self):
-        super().targetSoftUpdate()
-        self.encoderTargetSoftUpdate()
+    # Code for this function from https://github.com/facebookresearch/moco
+    @torch.no_grad()
+    def update_momentum_net(self, momentum=0.999):
+        for param_q, param_k in zip(self.policy_net.parameters(), self.momentum_net.parameters()):
+            param_k.data.copy_(momentum * param_k.data + (1. - momentum) * param_q.data)  # update
 
     def initNetwork(self, network, initialize_target=True):
         self.policy_net = network
         self.target_net = deepcopy(network)
+        self.momentum_net = deepcopy(network)
+        self.initialize_momentum_net()
 
         self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=self.lr)
-        self.encoder_optimizer = torch.optim.Adam(self.policy_net.encoder.parameters(), lr=self.lr)
-
-        self.curl = CURL(self.z_dim, self.policy_net.encoder, self.target_net.encoder).to(self.device)
-        self.curl_optimizer = torch.optim.Adam(self.curl.parameters(), lr=self.lr)
-
-        self.target_networks.append(self.target_net)
 
         self.networks.append(self.policy_net)
-        self.networks.append(self.curl)
+
+        self.target_networks.append(self.target_net)
+        self.target_networks.append(self.momentum_net)
 
         self.optimizers.append(self.optimizer)
-        self.optimizers.append(self.encoder_optimizer)
-        self.optimizers.append(self.curl_optimizer)
 
-    def updateCURL(self, update_target=False):
-        batch_size, states, obs, action, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
-        obs_anchor = randomCrop(obs, out=self.crop_size)
-        obs_pos = randomCrop(obs, out=self.crop_size)
+        for param in self.target_net.parameters():
+            param.requires_grad = False
 
-        state_tile = states.reshape(states.size(0), 1, 1, 1).repeat(1, 1, self.crop_size, self.crop_size)
-        obs_anchor = torch.cat([obs_anchor, state_tile], dim=1)
-        obs_pos = torch.cat([obs_pos, state_tile], dim=1)
-
-        z_a = self.curl.encode(obs_anchor)
-        z_pos = self.curl.encode(obs_pos, ema=True)
-
-        logits = self.curl.compute_logits(z_a, z_pos)
-        labels = torch.arange(logits.shape[0]).long().to(self.device)
-        loss = F.cross_entropy(logits, labels)
-
-        self.encoder_optimizer.zero_grad()
-        self.curl_optimizer.zero_grad()
-        loss.backward()
-
-        self.encoder_optimizer.step()
-        self.curl_optimizer.step()
-
-        if update_target:
-            self.encoderTargetSoftUpdate()
-
-        return loss
+        for param in self.momentum_net.parameters():
+            param.requires_grad = False
 
     def getEGreedyActions(self, state, obs, eps):
         obs = centerCrop(obs, out=self.crop_size)
         return super().getEGreedyActions(state, obs, eps)
 
-    def forwardNetworkDetachEncoder(self, state, obs, target_net=False, to_cpu=False):
+    def forwardNetwork(self, state, obs, target_net=False, to_cpu=False):
         if target_net:
             net = self.target_net
         else:
@@ -87,22 +63,42 @@ class CURLDQNCom(DQNAgentCom):
 
         state_tile = state.reshape(state.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])
         stacked = torch.cat([obs, state_tile], dim=1)
-        q = net(stacked.to(self.device), detach_encoder=True)
+        q, h = net(stacked.to(self.device))
         if to_cpu:
             q = q.to('cpu')
         q = q.reshape(state.shape[0], self.n_xy, self.n_z, self.n_theta, self.n_p)
         return q
 
-    def updateCURLOnly(self, batch):
-        self._loadBatchToDevice(batch)
-        curl_loss = self.updateCURL(update_target=True)
-        return 0, curl_loss.item()
+    def forwardPolicyNetWithH(self, state, obs, to_cpu=False):
+        state_tile = state.reshape(state.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])
+        stacked = torch.cat([obs, state_tile], dim=1)
+        q, h = self.policy_net(stacked.to(self.device))
+        if to_cpu:
+            q = q.to('cpu')
+        q = q.reshape(state.shape[0], self.n_xy, self.n_z, self.n_theta, self.n_p)
+        return q, h
+
+    def forwardMomentumNetWithH(self, state, obs, to_cpu=False):
+        state_tile = state.reshape(state.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])
+        stacked = torch.cat([obs, state_tile], dim=1)
+        q, h = self.momentum_net(stacked.to(self.device))
+        if to_cpu:
+            q = q.to('cpu')
+        q = q.reshape(state.shape[0], self.n_xy, self.n_z, self.n_theta, self.n_p)
+        return q, h
 
     def update(self, batch):
         self._loadBatchToDevice(batch)
         batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
-        next_obs = randomCrop(next_obs, out=self.crop_size)
-        obs = randomCrop(obs, out=self.crop_size)
+
+        # aug_obs_1 = aug(obs)
+        # aug_obs_2 = aug(obs)
+
+        aug_obs_1 = randomCrop(obs, out=self.crop_size)
+        aug_obs_2 = randomCrop(obs, out=self.crop_size)
+        obs = centerCrop(obs, out=self.crop_size)
+        next_obs = centerCrop(next_obs, out=self.crop_size)
+
         p_id = action_idx[:, 0]
         dxy_id = action_idx[:, 1]
         dz_id = action_idx[:, 2]
@@ -113,22 +109,34 @@ class CURLDQNCom(DQNAgentCom):
             q_prime = q_all_prime.reshape(batch_size, -1).max(1)[0]
             q_target = rewards + self.gamma * q_prime * non_final_masks
 
-        q = self.forwardNetworkDetachEncoder(states, obs)
+        q = self.forwardNetwork(states, obs)
+
+        _, z_anch = self.forwardPolicyNetWithH(states, aug_obs_1)
+        _, z_target = self.forwardMomentumNetWithH(states, aug_obs_2)
+        z_proj = torch.matmul(self.policy_net.W, z_target.T)
+        logits = torch.matmul(z_anch, z_proj)
+        logits = (logits - torch.max(logits, 1)[0][:, None])
+        logits = logits * 0.1
+        labels = torch.arange(logits.shape[0]).long().to(self.device)
+        moco_loss = (nn.CrossEntropyLoss()(logits, labels)).to(self.device)
+
         q_pred = q[torch.arange(batch_size), dxy_id, dz_id, dtheta_id, p_id]
         self.loss_calc_dict['q_output'] = q
         self.loss_calc_dict['q_pred'] = q_pred
         td_loss = F.smooth_l1_loss(q_pred, q_target)
-        with torch.no_grad():
-            td_error = torch.abs(q_pred - q_target)
+
+        loss = td_loss + (moco_loss * self.coeff)
+
         self.optimizer.zero_grad()
-        td_loss.backward()
+        loss.backward()
         self.optimizer.step()
 
         self.targetSoftUpdate()
-
-        curl_loss = self.updateCURL(update_target=False)
+        self.update_momentum_net()
 
         self.loss_calc_dict = {}
 
+        with torch.no_grad():
+            td_error = torch.abs(q_pred - q_target)
 
-        return (td_loss.item(), curl_loss.item()), td_error
+        return (td_loss.item(), moco_loss.item()), td_error
