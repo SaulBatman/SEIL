@@ -119,12 +119,10 @@ def createAgent(test=False):
                           target_update_interval=1, automatic_entropy_tuning=True, obs_type=obs_type,
                           demon_w=demon_w, demon_l='mean')
         elif alg == 'sac_drq':
-            assert obs_type is 'pixel'
             agent = SACDrQ(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
                            n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
-                           target_update_interval=1, automatic_entropy_tuning=True)
+                           target_update_interval=1, automatic_entropy_tuning=True, obs_type=obs_type)
         elif alg == 'sacfd_drq':
-            assert obs_type is 'pixel'
             agent = SACfDDrQ(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
                              n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
                              target_update_interval=1, automatic_entropy_tuning=True, obs_type=obs_type,

@@ -70,6 +70,11 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
             'cnn+drq': 'purple',
             'cnn+curl': 'orange',
             'curl': 'orange',
+
+            'equi_both': 'b',
+            'equi_actor': 'r',
+            'equi_critic': 'purple',
+            'cnn_both': 'g',
         }
 
     linestyle_map = {
@@ -84,6 +89,11 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
         'cnn+drq': 'DrQ',
         'cnn+curl': 'FERM',
         'curl': 'CURL',
+
+        'equi_both': 'Equi Actor + Equi Critic',
+        'equi_actor': 'Equi Actor + CNN Critic',
+        'equi_critic': 'CNN Actor + Equi Critic',
+        'cnn_both': 'CNN Actor + CNN Critic',
     }
 
     sequence = {
@@ -95,6 +105,11 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
         'cnn+drq': '3',
         'cnn+curl': '4',
         'curl': '4',
+
+        'equi_both': '0',
+        'equi_actor': '1',
+        'equi_critic': '2',
+        'cnn_both': '3',
     }
 
     i = 0
@@ -365,7 +380,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop/0919_dqn/bpull'
+    base = '/media/dian/hdd/mrun_results/close_loop/0919_sacfd_vec/h1'
     plotLearningCurve(base, 2000, window=100)
     plotEvalCurve(base, 20000, freq=500)
     showPerformance(base)
