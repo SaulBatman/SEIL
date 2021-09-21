@@ -8,6 +8,7 @@ from torch.autograd import Variable
 import numpy as np
 import cv2
 import collections
+from utils.parameters import crop_size
 
 from collections import OrderedDict
 from scipy.ndimage import affine_transform
@@ -406,6 +407,37 @@ def augmentTransitionCnVec(d):
     return ExpertTransition(d.state, obs, action, d.reward, d.next_state,
                             next_obs, d.done, d.step_left, d.expert)
 
+def augmentTransitionShift(d):
+    obs = d.obs[0]
+    next_obs = d.next_obs[0]
+    heightmap_size = obs.shape[-1]
+    padded_obs = np.pad(obs, [4, 4], mode='edge')
+    padded_next_obs = np.pad(next_obs, [4, 4], mode='edge')
+    mag_x = np.random.randint(8)
+    mag_y = np.random.randint(8)
+    obs = padded_obs[mag_x:mag_x + heightmap_size, mag_y:mag_y + heightmap_size]
+    next_obs = padded_next_obs[mag_x:mag_x + heightmap_size, mag_y:mag_y + heightmap_size]
+    obs = obs.reshape(1, *obs.shape)
+    next_obs = next_obs.reshape(1, *next_obs.shape)
+    return ExpertTransition(d.state, obs, d.action, d.reward, d.next_state,
+                            next_obs, d.done, d.step_left, d.expert)
+
+def augmentTransitionCrop(d):
+    obs = d.obs[0]
+    next_obs = d.next_obs[0]
+    heightmap_size = obs.shape[-1]
+
+    crop_max = heightmap_size - crop_size + 1
+    w1 = np.random.randint(0, crop_max)
+    h1 = np.random.randint(0, crop_max)
+    obs = obs[w1:w1 + crop_size, h1:h1 + crop_size]
+    next_obs = next_obs[w1:w1 + crop_size, h1:h1 + crop_size]
+    obs = obs.reshape(1, *obs.shape)
+    next_obs = next_obs.reshape(1, *next_obs.shape)
+    return ExpertTransition(d.state, obs, d.action, d.reward, d.next_state,
+                            next_obs, d.done, d.step_left, d.expert)
+
+
 def augmentTransition(d, aug_type):
     if aug_type == 'se2':
         return augmentTransitionSE2(d)
@@ -417,6 +449,10 @@ def augmentTransition(d, aug_type):
         return augmentDQNTransitionC4(d)
     elif aug_type == 'cn_vec':
         return augmentTransitionCnVec(d)
+    elif aug_type == 'shift':
+        return augmentTransitionShift(d)
+    elif aug_type == 'crop':
+        return augmentTransitionCrop(d)
     else:
         raise NotImplementedError
 

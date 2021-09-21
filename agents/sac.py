@@ -3,6 +3,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from copy import deepcopy
+from utils.parameters import heightmap_size, crop_size
+from utils.torch_utils import centerCrop
+
 
 class SAC(A2CBase):
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/16, n_a=5, tau=0.001,
@@ -73,6 +76,8 @@ class SAC(A2CBase):
             if self.obs_type is 'pixel':
                 state_tile = state.reshape(state.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])
                 obs = torch.cat([obs, state_tile], dim=1).to(self.device)
+                if heightmap_size > crop_size:
+                    obs = centerCrop(obs, out=crop_size)
             else:
                 obs = obs.to(self.device)
 

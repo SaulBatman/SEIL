@@ -131,30 +131,30 @@ def createAgent(test=False):
         # pixel observation
         if obs_type == 'pixel':
             if model == 'cnn':
-                actor = SACGaussianPolicy((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
-                critic = SACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
+                actor = SACGaussianPolicy((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
+                critic = SACCritic((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
             elif model == 'equi_actor':
-                actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
-                critic = SACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
+                actor = EquivariantSACActor((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+                critic = SACCritic((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
             elif model == 'equi_critic':
-                actor = SACGaussianPolicy((obs_channel, heightmap_size, heightmap_size), len(action_sequence)).to(device)
-                critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+                actor = SACGaussianPolicy((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
+                critic = EquivariantSACCritic((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
             elif model == 'equi_both':
-                actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
-                critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+                actor = EquivariantSACActor((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+                critic = EquivariantSACCritic((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
             elif model == 'equi_both_2':
-                actor = EquivariantSACActor2((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize,
+                actor = EquivariantSACActor2((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize,
                                              N=equi_n).to(device)
-                critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize,
+                critic = EquivariantSACCritic((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize,
                                               N=equi_n).to(device)
             elif model == 'equi_both_enc_2':
-                actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence),
+                actor = EquivariantSACActor((obs_channel, crop_size, crop_size), len(action_sequence),
                                             n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
-                critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence),
+                critic = EquivariantSACCritic((obs_channel, crop_size, crop_size), len(action_sequence),
                                               n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
             elif model == 'equi_both_nogp':
-                actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
-                critic = EquivariantSACCriticNoGP((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+                actor = EquivariantSACActor((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+                critic = EquivariantSACCriticNoGP((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
             else:
                 raise NotImplementedError
         # vector observation
@@ -178,9 +178,9 @@ def createAgent(test=False):
                                           n_a=len(action_sequence))
 
         if model == 'equi':
-            policy = EquivariantPolicy((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+            policy = EquivariantPolicy((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
         elif model == 'equi_enc_2':
-            policy = EquivariantPolicy((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
+            policy = EquivariantPolicy((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
         elif model == 'cnn':
             policy = Actor(len(action_sequence)).to(device)
         else:
@@ -192,22 +192,22 @@ def createAgent(test=False):
         if alg == 'curl_sac':
             agent = CURLSAC(lr=curl_sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
                             tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True,
-                            crop_size=curl_crop_size)
+                            crop_size=crop_size)
         elif alg == 'curl_sacfd':
             agent = CURLSACfD(lr=curl_sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
                               n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
-                              target_update_interval=1, automatic_entropy_tuning=True, crop_size=curl_crop_size,
+                              target_update_interval=1, automatic_entropy_tuning=True, crop_size=crop_size,
                               demon_w=demon_w, demon_l='pi')
         elif alg == 'curl_sacfd_mean':
             agent = CURLSACfD(lr=curl_sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
                               n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
-                              target_update_interval=1, automatic_entropy_tuning=True, crop_size=curl_crop_size,
+                              target_update_interval=1, automatic_entropy_tuning=True, crop_size=crop_size,
                               demon_w=demon_w, demon_l='mean')
         else:
             raise NotImplementedError
         if model == 'cnn':
-            actor = CURLSACGaussianPolicy(CURLSACEncoder((obs_channel, curl_crop_size, curl_crop_size)).to(device), action_dim=len(action_sequence)).to(device)
-            critic = CURLSACCritic(CURLSACEncoder((obs_channel, curl_crop_size, curl_crop_size)).to(device), action_dim=len(action_sequence)).to(device)
+            actor = CURLSACGaussianPolicy(CURLSACEncoder((obs_channel, crop_size, crop_size)).to(device), action_dim=len(action_sequence)).to(device)
+            critic = CURLSACCritic(CURLSACEncoder((obs_channel, crop_size, crop_size)).to(device), action_dim=len(action_sequence)).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(actor, critic)
