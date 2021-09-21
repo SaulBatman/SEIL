@@ -21,7 +21,7 @@ from agents.bc_continuous import BehaviorCloningContinuous
 from agents.sac_drq import SACDrQ
 from agents.sacfd_drq import SACfDDrQ
 from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy
-from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy
+from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy, EquivariantSACCriticNoGP
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
 from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy, CURLCNNCom
 from networks.cnn import DQNComCURL
@@ -152,6 +152,9 @@ def createAgent(test=False):
                                             n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
                 critic = EquivariantSACCritic((obs_channel, heightmap_size, heightmap_size), len(action_sequence),
                                               n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
+            elif model == 'equi_both_nogp':
+                actor = EquivariantSACActor((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+                critic = EquivariantSACCriticNoGP((obs_channel, heightmap_size, heightmap_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
             else:
                 raise NotImplementedError
         # vector observation
