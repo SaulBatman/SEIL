@@ -68,7 +68,7 @@ training_group.add_argument('--aug', type=strToBool, default=False)
 training_group.add_argument('--buffer_aug_type', type=str, choices=['se2', 'cn', 't', 'dqn_c4', 'cn_vec', 'shift', 'crop'], default='cn')
 training_group.add_argument('--aug_type', type=str, choices=['se2', 'cn', 't', 'dqn_c4', 'cn_vec', 'shift', 'crop'], default='cn')
 training_group.add_argument('--buffer_aug_n', type=int, default=4)
-training_group.add_argument('--expert_aug_n', type=int, default=4)
+training_group.add_argument('--expert_aug_n', type=int, default=0)
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
