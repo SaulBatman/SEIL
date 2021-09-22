@@ -19,7 +19,7 @@ from utils.env_wrapper import EnvWrapper
 from utils.create_agent import createAgent
 import threading
 
-from utils.torch_utils import ExpertTransition, normalizeTransition
+from utils.torch_utils import ExpertTransition, normalizeTransition, augmentBuffer
 
 def set_seed(s):
     np.random.seed(s)
@@ -200,6 +200,8 @@ def train():
             if not no_bar:
                 planner_bar.set_description('{:.3f}/{}, AVG: {:.3f}'.format(s, j, float(s)/j if j != 0 else 0))
                 planner_bar.update(dones.sum().item())
+        if expert_aug_n > 0:
+            augmentBuffer(replay_buffer, buffer_aug_type, expert_aug_n)
 
         if alg in ['curl_sac', 'curl_sacfd', 'curl_sacfd_mean']:
             if not no_bar:

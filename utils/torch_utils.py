@@ -466,3 +466,11 @@ def normalizeTransition(d: ExpertTransition):
     next_obs = next_obs.astype(np.uint8)
 
     return ExpertTransition(d.state, obs, d.action, d.reward, d.next_state, next_obs, d.done, d.step_left, d.expert)
+
+def augmentBuffer(buffer, aug_t, aug_n):
+    aug_list = []
+    for i, d in enumerate(buffer):
+        for _ in range(aug_n):
+            aug_list.append(augmentTransition(d, aug_t))
+    for d in aug_list:
+        buffer.add(d)

@@ -68,6 +68,7 @@ training_group.add_argument('--aug', type=strToBool, default=False)
 training_group.add_argument('--buffer_aug_type', type=str, choices=['se2', 'cn', 't', 'dqn_c4', 'cn_vec', 'shift', 'crop'], default='cn')
 training_group.add_argument('--aug_type', type=str, choices=['se2', 'cn', 't', 'dqn_c4', 'cn_vec', 'shift', 'crop'], default='cn')
 training_group.add_argument('--buffer_aug_n', type=int, default=4)
+training_group.add_argument('--expert_aug_n', type=int, default=4)
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -179,6 +180,7 @@ aug = args.aug
 aug_type = args.aug_type
 buffer_aug_type = args.buffer_aug_type
 buffer_aug_n = args.buffer_aug_n
+expert_aug_n = args.expert_aug_n
 
 # eval
 eval_freq = args.eval_freq

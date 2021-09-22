@@ -13,6 +13,12 @@ class QLearningBuffer:
     def __len__(self):
         return len(self._storage)
 
+    def __getitem__(self, key):
+        return self._storage[key]
+
+    def __setitem__(self, key, value):
+        self._storage[key] = value
+
     def add(self, data):
         if self._next_idx >= len(self._storage):
             self._storage.append(data)
