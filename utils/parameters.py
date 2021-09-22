@@ -11,7 +11,7 @@ def strToBool(value):
 
 parser = argparse.ArgumentParser()
 env_group = parser.add_argument_group('environment')
-env_group.add_argument('--env', type=str, default='block_stacking', help='block_picking, block_stacking, brick_stacking, '
+env_group.add_argument('--env', type=str, default='close_loop_block_stacking', help='block_picking, block_stacking, brick_stacking, '
                                                                          'brick_inserting, block_cylinder_stacking')
 env_group.add_argument('--reward_type', type=str, default='sparse')
 env_group.add_argument('--simulator', type=str, default='pybullet')

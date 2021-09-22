@@ -21,7 +21,7 @@ from agents.bc_continuous import BehaviorCloningContinuous
 from agents.sac_drq import SACDrQ
 from agents.sacfd_drq import SACfDDrQ
 from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy
-from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy, EquivariantSACCriticNoGP
+from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy, EquivariantSACCriticNoGP, EquivariantSACActor3
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
 from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy, CURLCNNCom
 from networks.cnn import DQNComCURL
@@ -147,6 +147,9 @@ def createAgent(test=False):
                                              N=equi_n).to(device)
                 critic = EquivariantSACCritic((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize,
                                               N=equi_n).to(device)
+            elif model == 'equi_both_3':
+                actor = EquivariantSACActor3((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+                critic = EquivariantSACCritic((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
             elif model == 'equi_both_enc_2':
                 actor = EquivariantSACActor((obs_channel, crop_size, crop_size), len(action_sequence),
                                             n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
