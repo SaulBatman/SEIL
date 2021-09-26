@@ -75,10 +75,32 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
             'equi_actor': 'r',
             'equi_critic': 'purple',
             'cnn_both': 'g',
+
+            'equi_rotaugall': 'b',
+            'cnn_rotaugall': 'g',
+            'rad_rotaugall': 'r',
+            'drq_rotaugall': 'purple',
+            'ferm_rotaugall': 'orange',
+
+            'sacfd_equi': 'b',
+            'sacfd_cnn': 'g',
+            'sacfd_rad_cn': 'r',
+            'sacfd_drq_cn': 'purple',
+
+            'sac_equi': 'b',
+            'sac_cnn': 'g',
+            'sac_rad_crop': 'r',
+            'sac_drq_shift': 'purple',
+            'sac_curl': 'orange',
+
+            'dqn_equi': 'b',
+            'dqn_cnn': 'g',
+            'dqn_rad_crop': 'r',
+            'dqn_drq_shift': 'purple',
+            'dqn_curl': 'orange',
         }
 
     linestyle_map = {
-
     }
     name_map = {
         'equi+bufferaug': 'Equivariant',
@@ -94,6 +116,29 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
         'equi_actor': 'Equi Actor + CNN Critic',
         'equi_critic': 'CNN Actor + Equi Critic',
         'cnn_both': 'CNN Actor + CNN Critic',
+
+        'equi_rotaugall': 'Equi SACfD',
+        'cnn_rotaugall': 'CNN SACfD',
+        'rad_rotaugall': 'RAD Crop SACfD',
+        'drq_rotaugall': 'DrQ Shift SACfD',
+        'ferm_rotaugall': 'FERM SACfD',
+
+        'sacfd_equi': 'Equi SACfD',
+        'sacfd_cnn': 'CNN SACfD',
+        'sacfd_rad_cn': 'RAD SO(2) SACfD',
+        'sacfd_drq_cn': 'DrQ SO(2) SACfD',
+
+        'sac_equi': 'Equi SAC',
+        'sac_cnn': 'CNN SAC',
+        'sac_rad_crop': 'RAD Crop SAC',
+        'sac_drq_shift': 'DrQ Shift SAC',
+        'sac_curl': 'FERM',
+
+        'dqn_equi': 'Equi DQN',
+        'dqn_cnn': 'CNN DQN',
+        'dqn_rad_crop': 'RAD Crop DQN',
+        'dqn_drq_shift': 'DrQ Shift DQN',
+        'dqn_curl': 'CURL DQN',
     }
 
     sequence = {
@@ -110,6 +155,29 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
         'equi_actor': '1',
         'equi_critic': '2',
         'cnn_both': '3',
+
+        'equi_rotaugall': '0',
+        'cnn_rotaugall': '1',
+        'rad_rotaugall': '2',
+        'drq_rotaugall': '3',
+        'ferm_rotaugall': '4',
+
+        'sacfd_equi': '0',
+        'sacfd_cnn': '1',
+        'sacfd_rad_cn': '2',
+        'sacfd_drq_cn': '3',
+
+        'sac_equi': '0',
+        'sac_cnn': '1',
+        'sac_rad_crop': '2',
+        'sac_drq_shift': '3',
+        'sac_curl': '4',
+
+        'dqn_equi': '0',
+        'dqn_cnn': '1',
+        'dqn_rad_crop': '2',
+        'dqn_drq_shift': '3',
+        'dqn_curl': '4',
     }
 
     i = 0
@@ -137,6 +205,7 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
     plt.ylabel('eval discounted reward')
     # plt.xlim((-100, step+100))
     # plt.yticks(np.arange(0., 1.05, 0.1))
+    # plt.ylim(bottom=-0.05)
 
     plt.tight_layout()
     plt.savefig(os.path.join(base, 'eval.png'), bbox_inches='tight',pad_inches = 0)
@@ -380,7 +449,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop/0921_bufferaug/drq_augexpert'
+    base = '/media/dian/hdd/mrun_results/close_loop/ICLR22/sacfd_rot_aug/rotaugexpert/h1'
     plotLearningCurve(base, 2000, window=100)
     plotEvalCurve(base, 20000, freq=500)
     showPerformance(base)

@@ -149,27 +149,8 @@ def train():
     if load_sub:
         logger.loadCheckPoint(os.path.join(log_dir, load_sub, 'checkpoint'), envs, agent, replay_buffer)
 
-    # pre train
     if load_buffer is not None and not load_sub:
         logger.loadBuffer(replay_buffer, load_buffer, load_n)
-    if pre_train_step > 0:
-        pbar = tqdm(total=pre_train_step)
-        while len(logger.losses) < pre_train_step:
-            t0 = time.time()
-            train_step(agent, replay_buffer, logger, p_beta_schedule)
-            if logger.num_training_steps % 1000 == 0:
-                logger.saveLossCurve(100)
-                logger.saveTdErrorCurve(100)
-            if not no_bar:
-                pbar.set_description('loss: {:.3f}, time: {:.2f}'.format(float(logger.getCurrentLoss()), time.time()-t0))
-                pbar.update(len(logger.losses)-pbar.n)
-
-            if (time.time() - start_time) / 3600 > time_limit:
-                logger.saveCheckPoint(args, envs, agent, replay_buffer)
-                exit(0)
-        pbar.close()
-        logger.saveModel(0, 'pretrain', agent)
-        # agent.sl = sl
 
     if planner_episode > 0 and not load_sub:
         planner_envs = envs
@@ -206,11 +187,30 @@ def train():
         if alg in ['curl_sac', 'curl_sacfd', 'curl_sacfd_mean']:
             if not no_bar:
                 pre_train_bar = tqdm(total=1000)
-            while j < 1000:
+            while j < 1600:
                 preTrainCURLStep(agent, replay_buffer, logger)
                 j += 1
                 if not no_bar:
                     pre_train_bar.update(1)
+
+    # pre train
+    if pre_train_step > 0:
+        pbar = tqdm(total=pre_train_step)
+        while len(logger.losses) < pre_train_step:
+            t0 = time.time()
+            train_step(agent, replay_buffer, logger, p_beta_schedule)
+            if logger.num_training_steps % 1000 == 0:
+                logger.saveLossCurve(100)
+                logger.saveTdErrorCurve(100)
+            if not no_bar:
+                pbar.set_description('loss: {:.3f}, time: {:.2f}'.format(float(logger.getCurrentLoss()), time.time()-t0))
+                pbar.update(len(logger.losses)-pbar.n)
+
+            if (time.time() - start_time) / 3600 > time_limit:
+                logger.saveCheckPoint(args, envs, agent, replay_buffer)
+                exit(0)
+        pbar.close()
+        logger.saveModel(0, 'pretrain', agent)
 
     if not no_bar:
         pbar = tqdm(total=max_train_step)
