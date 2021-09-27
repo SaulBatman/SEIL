@@ -80,6 +80,41 @@ class CURLSACEncoder(nn.Module):
             if isinstance(self.conv[i], nn.Conv2d):
                 tieWeights(src=source.conv[i], trg=self.conv[i])
 
+class CURLSACEncoderOri(nn.Module):
+    def __init__(self, input_shape=(2, 64, 64), output_dim=50):
+        super().__init__()
+        self.conv = torch.nn.Sequential(
+            nn.Conv2d(input_shape[0], 32, kernel_size=3, stride=2),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, 32, kernel_size=3),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, 32, kernel_size=3),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, 32, kernel_size=3),
+            nn.ReLU(inplace=True),
+            nn.Flatten(),
+        )
+
+        x = torch.randn([1] + list(input_shape))
+        conv_out_dim = self.conv(x).reshape(-1).shape[-1]
+
+        self.fc = torch.nn.Sequential(
+            torch.nn.Linear(conv_out_dim, output_dim),
+            nn.LayerNorm(output_dim),
+        )
+
+    def forward(self, x, detach=False):
+        h = self.conv(x)
+        if detach:
+            h = h.detach()
+        h_fc = self.fc(h)
+        return h_fc
+
+    def copyConvWeightsFrom(self, source):
+        for i in range(len(self.conv)):
+            if isinstance(self.conv[i], nn.Conv2d):
+                tieWeights(src=source.conv[i], trg=self.conv[i])
+
 class CURLSACCritic(nn.Module):
     def __init__(self, encoder, encoder_output_dim=50, hidden_dim=1024, action_dim=5):
         super().__init__()

@@ -449,7 +449,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop/ICLR22/sacfd_rot_aug/rotaugexpert/h1'
+    base = '/media/dian/hdd/mrun_results/close_loop/0926_ferm_1600/sacfd/bs'
     plotLearningCurve(base, 2000, window=100)
     plotEvalCurve(base, 20000, freq=500)
     showPerformance(base)

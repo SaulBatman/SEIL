@@ -12,12 +12,12 @@ import torch.nn as nn
 # aug = random_shift
 
 class CURLDQNCom(DQNAgentCom):
-    def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/32, n_p=1, n_theta=1):
+    def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/32, n_p=1, n_theta=1, crop_size=128):
         super().__init__(lr, gamma, device, dx, dy, dz, dr, n_p, n_theta)
         self.momentum_net = None
         # self.coeff = 1
         self.coeff = 0.01
-        self.crop_size = 128
+        self.crop_size = crop_size
 
     def initialize_momentum_net(self):
         for param_q, param_k in zip(self.policy_net.parameters(), self.momentum_net.parameters()):
