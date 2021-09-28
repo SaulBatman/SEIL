@@ -20,7 +20,6 @@ def tieWeights(src, trg):
 class CURLSACEncoder(nn.Module):
     def __init__(self, input_shape=(2, 64, 64), output_dim=50):
         super().__init__()
-        assert input_shape[1] in [64, 128]
         if input_shape[1] == 128:
             self.conv = torch.nn.Sequential(
                 # 128x128

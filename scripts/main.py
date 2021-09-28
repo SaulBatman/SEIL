@@ -186,7 +186,7 @@ def train():
 
         if alg in ['curl_sac', 'curl_sacfd', 'curl_sacfd_mean']:
             if not no_bar:
-                pre_train_bar = tqdm(total=1000)
+                pre_train_bar = tqdm(total=1600)
             while j < 1600:
                 preTrainCURLStep(agent, replay_buffer, logger)
                 j += 1
