@@ -124,7 +124,7 @@ heightmap_resolution = workspace_size/heightmap_size
 action_space = [0, heightmap_size]
 view_type = args.view_type
 obs_type = args.obs_type
-if env in ['close_loop_block_reaching', 'close_loop_block_picking']:
+if env in ['close_loop_block_reaching', 'close_loop_block_picking', 'close_loop_household_picking']:
     obs_dim = 1 + 4 + 4
 elif env in ['close_loop_block_pulling', 'close_loop_block_picking_corner', 'close_loop_drawer_opening']:
     obs_dim = 1 + 4 + 4*2
@@ -223,6 +223,8 @@ env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size'
               'workspace_check': 'point', 'object_scale_range': (1, 1),
               'hard_reset_freq': 1000, 'physics_mode' : 'fast', 'view_type': view_type, 'obs_type': obs_type}
 planner_config = {'random_orientation':random_orientation, 'dpos': dpos, 'drot': drot}
+if env == 'close_loop_household_picking':
+    env_config['object_scale_range'] = (0.6, 0.6)
 if seed is not None:
     env_config['seed'] = seed
 ######################################################################################
