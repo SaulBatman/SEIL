@@ -86,6 +86,9 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
             'sacfd_cnn': 'g',
             'sacfd_rad_cn': 'r',
             'sacfd_drq_cn': 'purple',
+            'sacfd_rad': 'r',
+            'sacfd_drq': 'purple',
+            'sacfd_ferm': 'orange',
 
             'sac_equi': 'b',
             'sac_cnn': 'g',
@@ -127,6 +130,9 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
         'sacfd_cnn': 'CNN SACfD',
         'sacfd_rad_cn': 'RAD SO(2) SACfD',
         'sacfd_drq_cn': 'DrQ SO(2) SACfD',
+        'sacfd_rad': 'RAD Crop SACfD',
+        'sacfd_drq': 'DrQ Shift SACfD',
+        'sacfd_ferm': 'FERM SACfD',
 
         'sac_equi': 'Equi SAC',
         'sac_cnn': 'CNN SAC',
@@ -166,6 +172,9 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
         'sacfd_cnn': '1',
         'sacfd_rad_cn': '2',
         'sacfd_drq_cn': '3',
+        'sacfd_rad': '2',
+        'sacfd_drq': '3',
+        'sacfd_ferm': '4',
 
         'sac_equi': '0',
         'sac_cnn': '1',
