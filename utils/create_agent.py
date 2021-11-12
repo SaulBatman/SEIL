@@ -6,7 +6,7 @@ from agents.sdqfd_agent_com import SDQfDCom
 from agents.sdqfd_agent_com_drq import SDQfDComDrQ
 from agents.curl_dqn_com import CURLDQNCom
 from agents.curl_sdqfd_com import CURLSDQfDCom
-from networks.cnn import CNNFac, CNNCom
+from networks.cnn import CNNFac, CNNCom, CNNCom2
 from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, EquivariantCNNFac3, EquivariantCNNCom, EquivariantCNNCom2
 
 from agents.ddpg import DDPG
@@ -67,6 +67,8 @@ def createAgent(test=False):
                                 n_theta=n_theta, l=margin_l, w=margin_weight)
         if model == 'cnn':
             net = CNNCom((obs_channel, crop_size, crop_size), n_p=n_p, n_theta=n_theta).to(device)
+        elif model == 'cnn_2':
+            net = CNNCom2((obs_channel, crop_size, crop_size), n_p=n_p, n_theta=n_theta).to(device)
         elif model == 'equi':
             net = EquivariantCNNCom(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_2':

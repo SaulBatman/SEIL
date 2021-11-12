@@ -97,6 +97,9 @@ def evaluate(envs, agent, logger):
     if not no_bar:
         eval_bar.close()
 
+def countParameters(m):
+    return sum(p.numel() for p in m.parameters() if p.requires_grad)
+
 def train():
     eval_thread = None
     start_time = time.time()
