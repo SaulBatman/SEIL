@@ -79,6 +79,51 @@ class CURLSACEncoder(nn.Module):
             if isinstance(self.conv[i], nn.Conv2d):
                 tieWeights(src=source.conv[i], trg=self.conv[i])
 
+# similar amount of parameters
+class CURLSACEncoder2(nn.Module):
+    def __init__(self, input_shape=(2, 64, 64), output_dim=50):
+        super().__init__()
+        self.conv = torch.nn.Sequential(
+            # 128x128
+            nn.Conv2d(input_shape[0], 16, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 64x64
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 32x32
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 16x16
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 8x8
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=0),
+            nn.ReLU(inplace=True),
+            # 6x6
+            nn.MaxPool2d(2),
+            # 3x3
+            nn.Conv2d(256, output_dim, kernel_size=3, padding=0),
+            nn.ReLU(inplace=True),
+            nn.Flatten(),
+        )
+
+    def forward(self, x, detach=False):
+        h = self.conv(x)
+        if detach:
+            h = h.detach()
+        return h
+
+    def copyConvWeightsFrom(self, source):
+        for i in range(len(self.conv)):
+            if isinstance(self.conv[i], nn.Conv2d):
+                tieWeights(src=source.conv[i], trg=self.conv[i])
+
 class CURLSACEncoderOri(nn.Module):
     def __init__(self, input_shape=(2, 64, 64), output_dim=50):
         super().__init__()

@@ -20,10 +20,10 @@ from agents.sac_aug import SACAug
 from agents.bc_continuous import BehaviorCloningContinuous
 from agents.sac_drq import SACDrQ
 from agents.sacfd_drq import SACfDDrQ
-from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy
+from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy, SACCritic2, SACGaussianPolicy2
 from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy, EquivariantSACCriticNoGP, EquivariantSACActor3
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
-from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy, CURLSACEncoderOri
+from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy, CURLSACEncoderOri, CURLSACEncoder2
 from networks.cnn import DQNComCURL, DQNComCURLOri
 
 def createAgent(test=False):
@@ -137,6 +137,9 @@ def createAgent(test=False):
             if model == 'cnn':
                 actor = SACGaussianPolicy((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
                 critic = SACCritic((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
+            elif model == 'cnn_2':
+                actor = SACGaussianPolicy2((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
+                critic = SACCritic2((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
             elif model == 'equi_actor':
                 actor = EquivariantSACActor((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
                 critic = SACCritic((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
@@ -215,6 +218,9 @@ def createAgent(test=False):
         if model == 'cnn':
             actor = CURLSACGaussianPolicy(CURLSACEncoder((obs_channel, crop_size, crop_size)).to(device), action_dim=len(action_sequence)).to(device)
             critic = CURLSACCritic(CURLSACEncoder((obs_channel, crop_size, crop_size)).to(device), action_dim=len(action_sequence)).to(device)
+        elif model == 'cnn_2':
+            actor = CURLSACGaussianPolicy(CURLSACEncoder2((obs_channel, crop_size, crop_size)).to(device), action_dim=len(action_sequence)).to(device)
+            critic = CURLSACCritic(CURLSACEncoder2((obs_channel, crop_size, crop_size)).to(device), action_dim=len(action_sequence)).to(device)
         # ferm paper network
         elif model == 'cnn_ferm':
             actor = CURLSACGaussianPolicy(CURLSACEncoderOri((obs_channel, crop_size, crop_size)).to(device),
