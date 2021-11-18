@@ -108,16 +108,22 @@ class CURLSACEncoder2(nn.Module):
             # 6x6
             nn.MaxPool2d(2),
             # 3x3
-            nn.Conv2d(256, output_dim, kernel_size=3, padding=0),
+            nn.Conv2d(256, 1024, kernel_size=3, padding=0),
             nn.ReLU(inplace=True),
             nn.Flatten(),
+        )
+
+        self.fc = torch.nn.Sequential(
+            torch.nn.Linear(1024, output_dim),
+            nn.LayerNorm(output_dim),
         )
 
     def forward(self, x, detach=False):
         h = self.conv(x)
         if detach:
             h = h.detach()
-        return h
+        h_fc = self.fc(h)
+        return h_fc
 
     def copyConvWeightsFrom(self, source):
         for i in range(len(self.conv)):
