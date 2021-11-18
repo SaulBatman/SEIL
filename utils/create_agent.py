@@ -142,9 +142,9 @@ def createAgent(test=False):
                 critic = SACCritic2((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
             elif model == 'equi_actor':
                 actor = EquivariantSACActor((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
-                critic = SACCritic((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
+                critic = SACCritic2((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
             elif model == 'equi_critic':
-                actor = SACGaussianPolicy((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
+                actor = SACGaussianPolicy2((obs_channel, crop_size, crop_size), len(action_sequence)).to(device)
                 critic = EquivariantSACCritic((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
             elif model == 'equi_both':
                 actor = EquivariantSACActor((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
