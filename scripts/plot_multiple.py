@@ -101,6 +101,10 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
             'dqn_rad_crop': 'r',
             'dqn_drq_shift': 'purple',
             'dqn_curl': 'orange',
+
+            'C8': 'b',
+            'C4': 'g',
+            'C2': 'r',
         }
 
     linestyle_map = {
@@ -187,6 +191,10 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
         'dqn_rad_crop': '2',
         'dqn_drq_shift': '3',
         'dqn_curl': '4',
+
+        'C8': '0',
+        'C4': '1',
+        'C2': '2',
     }
 
     i = 0
@@ -458,7 +466,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop/1112_dqn_small/do'
+    base = '/media/dian/hdd/mrun_results/close_loop/1117_fix_rot_no_aug_sac/do'
     plotLearningCurve(base, 2000, window=100)
     plotEvalCurve(base, 20000, freq=500)
     showPerformance(base)
