@@ -163,6 +163,16 @@ def createAgent(test=False):
                                             n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
                 critic = EquivariantSACCritic((obs_channel, crop_size, crop_size), len(action_sequence),
                                               n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
+            elif model == 'equi_both_enc_3':
+                actor = EquivariantSACActor((obs_channel, crop_size, crop_size), len(action_sequence),
+                                            n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=3).to(device)
+                critic = EquivariantSACCritic((obs_channel, crop_size, crop_size), len(action_sequence),
+                                                  n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=3).to(device)
+            elif model == 'equi_both_enc_4':
+                actor = EquivariantSACActor((obs_channel, crop_size, crop_size), len(action_sequence),
+                                            n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=4).to(device)
+                critic = EquivariantSACCritic((obs_channel, crop_size, crop_size), len(action_sequence),
+                                                  n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=4).to(device)
             elif model == 'equi_both_nogp':
                 actor = EquivariantSACActor((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
                 critic = EquivariantSACCriticNoGP((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)

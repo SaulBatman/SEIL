@@ -102,6 +102,79 @@ class EquivariantEncoder128(torch.nn.Module):
         # geo = nn.GeometricTensor(x, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
         return self.conv(geo)
 
+class EquivariantEncoder128NoPool(torch.nn.Module):
+    def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
+        super().__init__()
+        self.obs_channel = obs_channel
+        self.c4_act = gspaces.Rot2dOnR2(N)
+        self.conv = torch.nn.Sequential(
+            nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, n_out//8 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_out//8 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_out//8 * [self.c4_act.regular_repr]), 2),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_out//8 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_out//4 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_out//4 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_out//4 * [self.c4_act.regular_repr]), 2),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_out//4 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_out//2 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_out//2 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_out//2 * [self.c4_act.regular_repr]), 2),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_out//2 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]), 4),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]), inplace=True),
+        )
+
+    def forward(self, geo):
+        # geo = nn.GeometricTensor(geo, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
+        return self.conv(geo)
+
+class EquivariantEncoder128Small(torch.nn.Module):
+    def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
+        super().__init__()
+        self.obs_channel = obs_channel
+        self.c4_act = gspaces.Rot2dOnR2(N)
+        self.conv = torch.nn.Sequential(
+            # 128x128
+            nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, n_out//8 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_out//8 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_out//8 * [self.c4_act.regular_repr]), 4),
+            # 32x32
+            nn.R2Conv(nn.FieldType(self.c4_act, n_out//8 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_out//4 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_out//4 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_out//4 * [self.c4_act.regular_repr]), 4),
+            # 8x8
+            nn.R2Conv(nn.FieldType(self.c4_act, n_out//4 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_out//2 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_out//2 * [self.c4_act.regular_repr]), inplace=True),
+            # 6x6
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_out//2 * [self.c4_act.regular_repr]), 2),
+            # 3x3
+            nn.R2Conv(nn.FieldType(self.c4_act, n_out//2 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=0, initialize=initialize),
+            # 1x1
+            nn.ReLU(nn.FieldType(self.c4_act, n_out * [self.c4_act.regular_repr]), inplace=True),
+        )
+
+    def forward(self, geo):
+        # geo = nn.GeometricTensor(geo, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
+        return self.conv(geo)
+
 class EquivariantEncoder128Res(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
         super().__init__()
@@ -239,12 +312,17 @@ class EquivariantEncoder64_2(torch.nn.Module):
 
 def getEnc(obs_size, enc_id):
     assert obs_size in [128, 64]
-    assert enc_id in [1, 2]
     if obs_size == 128:
         if enc_id == 1:
             return EquivariantEncoder128
-        else:
+        elif enc_id == 2:
             return EquivariantEncoder128Res
+        elif enc_id == 3:
+            return EquivariantEncoder128NoPool
+        elif enc_id == 4:
+            return EquivariantEncoder128Small
+        else:
+            raise NotImplementedError
     else:
         if enc_id == 1:
             return EquivariantEncoder64_1
