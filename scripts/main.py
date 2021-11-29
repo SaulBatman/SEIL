@@ -56,7 +56,7 @@ def preTrainCURLStep(agent, replay_buffer, logger):
 
 def saveModelAndInfo(logger, agent):
     logger.saveModel(logger.num_steps, env, agent)
-    logger.saveLearningCurve(100)
+    logger.saveLearningCurve(20)
     logger.saveLossCurve(100)
     logger.saveTdErrorCurve(100)
     logger.saveStepLeftCurve(100)
@@ -197,9 +197,9 @@ def train():
                     pre_train_bar.update(1)
 
     # pre train
-    if pre_train_step > 0:
+    if pre_train_step > 0 and not load_sub and not load_model_pre:
         pbar = tqdm(total=pre_train_step)
-        while len(logger.losses) < pre_train_step:
+        for i in range(pre_train_step):
             t0 = time.time()
             train_step(agent, replay_buffer, logger, p_beta_schedule)
             if logger.num_training_steps % 1000 == 0:
@@ -207,7 +207,7 @@ def train():
                 logger.saveTdErrorCurve(100)
             if not no_bar:
                 pbar.set_description('loss: {:.3f}, time: {:.2f}'.format(float(logger.getCurrentLoss()), time.time()-t0))
-                pbar.update(len(logger.losses)-pbar.n)
+                pbar.update()
 
             if (time.time() - start_time) / 3600 > time_limit:
                 logger.saveCheckPoint(args, envs, agent, replay_buffer)
@@ -264,8 +264,8 @@ def train():
 
         if not no_bar:
             timer_final = time.time()
-            description = 'Action Step:{}; Reward:{:.03f}; Eval Reward:{:.03f}; Explore:{:.02f}; Loss:{:.03f}; Time:{:.03f}'.format(
-                logger.num_steps, logger.getCurrentAvgReward(100), logger.eval_rewards[-1] if len(logger.eval_rewards) > 0 else 0, eps, float(logger.getCurrentLoss()),
+            description = 'Action Step:{}; Episode: {}; Reward:{:.03f}; Eval Reward:{:.03f}; Explore:{:.02f}; Loss:{:.03f}; Time:{:.03f}'.format(
+                logger.num_steps, logger.num_episodes, logger.getCurrentAvgReward(20), logger.eval_rewards[-1] if len(logger.eval_rewards) > 0 else 0, eps, float(logger.getCurrentLoss()),
                 timer_final - timer_start)
             pbar.set_description(description)
             timer_start = timer_final
