@@ -24,6 +24,7 @@ from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SAC
 from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy, EquivariantSACCriticNoGP, EquivariantSACActor3
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
 from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy, CURLSACEncoderOri, CURLSACEncoder2
+from networks.curl_equi_sac_net import CURLEquiSACEncoder, CURLEquiSACCritic, CURLEquiSACGaussianPolicy
 from networks.cnn import DQNComCURL, DQNComCURLOri
 
 def createAgent(test=False):
@@ -199,20 +200,25 @@ def createAgent(test=False):
 
     elif alg in ['curl_sac', 'curl_sacfd', 'curl_sacfd_mean']:
         curl_sac_lr = [actor_lr, critic_lr, lr, lr]
+        if model == 'equi_both':
+            z_dim = n_hidden * equi_n
+        else:
+            z_dim = 50
+
         if alg == 'curl_sac':
             agent = CURLSAC(lr=curl_sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence),
                             tau=tau, alpha=init_temp, policy_type='gaussian', target_update_interval=1, automatic_entropy_tuning=True,
-                            crop_size=crop_size)
+                            crop_size=crop_size, z_dim=z_dim)
         elif alg == 'curl_sacfd':
             agent = CURLSACfD(lr=curl_sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
                               n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
                               target_update_interval=1, automatic_entropy_tuning=True, crop_size=crop_size,
-                              demon_w=demon_w, demon_l='pi')
+                              demon_w=demon_w, demon_l='pi', z_dim=z_dim)
         elif alg == 'curl_sacfd_mean':
             agent = CURLSACfD(lr=curl_sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
                               n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
                               target_update_interval=1, automatic_entropy_tuning=True, crop_size=crop_size,
-                              demon_w=demon_w, demon_l='mean')
+                              demon_w=demon_w, demon_l='mean', z_dim=z_dim)
         else:
             raise NotImplementedError
         if model == 'cnn':
@@ -227,6 +233,11 @@ def createAgent(test=False):
                                           action_dim=len(action_sequence)).to(device)
             critic = CURLSACCritic(CURLSACEncoderOri((obs_channel, crop_size, crop_size)).to(device),
                                    action_dim=len(action_sequence)).to(device)
+        elif model == 'equi_both':
+            actor = CURLEquiSACGaussianPolicy(CURLEquiSACEncoder((obs_channel, crop_size, crop_size), n_hidden, initialize, equi_n),
+                                              n_hidden, len(action_sequence), initialize, equi_n).to(device)
+            critic = CURLEquiSACCritic(CURLEquiSACEncoder((obs_channel, crop_size, crop_size), n_hidden, initialize, equi_n),
+                                       n_hidden, len(action_sequence), initialize, equi_n).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(actor, critic)
