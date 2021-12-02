@@ -128,7 +128,7 @@ if env in ['close_loop_block_reaching', 'close_loop_block_picking', 'close_loop_
     obs_dim = 1 + 4 + 4
 elif env in ['close_loop_block_pulling', 'close_loop_block_picking_corner', 'close_loop_drawer_opening']:
     obs_dim = 1 + 4 + 4*2
-elif env in ['close_loop_block_stacking', 'close_loop_house_building_1']:
+elif env in ['close_loop_block_stacking', 'close_loop_house_building_1', 'close_loop_clutter_picking']:
     obs_dim = 1 + 4 + 4 * num_objects
 else:
     raise NotImplementedError
@@ -225,6 +225,8 @@ env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size'
 planner_config = {'random_orientation':random_orientation, 'dpos': dpos, 'drot': drot}
 if env == 'close_loop_household_picking':
     env_config['object_scale_range'] = (0.6, 0.6)
+elif env == 'close_loop_clutter_picking':
+    env_config['object_scale_range'] = (0.8, 1.0)
 if seed is not None:
     env_config['seed'] = seed
 ######################################################################################
