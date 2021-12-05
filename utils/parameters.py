@@ -28,6 +28,8 @@ env_group.add_argument('--workspace_size', type=float, default=0.3)
 env_group.add_argument('--heightmap_size', type=int, default=128)
 env_group.add_argument('--view_type', type=str, default='camera_center_xyz')
 env_group.add_argument('--obs_type', type=str, default='pixel')
+env_group.add_argument('--transparent_bin', type=strToBool, default=False)
+env_group.add_argument('--collision_penalty', type=strToBool, default=True)
 
 training_group = parser.add_argument_group('training')
 training_group.add_argument('--alg', default='dqn')
@@ -133,6 +135,9 @@ elif env in ['close_loop_block_stacking', 'close_loop_house_building_1', 'close_
 else:
     raise NotImplementedError
 
+transparent_bin = args.transparent_bin
+collision_penalty = args.collision_penalty
+
 ######################################################################################
 # training
 alg = args.alg
@@ -221,7 +226,8 @@ env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size'
               'fast_mode': fast_mode,  'action_sequence': action_sequence, 'render': render, 'num_objects': num_objects,
               'random_orientation':random_orientation, 'reward_type': reward_type, 'robot': robot,
               'workspace_check': 'point', 'object_scale_range': (1, 1),
-              'hard_reset_freq': 1000, 'physics_mode' : 'fast', 'view_type': view_type, 'obs_type': obs_type}
+              'hard_reset_freq': 1000, 'physics_mode' : 'fast', 'view_type': view_type, 'obs_type': obs_type,
+              'transparent_bin': transparent_bin, 'collision_penalty': collision_penalty}
 planner_config = {'random_orientation':random_orientation, 'dpos': dpos, 'drot': drot}
 if env == 'close_loop_household_picking':
     env_config['object_scale_range'] = (0.6, 0.6)
