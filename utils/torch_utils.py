@@ -13,6 +13,8 @@ from utils.parameters import crop_size
 from collections import OrderedDict
 from scipy.ndimage import affine_transform
 
+from torch.distributions.utils import _standard_normal
+
 ExpertTransition = collections.namedtuple('ExpertTransition', 'state obs action reward next_state next_obs done step_left expert')
 
 def featureExtractor():
@@ -474,3 +476,28 @@ def augmentBuffer(buffer, aug_t, aug_n):
             aug_list.append(augmentTransition(d, aug_t))
     for d in aug_list:
         buffer.add(d)
+
+
+# code for this function from: https://github.com/facebookresearch/drqv2/blob/21e9048bf59e15f1018b49b850f727ed7b1e210d/utils.py#L105
+class TruncatedNormal(torch.distributions.Normal):
+    def __init__(self, loc, scale, low=-1.0, high=1.0, eps=1e-6):
+        super().__init__(loc, scale, validate_args=False)
+        self.low = low
+        self.high = high
+        self.eps = eps
+
+    def _clamp(self, x):
+        clamped_x = torch.clamp(x, self.low + self.eps, self.high - self.eps)
+        x = x - x.detach() + clamped_x.detach()
+        return x
+
+    def sample(self, clip=None, sample_shape=torch.Size()):
+        shape = self._extended_shape(sample_shape)
+        eps = _standard_normal(shape,
+                               dtype=self.loc.dtype,
+                               device=self.loc.device)
+        eps *= self.scale
+        if clip is not None:
+            eps = torch.clamp(eps, -clip, clip)
+        x = self.loc + eps
+        return self._clamp(x)

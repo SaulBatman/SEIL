@@ -10,6 +10,7 @@ from networks.cnn import CNNFac, CNNCom, CNNCom2
 from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, EquivariantCNNFac3, EquivariantCNNCom, EquivariantCNNCom2
 
 from agents.ddpg import DDPG
+from agents.ddpgfd import DDPGfD
 from networks.cnn import Actor, Critic
 
 from agents.sac import SAC
@@ -93,15 +94,24 @@ def createAgent(test=False):
             raise NotImplementedError
         agent.initNetwork(net)
 
-    elif alg == 'ddpg':
+    elif alg in ['ddpg', 'ddpgfd']:
         ddpg_lr = (actor_lr, critic_lr)
-        agent = DDPG(lr=ddpg_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_a=len(action_sequence), tau=tau)
+        if alg == 'ddpg':
+            agent = DDPG(lr=ddpg_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
+                         n_a=len(action_sequence), tau=tau)
+        elif alg == 'ddpgfd':
+            agent = DDPGfD(lr=ddpg_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
+                           n_a=len(action_sequence), tau=tau, demon_w=demon_w)
+        else:
+            raise NotImplementedError
         if model == 'cnn':
             actor = Actor(len(action_sequence)).to(device)
             critic = Critic(len(action_sequence)).to(device)
         elif model == 'equi_both':
-            actor = EquivariantDDPGActor(len(action_sequence), initialize=initialize).to(device)
-            critic = EquivariantDDPGCritic(len(action_sequence), initialize=initialize).to(device)
+            actor = EquivariantDDPGActor((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden,
+                                        initialize=initialize, N=equi_n).to(device)
+            critic = EquivariantDDPGCritic((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden,
+                                        initialize=initialize, N=equi_n).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(actor, critic, initialize_target=not test)
