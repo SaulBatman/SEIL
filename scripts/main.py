@@ -231,20 +231,28 @@ def train():
 
         # simulate actions
         if envs.canSimulate():
+            sim_obs = obs
+            sim_states = states
             for _ in range(simulate_n):
-                sim_actions_star_idx, sim_actions_star = agent.getEGreedyActions(states, obs, eps)
-
-                states_, obs_, rewards, dones = envs.simulate(sim_actions_star)
-                steps_lefts = envs.getStepLeft()
+                if not envs.canSimulate():
+                    envs.resetSimPose()
+                    sim_obs = obs
+                    sim_states = states
+                sim_actions_star_idx, sim_actions_star = agent.getEGreedyActions(sim_states, sim_obs, eps)
+                sim_states_, sim_obs_, sim_rewards, sim_dones = envs.simulate(sim_actions_star)
+                sim_steps_lefts = envs.getStepLeft()
 
                 if not alg[:2] == 'bc':
                     for i in range(num_processes):
                         transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), sim_actions_star_idx[i].numpy(),
-                                                      rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
-                                                      steps_lefts[i].numpy(), np.array(is_expert))
+                                                      sim_rewards[i].numpy(), sim_states_[i].numpy(), sim_obs_[i].numpy(), sim_dones[i].numpy(),
+                                                      sim_steps_lefts[i].numpy(), np.array(is_expert))
                         if obs_type == 'pixel':
                             transition = normalizeTransition(transition)
                         replay_buffer.add(transition)
+
+                sim_obs = sim_obs_
+                sim_states = sim_states_
 
         actions_star_idx, actions_star = agent.getEGreedyActions(states, obs, eps)
 

@@ -44,6 +44,9 @@ class EnvWrapper:
         dones = torch.tensor(dones).float()
         return states_, obs_, rewards, dones
 
+    def resetSimPose(self):
+        self.envs.resetSimPose()
+
     def canSimulate(self):
         return self.envs.canSimulate()
 
