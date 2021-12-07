@@ -35,6 +35,18 @@ class EnvWrapper:
         dones = torch.tensor(dones).float()
         return states_, obs_, rewards, dones
 
+    def simulate(self, actions):
+        actions = actions.cpu().numpy()
+        (states_, in_hands_, obs_), rewards, dones = self.envs.simulate(actions)
+        states_ = torch.tensor(states_).float()
+        obs_ = torch.tensor(obs_).float()
+        rewards = torch.tensor(rewards).float()
+        dones = torch.tensor(dones).float()
+        return states_, obs_, rewards, dones
+
+    def canSimulate(self):
+        return self.envs.canSimulate()
+
     def getStepLeft(self):
         return torch.tensor(self.envs.getStepsLeft()).float()
 

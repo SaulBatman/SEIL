@@ -26,7 +26,7 @@ env_group.add_argument('--num_eval_processes', type=int, default=5)
 env_group.add_argument('--render', type=strToBool, default=False)
 env_group.add_argument('--workspace_size', type=float, default=0.3)
 env_group.add_argument('--heightmap_size', type=int, default=128)
-env_group.add_argument('--view_type', type=str, default='camera_center_xyz')
+env_group.add_argument('--view_type', type=str, default='render_center')
 env_group.add_argument('--obs_type', type=str, default='pixel')
 env_group.add_argument('--transparent_bin', type=strToBool, default=False)
 env_group.add_argument('--collision_penalty', type=strToBool, default=True)
@@ -71,6 +71,7 @@ training_group.add_argument('--buffer_aug_type', type=str, choices=['se2', 'cn',
 training_group.add_argument('--aug_type', type=str, choices=['se2', 'cn', 't', 'dqn_c4', 'cn_vec', 'shift', 'crop'], default='cn')
 training_group.add_argument('--buffer_aug_n', type=int, default=4)
 training_group.add_argument('--expert_aug_n', type=int, default=0)
+training_group.add_argument('--simulate_n', type=int, default=0)
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -186,6 +187,8 @@ aug_type = args.aug_type
 buffer_aug_type = args.buffer_aug_type
 buffer_aug_n = args.buffer_aug_n
 expert_aug_n = args.expert_aug_n
+
+simulate_n = args.simulate_n
 
 # eval
 eval_freq = args.eval_freq

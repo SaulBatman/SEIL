@@ -228,6 +228,24 @@ def train():
             eps = exploration.value(logger.num_training_steps)
 
         is_expert = 0
+
+        # simulate actions
+        if envs.canSimulate():
+            for _ in range(simulate_n):
+                sim_actions_star_idx, sim_actions_star = agent.getEGreedyActions(states, obs, eps)
+
+                states_, obs_, rewards, dones = envs.simulate(sim_actions_star)
+                steps_lefts = envs.getStepLeft()
+
+                if not alg[:2] == 'bc':
+                    for i in range(num_processes):
+                        transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), sim_actions_star_idx[i].numpy(),
+                                                      rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
+                                                      steps_lefts[i].numpy(), np.array(is_expert))
+                        if obs_type == 'pixel':
+                            transition = normalizeTransition(transition)
+                        replay_buffer.add(transition)
+
         actions_star_idx, actions_star = agent.getEGreedyActions(states, obs, eps)
 
         envs.stepAsync(actions_star, auto_reset=False)
