@@ -27,7 +27,7 @@ def test():
         states = copy.copy(states_)
         obs = copy.copy(obs_)
 
-        s += rewards.sum().int().item()
+        s += rewards.int().sum().item()
 
         if dones.sum():
             total += dones.sum().int().item()

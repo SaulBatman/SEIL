@@ -365,7 +365,7 @@ def plotLearningCurve(base, ep=50000, use_default_cm=False, window=1000):
     # if base.find('bbp') > -1:
     plt.ylabel('discounted reward')
 
-    plt.xlim((-100, ep+100))
+    # plt.xlim((-100, ep+100))
     # plt.yticks(np.arange(0., 1.05, 0.1))
 
     plt.tight_layout()
@@ -466,9 +466,9 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop/1119_gen_aug_cnn2/do'
-    plotLearningCurve(base, 2000, window=100)
-    plotEvalCurve(base, 20000, freq=500)
+    base = '/media/dian/hdd/mrun_results/close_loop_1p/1205_clp/trans_no-pen'
+    plotLearningCurve(base, 500, window=20)
+    # plotEvalCurve(base, 20000, freq=500)
     showPerformance(base)
     # plotLoss(base, 30000)
 
