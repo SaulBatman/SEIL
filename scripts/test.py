@@ -15,12 +15,12 @@ def test():
     agent.train()
     agent.loadModel(load_model_pre)
     states, obs = envs.reset()
-    test_episode = 1000
+    test_episode = 50
     total = 0
     s = 0
     step_times = []
     pbar = tqdm(total=test_episode)
-    while total < 1000:
+    while total < test_episode:
         actions_star_idx, actions_star = agent.getGreedyActions(states, obs)
         states_, obs_, rewards, dones = envs.step(actions_star, auto_reset=True)
 

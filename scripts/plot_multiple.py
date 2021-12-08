@@ -371,6 +371,79 @@ def plotLearningCurve(base, ep=50000, use_default_cm=False, window=1000):
     plt.tight_layout()
     plt.savefig(os.path.join(base, 'plot.png'), bbox_inches='tight',pad_inches = 0)
 
+def plotSuccessRate(base, ep=50000, use_default_cm=False, window=1000):
+    plt.style.use('ggplot')
+    plt.figure(dpi=300)
+    MEDIUM_SIZE = 12
+    BIGGER_SIZE = 14
+
+    plt.rc('axes', titlesize=BIGGER_SIZE)  # fontsize of the axes title
+    plt.rc('axes', labelsize=BIGGER_SIZE)  # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
+    plt.rc('ytick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
+
+    colors = "bgrycmkwbgrycmkw"
+    if use_default_cm:
+        color_map = {}
+    else:
+        color_map = {
+            'equi+bufferaug': 'b',
+            'cnn+bufferaug': 'g',
+            'cnn+rad': 'r',
+            'cnn+drq': 'purple',
+            'cnn+curl': 'orange',
+        }
+
+    linestyle_map = {
+    }
+    name_map = {
+    }
+
+    sequence = {
+    }
+
+    i = 0
+    methods = filter(lambda x: x[0] != '.', get_immediate_subdirectories(base))
+    for method in sorted(methods, key=lambda x: sequence[x] if x in sequence.keys() else x):
+        rs = []
+        for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
+            try:
+                r = np.load(os.path.join(base, method, run, 'info/success_rate.npy'))
+                if method.find('BC') >= 0 or method.find('tp') >= 0:
+                    rs.append(r[-window:].mean())
+                else:
+                    rs.append(getRewardsSingle(r[:ep], window=window))
+            except Exception as e:
+                print(e)
+                continue
+
+        if method.find('BC') >= 0 or method.find('tp') >= 0:
+            avg_rewards = np.mean(rs, axis=0)
+            std_rewards = stats.sem(rs, axis=0)
+
+            plt.plot([0, ep], [avg_rewards, avg_rewards],
+                     label=name_map[method] if method in name_map else method,
+                     color=color_map[method] if method in color_map else colors[i])
+            plt.fill_between([0, ep], avg_rewards - std_rewards, avg_rewards + std_rewards, alpha=0.2, color=color_map[method] if method in color_map else colors[i])
+        else:
+            plotLearningCurveAvg(rs, window, label=name_map[method] if method in name_map else method,
+                                 color=color_map[method] if method in color_map else colors[i],
+                                 linestyle=linestyle_map[method] if method in linestyle_map else '-')
+        i += 1
+
+
+    # plt.plot([0, ep], [1.450, 1.450], label='planner')
+    plt.legend(loc=0, facecolor='w', fontsize='x-large')
+    plt.xlabel('number of episodes')
+    # if base.find('bbp') > -1:
+    plt.ylabel('success rate')
+
+    # plt.xlim((-100, ep+100))
+    # plt.yticks(np.arange(0., 1.05, 0.1))
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(base, 'sr.png'), bbox_inches='tight',pad_inches = 0)
+
 def showPerformance(base):
     methods = sorted(filter(lambda x: x[0] != '.', get_immediate_subdirectories(base)))
     for method in methods:
@@ -466,8 +539,9 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_1p/1205_clp/trans_no-pen'
+    base = '/media/dian/hdd/mrun_results/close_loop_1p/1207_clp/clp5_aug'
     plotLearningCurve(base, 500, window=20)
+    plotSuccessRate(base, 500, window=20)
     # plotEvalCurve(base, 20000, freq=500)
     showPerformance(base)
     # plotLoss(base, 30000)

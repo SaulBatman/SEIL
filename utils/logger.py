@@ -20,8 +20,6 @@ from utils.parameters import *
 # Transition object
 from utils.torch_utils import ExpertTransition
 
-plt.style.use('ggplot')
-
 class Logger(object):
     '''
     Logger for train/test runs.
@@ -137,6 +135,7 @@ class Logger(object):
 
     def saveLearningCurve(self, n=100):
         ''' Plot the rewards over timesteps and save to logging dir '''
+        plt.style.use('ggplot')
         n = min(n, len(self.rewards))
         if n > 0:
             avg_reward = np.mean(list(windowed(self.rewards, n)), axis=1)
@@ -154,6 +153,7 @@ class Logger(object):
             plt.close()
 
     def saveStepLeftCurve(self, n=100):
+        plt.style.use('ggplot')
         n = min(n, len(self.steps_left))
         if n > 0:
             plt.plot(np.mean(list(windowed(self.steps_left, n)), axis=1))
@@ -161,6 +161,7 @@ class Logger(object):
             plt.close()
 
     def saveLossCurve(self, n=100):
+        plt.style.use('ggplot')
         losses = np.array(self.losses)
         if len(losses) < n:
             return
@@ -178,6 +179,7 @@ class Logger(object):
         plt.close()
 
     def saveTdErrorCurve(self, n=100):
+        plt.style.use('ggplot')
         n = min(n, len(self.td_errors))
         if n > 0:
             plt.plot(np.mean(list(windowed(self.td_errors, n)), axis=1))
@@ -186,6 +188,7 @@ class Logger(object):
             plt.close()
 
     def saveEvalCurve(self):
+        plt.style.use('ggplot')
         if len(self.eval_rewards) > 0:
             xs = np.arange(eval_freq, (len(self.eval_rewards)+1) * eval_freq, eval_freq)
             plt.plot(xs, self.eval_rewards)
@@ -324,6 +327,7 @@ class Logger(object):
 
 
     def saveExpertSampleCurve(self, n=100):
+        plt.style.use('ggplot')
         n = min(n, len(self.expert_samples))
         if n > 0:
             plt.plot(np.mean(list(windowed(self.expert_samples, n)), axis=1))
