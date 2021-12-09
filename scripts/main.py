@@ -163,6 +163,7 @@ def train():
         s = 0
         if not no_bar:
             planner_bar = tqdm(total=planner_episode)
+        local_transitions = []
         while j < planner_episode:
             plan_actions = planner_envs.getNextAction()
             planner_actions_star_idx, planner_actions_star = agent.getActionFromPlan(plan_actions)
@@ -174,16 +175,22 @@ def train():
                                               steps_lefts[i].numpy(), np.array(1))
                 if obs_type == 'pixel':
                     transition = normalizeTransition(transition)
-                replay_buffer.add(transition)
+                # replay_buffer.add(transition)
+                local_transitions.append(transition)
             states = copy.copy(states_)
             obs = copy.copy(obs_)
 
-            j += dones.sum().item()
-            s += rewards.sum().item()
+            if dones.sum() and rewards.sum():
+                for t in local_transitions:
+                    replay_buffer.add(t)
+                j += dones.sum().item()
+                s += rewards.sum().item()
+                if not no_bar:
+                    planner_bar.set_description('{:.3f}/{}, AVG: {:.3f}'.format(s, j, float(s) / j if j != 0 else 0))
+                    planner_bar.update(dones.sum().item())
+            elif dones.sum():
+                local_transitions = []
 
-            if not no_bar:
-                planner_bar.set_description('{:.3f}/{}, AVG: {:.3f}'.format(s, j, float(s)/j if j != 0 else 0))
-                planner_bar.update(dones.sum().item())
         if expert_aug_n > 0:
             augmentBuffer(replay_buffer, buffer_aug_type, expert_aug_n)
 
