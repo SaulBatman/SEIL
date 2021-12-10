@@ -257,6 +257,11 @@ def train():
                         if obs_type == 'pixel':
                             transition = normalizeTransition(transition)
                         replay_buffer.add(transition)
+                        # insert extra training steps after simulation
+                        if train_simulate:
+                            if len(replay_buffer) >= training_offset:
+                                for training_iter in range(training_iters):
+                                    train_step(agent, replay_buffer, logger, p_beta_schedule)
 
                 sim_obs = sim_obs_
                 sim_states = sim_states_

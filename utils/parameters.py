@@ -72,6 +72,7 @@ training_group.add_argument('--aug_type', type=str, choices=['se2', 'cn', 't', '
 training_group.add_argument('--buffer_aug_n', type=int, default=4)
 training_group.add_argument('--expert_aug_n', type=int, default=0)
 training_group.add_argument('--simulate_n', type=int, default=0)
+training_group.add_argument('--train_simulate', type=strToBool, default=False)
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -189,6 +190,7 @@ buffer_aug_n = args.buffer_aug_n
 expert_aug_n = args.expert_aug_n
 
 simulate_n = args.simulate_n
+train_simulate = args.train_simulate
 
 # eval
 eval_freq = args.eval_freq

@@ -539,9 +539,9 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_1p/1207_clp/clp5_aug'
-    plotLearningCurve(base, 500, window=20)
-    plotSuccessRate(base, 500, window=20)
+    base = '/media/dian/hdd/mrun_results/close_loop_1p/1209_panda/sac_pen'
+    plotLearningCurve(base, 1000, window=20)
+    plotSuccessRate(base, 1000, window=20)
     # plotEvalCurve(base, 20000, freq=500)
     showPerformance(base)
     # plotLoss(base, 30000)
