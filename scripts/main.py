@@ -183,6 +183,7 @@ def train():
             if dones.sum() and rewards.sum():
                 for t in local_transitions:
                     replay_buffer.add(t)
+                local_transitions = []
                 j += dones.sum().item()
                 s += rewards.sum().item()
                 if not no_bar:
