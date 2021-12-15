@@ -539,7 +539,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_1p/1210_panda_2/buffer_aug/penf_train_sim_bufferaug_ban_sn/ban4'
+    base = '/media/dian/hdd/mrun_results/close_loop_1p/1214_D4_drot4_10k_sim/best_vs'
     plotLearningCurve(base, 1000, window=20)
     plotSuccessRate(base, 1000, window=20)
     # plotEvalCurve(base, 20000, freq=500)

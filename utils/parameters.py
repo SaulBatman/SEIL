@@ -29,7 +29,7 @@ env_group.add_argument('--heightmap_size', type=int, default=128)
 env_group.add_argument('--view_type', type=str, default='render_center')
 env_group.add_argument('--obs_type', type=str, default='pixel')
 env_group.add_argument('--transparent_bin', type=strToBool, default=False)
-env_group.add_argument('--collision_penalty', type=strToBool, default=True)
+env_group.add_argument('--collision_penalty', type=strToBool, default=False)
 env_group.add_argument('--fix_set', type=strToBool, default=False)
 
 training_group = parser.add_argument_group('training')
