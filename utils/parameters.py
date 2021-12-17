@@ -31,6 +31,7 @@ env_group.add_argument('--obs_type', type=str, default='pixel')
 env_group.add_argument('--transparent_bin', type=strToBool, default=False)
 env_group.add_argument('--collision_penalty', type=strToBool, default=False)
 env_group.add_argument('--fix_set', type=strToBool, default=False)
+env_group.add_argument('--collision_terminate', type=strToBool, default=False)
 
 training_group = parser.add_argument_group('training')
 training_group.add_argument('--alg', default='dqn')
@@ -141,6 +142,7 @@ else:
 transparent_bin = args.transparent_bin
 collision_penalty = args.collision_penalty
 fix_set = args.fix_set
+collision_terminate = args.collision_terminate
 
 ######################################################################################
 # training
@@ -234,7 +236,8 @@ env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size'
               'random_orientation':random_orientation, 'reward_type': reward_type, 'robot': robot,
               'workspace_check': 'point', 'object_scale_range': (1, 1),
               'hard_reset_freq': 1000, 'physics_mode' : 'fast', 'view_type': view_type, 'obs_type': obs_type,
-              'transparent_bin': transparent_bin, 'collision_penalty': collision_penalty, 'fix_set': fix_set}
+              'transparent_bin': transparent_bin, 'collision_penalty': collision_penalty, 'fix_set': fix_set,
+              'collision_terminate': collision_terminate}
 planner_config = {'random_orientation':random_orientation, 'dpos': dpos, 'drot': drot}
 if env == 'close_loop_household_picking':
     env_config['object_scale_range'] = (0.6, 0.6)
