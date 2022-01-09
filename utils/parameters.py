@@ -134,10 +134,8 @@ if env in ['close_loop_block_reaching', 'close_loop_block_picking', 'close_loop_
     obs_dim = 1 + 4 + 4
 elif env in ['close_loop_block_pulling', 'close_loop_block_picking_corner', 'close_loop_drawer_opening']:
     obs_dim = 1 + 4 + 4*2
-elif env in ['close_loop_block_stacking', 'close_loop_house_building_1', 'close_loop_clutter_picking']:
-    obs_dim = 1 + 4 + 4 * num_objects
 else:
-    raise NotImplementedError
+    obs_dim = 1 + 4 + 4 * num_objects
 
 transparent_bin = args.transparent_bin
 collision_penalty = args.collision_penalty

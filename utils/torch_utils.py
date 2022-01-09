@@ -270,11 +270,19 @@ def perturb(current_image, next_image, dxy, set_theta_zero=False, set_trans_zero
     rotated_dxy = np.clip(rotated_dxy, -1, 1)
 
     # Apply rigid transform to image and pixel labels.
-    current_image = affine_transform(current_image, np.linalg.inv(transform), mode='nearest', order=1)
+    transformed_current_image = []
+    for i in range(current_image.shape[0]):
+        transformed_current_image.append(affine_transform(current_image[i], np.linalg.inv(transform), mode='nearest', order=1))
+    transformed_current_image = np.stack(transformed_current_image)
+    # current_image = affine_transform(current_image, np.linalg.inv(transform), mode='nearest', order=1)
     if next_image is not None:
-        next_image = affine_transform(next_image, np.linalg.inv(transform), mode='nearest', order=1)
-
-    return current_image, next_image, rotated_dxy, transform_params
+        transformed_next_image = []
+        for i in range(next_image.shape[0]):
+            transformed_next_image.append(affine_transform(next_image[i], np.linalg.inv(transform), mode='nearest', order=1))
+        transformed_next_image = np.stack(transformed_next_image)
+    else:
+        transformed_next_image = None
+    return transformed_current_image, transformed_next_image, rotated_dxy, transform_params
 
 def perturbVec(current_state, next_state, dxy, set_theta_zero=False, set_trans_zero=False):
     assert not set_theta_zero
@@ -362,12 +370,10 @@ def augmentDQNTransitionC4(d):
                             next_obs, d.done, d.step_left, d.expert)
 
 def augmentTransitionCn(d):
-    obs, next_obs, dxy, transform_params = perturb(d.obs[0].copy(),
-                                                   d.next_obs[0].copy(),
+    obs, next_obs, dxy, transform_params = perturb(d.obs.copy(),
+                                                   d.next_obs.copy(),
                                                    d.action[1:3].copy(),
                                                    set_trans_zero=True)
-    obs = obs.reshape(1, *obs.shape)
-    next_obs = next_obs.reshape(1, *next_obs.shape)
     action = d.action.copy()
     action[1] = dxy[0]
     action[2] = dxy[1]

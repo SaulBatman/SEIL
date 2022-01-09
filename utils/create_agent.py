@@ -30,7 +30,7 @@ from networks.cnn import DQNComCURL, DQNComCURLOri
 
 def createAgent(test=False):
     print('initializing agent')
-    obs_channel = 2
+    obs_channel = 3
     if load_sub is not None or load_model_pre is not None or test:
         initialize = False
     else:
