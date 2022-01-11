@@ -238,7 +238,7 @@ def train():
         is_expert = 0
 
         # simulate actions
-        if envs.canSimulate():
+        if simulate_n > 0 and envs.canSimulate():
             sim_obs = obs
             sim_states = states
             for _ in range(simulate_n):
