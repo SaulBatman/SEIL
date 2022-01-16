@@ -227,6 +227,195 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
     plt.tight_layout()
     plt.savefig(os.path.join(base, 'eval.png'), bbox_inches='tight',pad_inches = 0)
 
+def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000):
+    plt.style.use('ggplot')
+    plt.figure(dpi=300)
+    MEDIUM_SIZE = 12
+    BIGGER_SIZE = 14
+
+    plt.rc('axes', titlesize=BIGGER_SIZE)  # fontsize of the axes title
+    plt.rc('axes', labelsize=BIGGER_SIZE)  # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
+    plt.rc('ytick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
+
+    colors = "bgrycmkwbgrycmkw"
+    if use_default_cm:
+        color_map = {}
+    else:
+        color_map = {
+            'equi+bufferaug': 'b',
+            'equi': 'b',
+            'cnn+bufferaug': 'g',
+            'cnn': 'g',
+            'cnn+rad': 'r',
+            'cnn+drq': 'purple',
+            'cnn+curl': 'orange',
+            'curl': 'orange',
+
+            'equi_both': 'b',
+            'equi_actor': 'r',
+            'equi_critic': 'purple',
+            'cnn_both': 'g',
+
+            'equi_rotaugall': 'b',
+            'cnn_rotaugall': 'g',
+            'rad_rotaugall': 'r',
+            'drq_rotaugall': 'purple',
+            'ferm_rotaugall': 'orange',
+
+            'sacfd_equi': 'b',
+            'sacfd_cnn': 'g',
+            'sacfd_rad_cn': 'r',
+            'sacfd_drq_cn': 'purple',
+            'sacfd_rad': 'r',
+            'sacfd_drq': 'purple',
+            'sacfd_ferm': 'orange',
+
+            'sac_equi': 'b',
+            'sac_cnn': 'g',
+            'sac_rad_crop': 'r',
+            'sac_drq_shift': 'purple',
+            'sac_curl': 'orange',
+
+            'dqn_equi': 'b',
+            'dqn_cnn': 'g',
+            'dqn_rad_crop': 'r',
+            'dqn_drq_shift': 'purple',
+            'dqn_curl': 'orange',
+
+            'C8': 'b',
+            'C4': 'g',
+            'C2': 'r',
+        }
+
+    linestyle_map = {
+    }
+    name_map = {
+        'equi+bufferaug': 'Equivariant',
+        'equi': 'Equivariant',
+        'cnn+bufferaug': 'CNN',
+        'cnn': 'CNN',
+        'cnn+rad': 'RAD',
+        'cnn+drq': 'DrQ',
+        'cnn+curl': 'FERM',
+        'curl': 'CURL',
+
+        'equi_both': 'Equi Actor + Equi Critic',
+        'equi_actor': 'Equi Actor + CNN Critic',
+        'equi_critic': 'CNN Actor + Equi Critic',
+        'cnn_both': 'CNN Actor + CNN Critic',
+
+        'equi_rotaugall': 'Equi SACfD',
+        'cnn_rotaugall': 'CNN SACfD',
+        'rad_rotaugall': 'RAD Crop SACfD',
+        'drq_rotaugall': 'DrQ Shift SACfD',
+        'ferm_rotaugall': 'FERM SACfD',
+
+        'sacfd_equi': 'Equi SACfD',
+        'sacfd_cnn': 'CNN SACfD',
+        'sacfd_rad_cn': 'RAD SO(2) SACfD',
+        'sacfd_drq_cn': 'DrQ SO(2) SACfD',
+        'sacfd_rad': 'RAD Crop SACfD',
+        'sacfd_drq': 'DrQ Shift SACfD',
+        'sacfd_ferm': 'FERM SACfD',
+
+        'sac_equi': 'Equi SAC',
+        'sac_cnn': 'CNN SAC',
+        'sac_rad_crop': 'RAD Crop SAC',
+        'sac_drq_shift': 'DrQ Shift SAC',
+        'sac_curl': 'FERM',
+
+        'dqn_equi': 'Equi DQN',
+        'dqn_cnn': 'CNN DQN',
+        'dqn_rad_crop': 'RAD Crop DQN',
+        'dqn_drq_shift': 'DrQ Shift DQN',
+        'dqn_curl': 'CURL DQN',
+    }
+
+    sequence = {
+        'equi+bufferaug': '0',
+        'equi': '0',
+        'cnn+bufferaug': '1',
+        'cnn': '1',
+        'cnn+rad': '2',
+        'cnn+drq': '3',
+        'cnn+curl': '4',
+        'curl': '4',
+
+        'equi_both': '0',
+        'equi_actor': '1',
+        'equi_critic': '2',
+        'cnn_both': '3',
+
+        'equi_rotaugall': '0',
+        'cnn_rotaugall': '1',
+        'rad_rotaugall': '2',
+        'drq_rotaugall': '3',
+        'ferm_rotaugall': '4',
+
+        'sacfd_equi': '0',
+        'sacfd_cnn': '1',
+        'sacfd_rad_cn': '2',
+        'sacfd_drq_cn': '3',
+        'sacfd_rad': '2',
+        'sacfd_drq': '3',
+        'sacfd_ferm': '4',
+
+        'sac_equi': '0',
+        'sac_cnn': '1',
+        'sac_rad_crop': '2',
+        'sac_drq_shift': '3',
+        'sac_curl': '4',
+
+        'dqn_equi': '0',
+        'dqn_cnn': '1',
+        'dqn_rad_crop': '2',
+        'dqn_drq_shift': '3',
+        'dqn_curl': '4',
+
+        'C8': '0',
+        'C4': '1',
+        'C2': '2',
+    }
+
+    i = 0
+    methods = filter(lambda x: x[0] != '.', get_immediate_subdirectories(base))
+    for method in sorted(methods, key=lambda x: sequence[x] if x in sequence.keys() else x):
+        rs = []
+        for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
+            try:
+                step_reward = np.load(os.path.join(base, method, run, 'info/step_reward.npy'))
+                r = []
+                for k in range(1, step+1, freq):
+                    window_rewards = step_reward[(k <= step_reward[:, 0]) * (step_reward[:, 0] < k + freq)][:, 1]
+                    if window_rewards.shape[0] > 0:
+                        r.append(window_rewards.mean())
+                    else:
+                        break
+                    # r.append(step_reward[(i <= step_reward[:, 0]) * (step_reward[:, 0] < i + freq)][:, 1].mean())
+                rs.append(r)
+            except Exception as e:
+                print(e)
+                continue
+
+        plotEvalCurveAvg(rs, freq, label=name_map[method] if method in name_map else method,
+                         color=color_map[method] if method in color_map else colors[i],
+                         linestyle=linestyle_map[method] if method in linestyle_map else '-')
+        i += 1
+
+
+    # plt.plot([0, ep], [1.450, 1.450], label='planner')
+    plt.legend(loc=0, facecolor='w', fontsize='x-large')
+    plt.xlabel('number of training steps')
+    # if base.find('bbp') > -1:
+    plt.ylabel('discounted reward')
+    # plt.xlim((-100, step+100))
+    # plt.yticks(np.arange(0., 1.05, 0.1))
+    # plt.ylim(bottom=-0.05)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(base, 'step_reward.png'), bbox_inches='tight',pad_inches = 0)
+
 def get_immediate_subdirectories(a_dir):
     return [name for name in os.listdir(a_dir)
             if os.path.isdir(os.path.join(a_dir, name))]
@@ -539,10 +728,12 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_1p/1216_fixsimproj_D4/a4s2_vs'
-    plotLearningCurve(base, 1000, window=20)
-    plotSuccessRate(base, 1000, window=20)
-    # plotEvalCurve(base, 20000, freq=500)
-    showPerformance(base)
+    base = '/media/dian/hdd/plot_test'
+    # plotLearningCurve(base, 1000, window=20)
+    # plotSuccessRate(base, 1000, window=20)
+    # plotEvalCurve(base, 5000, freq=200)
+    # showPerformance(base)
     # plotLoss(base, 30000)
+
+    plotStepRewardCurve(base, 3000, freq=200)
 

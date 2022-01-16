@@ -70,6 +70,8 @@ class Logger(object):
         self.steps_left = list()
         self.td_errors = list()
         self.expert_samples = list()
+        self.step_discounted_reward = list()
+        self.step_success = list()
 
         self.eval_rewards = list()
         self.success = list()
@@ -89,6 +91,8 @@ class Logger(object):
                     R = r + self.gamma * R
                 self.rewards.append(R)
                 self.success.append(self.episode_rewards[i][-1])
+                self.step_discounted_reward.append([self.num_training_steps, R])
+                self.step_success.append([self.num_training_steps, self.episode_rewards[i][-1]])
                 self.episode_rewards[i] = []
         # self.rewards.extend(self.episode_rewards[done_masks.astype(bool)])
         self.steps_left.extend(step_lefts[done_masks.astype(bool)])
@@ -209,6 +213,8 @@ class Logger(object):
     def saveRewards(self):
         np.save(os.path.join(self.info_dir, 'rewards.npy'), self.rewards)
         np.save(os.path.join(self.info_dir, 'success_rate.npy'), self.success)
+        np.save(os.path.join(self.info_dir, 'step_reward.npy'), self.step_discounted_reward)
+        np.save(os.path.join(self.info_dir, 'step_success_rate.npy'), self.step_success)
 
     def saveLosses(self):
         np.save(os.path.join(self.info_dir, 'losses.npy'), self.losses)
