@@ -283,6 +283,8 @@ class Logger(object):
                 'expert_samples': self.expert_samples,
                 'eval_rewards': self.eval_rewards,
                 'success': self.success,
+                'step_reward': self.step_discounted_reward,
+                'step_success': self.step_success,
             },
             'torch_rng_state': torch.get_rng_state(),
             'torch_cuda_rng_state': torch.cuda.get_rng_state(),
@@ -314,6 +316,8 @@ class Logger(object):
         self.expert_samples = checkpoint['logger']['expert_samples']
         self.eval_rewards = checkpoint['logger']['eval_rewards']
         self.success = checkpoint['logger']['success']
+        self.step_discounted_reward = checkpoint['logger']['step_reward']
+        self.step_success = checkpoint['logger']['step_success']
         torch.set_rng_state(checkpoint['torch_rng_state'])
         torch.cuda.set_rng_state(checkpoint['torch_cuda_rng_state'])
         np.random.set_state(checkpoint['np_rng_state'])
@@ -348,4 +352,6 @@ class Logger(object):
         np.save(os.path.join(result_dir, 'td_errors.npy'), self.td_errors)
         np.save(os.path.join(result_dir, 'eval_rewards.npy'), self.eval_rewards)
         np.save(os.path.join(result_dir, 'success_rate.npy'), self.success)
+        np.save(os.path.join(result_dir, 'step_reward.npy'), self.step_discounted_reward)
+        np.save(os.path.join(result_dir, 'step_success_rate.npy'), self.step_success)
 
