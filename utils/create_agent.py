@@ -21,6 +21,7 @@ from agents.sac_aug import SACAug
 from agents.bc_continuous import BehaviorCloningContinuous
 from agents.sac_drq import SACDrQ
 from agents.sacfd_drq import SACfDDrQ
+from agents.sac_aux import SACAux
 from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy, SACCritic2, SACGaussianPolicy2
 from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy, EquivariantSACCriticNoGP, EquivariantSACActor3, EquivariantSACActorDihedral, EquivariantSACCriticDihedral
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
@@ -116,7 +117,7 @@ def createAgent(test=False):
             raise NotImplementedError
         agent.initNetwork(actor, critic, initialize_target=not test)
 
-    elif alg in ['sac', 'sacfd', 'sacfd_mean', 'sac_drq', 'sacfd_drq']:
+    elif alg in ['sac', 'sacfd', 'sacfd_mean', 'sac_drq', 'sacfd_drq', 'sac_aux']:
         sac_lr = (actor_lr, critic_lr)
         if alg == 'sac':
             agent = SAC(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
@@ -141,6 +142,10 @@ def createAgent(test=False):
                              n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
                              target_update_interval=1, automatic_entropy_tuning=True, obs_type=obs_type,
                              demon_w=demon_w)
+        elif alg == 'sac_aux':
+            agent = SACAux(lr=sac_lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
+                           n_a=len(action_sequence), tau=tau, alpha=init_temp, policy_type='gaussian',
+                           target_update_interval=1, automatic_entropy_tuning=True, obs_type=obs_type)
         else:
             raise NotImplementedError
         # pixel observation

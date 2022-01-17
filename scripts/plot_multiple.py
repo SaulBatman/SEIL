@@ -124,19 +124,19 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
         'equi_critic': 'CNN Actor + Equi Critic',
         'cnn_both': 'CNN Actor + CNN Critic',
 
-        'equi_rotaugall': 'Equi SACfD',
-        'cnn_rotaugall': 'CNN SACfD',
-        'rad_rotaugall': 'RAD Crop SACfD',
-        'drq_rotaugall': 'DrQ Shift SACfD',
-        'ferm_rotaugall': 'FERM SACfD',
+        'equi_rotaugall': 'Equi SACAux',
+        'cnn_rotaugall': 'CNN SACAux',
+        'rad_rotaugall': 'RAD Crop SACAux',
+        'drq_rotaugall': 'DrQ Shift SACAux',
+        'ferm_rotaugall': 'FERM SACAux',
 
-        'sacfd_equi': 'Equi SACfD',
-        'sacfd_cnn': 'CNN SACfD',
-        'sacfd_rad_cn': 'RAD SO(2) SACfD',
-        'sacfd_drq_cn': 'DrQ SO(2) SACfD',
-        'sacfd_rad': 'RAD Crop SACfD',
-        'sacfd_drq': 'DrQ Shift SACfD',
-        'sacfd_ferm': 'FERM SACfD',
+        'sacfd_equi': 'Equi SACAux',
+        'sacfd_cnn': 'CNN SACAux',
+        'sacfd_rad_cn': 'RAD SO(2) SACAux',
+        'sacfd_drq_cn': 'DrQ SO(2) SACAux',
+        'sacfd_rad': 'RAD Crop SACAux',
+        'sacfd_drq': 'DrQ Shift SACAux',
+        'sacfd_ferm': 'FERM SACAux',
 
         'sac_equi': 'Equi SAC',
         'sac_cnn': 'CNN SAC',
@@ -243,139 +243,57 @@ def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000):
         color_map = {}
     else:
         color_map = {
-            'equi+bufferaug': 'b',
-            'equi': 'b',
-            'cnn+bufferaug': 'g',
-            'cnn': 'g',
-            'cnn+rad': 'r',
-            'cnn+drq': 'purple',
-            'cnn+curl': 'orange',
-            'curl': 'orange',
+            'dpos=0.05, drot=0.25pi': 'b',
+            'dpos=0.05, drot=0.125pi': 'g',
+            'dpos=0.03, drot=0.125pi': 'r',
+            'dpos=0.1, drot=0.25pi': 'purple',
 
-            'equi_both': 'b',
-            'equi_actor': 'r',
-            'equi_critic': 'purple',
-            'cnn_both': 'g',
+            'ban0': 'g',
+            'ban2': 'r',
+            'ban4': 'b',
+            'ban8': 'purple',
+            'ban16': 'orange',
 
-            'equi_rotaugall': 'b',
-            'cnn_rotaugall': 'g',
-            'rad_rotaugall': 'r',
-            'drq_rotaugall': 'purple',
-            'ferm_rotaugall': 'orange',
-
-            'sacfd_equi': 'b',
-            'sacfd_cnn': 'g',
-            'sacfd_rad_cn': 'r',
-            'sacfd_drq_cn': 'purple',
-            'sacfd_rad': 'r',
-            'sacfd_drq': 'purple',
-            'sacfd_ferm': 'orange',
-
-            'sac_equi': 'b',
-            'sac_cnn': 'g',
-            'sac_rad_crop': 'r',
-            'sac_drq_shift': 'purple',
-            'sac_curl': 'orange',
-
-            'dqn_equi': 'b',
-            'dqn_cnn': 'g',
-            'dqn_rad_crop': 'r',
-            'dqn_drq_shift': 'purple',
-            'dqn_curl': 'orange',
-
-            'C8': 'b',
             'C4': 'g',
-            'C2': 'r',
+            'C8': 'r',
+            'D4': 'b',
+            'D8': 'purple',
+
+            '0': 'r',
+            '10': 'g',
+            '20': 'b',
+            '40': 'purple',
+
+            'sac+ban4': 'b',
+            'sac+rot rad': 'g',
+            'sac+rot rad+ban4': 'r',
         }
 
     linestyle_map = {
     }
     name_map = {
-        'equi+bufferaug': 'Equivariant',
-        'equi': 'Equivariant',
-        'cnn+bufferaug': 'CNN',
-        'cnn': 'CNN',
-        'cnn+rad': 'RAD',
-        'cnn+drq': 'DrQ',
-        'cnn+curl': 'FERM',
-        'curl': 'CURL',
+        'ban0': 'buffer aug 0',
+        'ban2': 'buffer aug 2',
+        'ban4': 'buffer aug 4',
+        'ban8': 'buffer aug 8',
+        'ban16': 'buffer aug 16',
 
-        'equi_both': 'Equi Actor + Equi Critic',
-        'equi_actor': 'Equi Actor + CNN Critic',
-        'equi_critic': 'CNN Actor + Equi Critic',
-        'cnn_both': 'CNN Actor + CNN Critic',
+        'sac+ban4': 'SAC + buffer aug',
+        'sac+rot rad': 'SAC+ rot RAD',
+        'sac+rot rad+ban4': 'SAC + rot RAD + buffer aug',
 
-        'equi_rotaugall': 'Equi SACfD',
-        'cnn_rotaugall': 'CNN SACfD',
-        'rad_rotaugall': 'RAD Crop SACfD',
-        'drq_rotaugall': 'DrQ Shift SACfD',
-        'ferm_rotaugall': 'FERM SACfD',
+        'sac': 'SAC',
+        'sacfd': 'SACAux',
 
-        'sacfd_equi': 'Equi SACfD',
-        'sacfd_cnn': 'CNN SACfD',
-        'sacfd_rad_cn': 'RAD SO(2) SACfD',
-        'sacfd_drq_cn': 'DrQ SO(2) SACfD',
-        'sacfd_rad': 'RAD Crop SACfD',
-        'sacfd_drq': 'DrQ Shift SACfD',
-        'sacfd_ferm': 'FERM SACfD',
-
-        'sac_equi': 'Equi SAC',
-        'sac_cnn': 'CNN SAC',
-        'sac_rad_crop': 'RAD Crop SAC',
-        'sac_drq_shift': 'DrQ Shift SAC',
-        'sac_curl': 'FERM',
-
-        'dqn_equi': 'Equi DQN',
-        'dqn_cnn': 'CNN DQN',
-        'dqn_rad_crop': 'RAD Crop DQN',
-        'dqn_drq_shift': 'DrQ Shift DQN',
-        'dqn_curl': 'CURL DQN',
+        'sac+crop rad': 'SAC + crop RAD'
     }
 
     sequence = {
-        'equi+bufferaug': '0',
-        'equi': '0',
-        'cnn+bufferaug': '1',
-        'cnn': '1',
-        'cnn+rad': '2',
-        'cnn+drq': '3',
-        'cnn+curl': '4',
-        'curl': '4',
-
-        'equi_both': '0',
-        'equi_actor': '1',
-        'equi_critic': '2',
-        'cnn_both': '3',
-
-        'equi_rotaugall': '0',
-        'cnn_rotaugall': '1',
-        'rad_rotaugall': '2',
-        'drq_rotaugall': '3',
-        'ferm_rotaugall': '4',
-
-        'sacfd_equi': '0',
-        'sacfd_cnn': '1',
-        'sacfd_rad_cn': '2',
-        'sacfd_drq_cn': '3',
-        'sacfd_rad': '2',
-        'sacfd_drq': '3',
-        'sacfd_ferm': '4',
-
-        'sac_equi': '0',
-        'sac_cnn': '1',
-        'sac_rad_crop': '2',
-        'sac_drq_shift': '3',
-        'sac_curl': '4',
-
-        'dqn_equi': '0',
-        'dqn_cnn': '1',
-        'dqn_rad_crop': '2',
-        'dqn_drq_shift': '3',
-        'dqn_curl': '4',
-
-        'C8': '0',
-        'C4': '1',
-        'C2': '2',
+        'ban0': '0',
+        'ban2': '1',
+        'ban4': '2',
+        'ban8': '3',
+        'ban16': '4',
     }
 
     i = 0
@@ -728,7 +646,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_1p/0116_ban/push'
+    base = '/media/dian/hdd/mrun_results/close_loop_1p/RSS/n_expert/bowl'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 1000, window=20)
     # plotEvalCurve(base, 5000, freq=200)
