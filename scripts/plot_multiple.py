@@ -267,6 +267,10 @@ def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000):
             'sac+ban4': 'b',
             'sac+rot rad': 'g',
             'sac+rot rad+ban4': 'r',
+            'sac+ban0': 'purple',
+
+            'sac+ban4': 'b',
+            'sac+aux+ban4': 'g',
         }
 
     linestyle_map = {
@@ -281,6 +285,9 @@ def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000):
         'sac+ban4': 'SAC + buffer aug',
         'sac+rot rad': 'SAC+ rot RAD',
         'sac+rot rad+ban4': 'SAC + rot RAD + buffer aug',
+        'sac+ban0': 'SAC',
+
+        'sac+aux+ban4': 'SAC + aux loss + buffer aug',
 
         'sac': 'SAC',
         'sacfd': 'SACAux',
@@ -646,7 +653,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_1p/RSS/n_expert/bowl'
+    base = '/media/dian/hdd/mrun_results/close_loop_1p/RSS/rad rot/push'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 1000, window=20)
     # plotEvalCurve(base, 5000, freq=200)
