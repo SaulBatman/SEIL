@@ -132,7 +132,7 @@ action_space = [0, heightmap_size]
 view_type = args.view_type
 view_scale = args.view_scale
 if view_scale is None:
-    if env in ['close_loop_clutter_picking']:
+    if env in ['close_loop_clutter_picking', 'close_loop_block_picking']:
         view_scale = 1.
     else:
         view_scale = 1.5
