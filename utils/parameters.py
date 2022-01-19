@@ -26,7 +26,8 @@ env_group.add_argument('--num_eval_processes', type=int, default=5)
 env_group.add_argument('--render', type=strToBool, default=False)
 env_group.add_argument('--workspace_size', type=float, default=0.3)
 env_group.add_argument('--heightmap_size', type=int, default=128)
-env_group.add_argument('--view_type', type=str, default='render_center')
+env_group.add_argument('--view_type', type=str, default='render_center_height')
+env_group.add_argument('--view_scale', type=float, default=None)
 env_group.add_argument('--obs_type', type=str, default='pixel')
 env_group.add_argument('--transparent_bin', type=strToBool, default=False)
 env_group.add_argument('--collision_penalty', type=strToBool, default=False)
@@ -129,6 +130,12 @@ heightmap_size = args.heightmap_size
 heightmap_resolution = workspace_size/heightmap_size
 action_space = [0, heightmap_size]
 view_type = args.view_type
+view_scale = args.view_scale
+if view_scale is None:
+    if env in ['close_loop_clutter_picking']:
+        view_scale = 1.
+    else:
+        view_scale = 1.5
 obs_type = args.obs_type
 if env in ['close_loop_block_reaching', 'close_loop_block_picking', 'close_loop_household_picking']:
     obs_dim = 1 + 4 + 4
@@ -235,7 +242,7 @@ env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size'
               'workspace_check': 'point', 'object_scale_range': (1, 1),
               'hard_reset_freq': 1000, 'physics_mode' : 'fast', 'view_type': view_type, 'obs_type': obs_type,
               'transparent_bin': transparent_bin, 'collision_penalty': collision_penalty, 'fix_set': fix_set,
-              'collision_terminate': collision_terminate}
+              'collision_terminate': collision_terminate, 'view_scale': view_scale}
 planner_config = {'random_orientation':random_orientation, 'dpos': dpos, 'drot': drot}
 if env == 'close_loop_household_picking':
     env_config['object_scale_range'] = (0.6, 0.6)
