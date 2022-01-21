@@ -283,7 +283,7 @@ def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000):
         'ban16': 'buffer aug 16',
 
         'sac+ban4': 'SAC + buffer aug',
-        'sac+rot rad': 'SAC+ rot RAD',
+        'sac+rot rad': 'SAC + rot RAD',
         'sac+rot rad+ban4': 'SAC + rot RAD + buffer aug',
         'sac+ban0': 'SAC',
 
@@ -659,7 +659,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_1p/RSS/view_scale/bowl'
+    base = '/media/dian/hdd/mrun_results/close_loop_1p/RSS/rad rot/push'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 1000, window=20)
     # plotEvalCurve(base, 5000, freq=200)
