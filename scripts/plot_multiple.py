@@ -227,7 +227,7 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
     plt.tight_layout()
     plt.savefig(os.path.join(base, 'eval.png'), bbox_inches='tight',pad_inches = 0)
 
-def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000):
+def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000, file_name='step_reward'):
     plt.style.use('ggplot')
     plt.figure(dpi=300)
     MEDIUM_SIZE = 12
@@ -271,6 +271,9 @@ def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000):
 
             'sac+aux+ban0': 'g',
             'sac+aux+ban4': 'r',
+
+            'equi sac': 'b',
+            'ferm': 'g'
         }
 
     linestyle_map = {
@@ -291,9 +294,12 @@ def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000):
         'sac+aux+ban0': 'SAC + aux loss',
 
         'sac': 'SAC',
-        'sacfd': 'SACAux',
+        'sacfd': 'SACfD',
 
-        'sac+crop rad': 'SAC + crop RAD'
+        'sac+crop rad': 'SAC + crop RAD',
+
+        'equi sac': 'Equivariant SAC',
+        'ferm': 'FERM'
     }
 
     sequence = {
@@ -315,7 +321,7 @@ def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000):
         rs = []
         for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
             try:
-                step_reward = np.load(os.path.join(base, method, run, 'info/step_reward.npy'))
+                step_reward = np.load(os.path.join(base, method, run, 'info/{}.npy'.format(file_name)))
                 r = []
                 for k in range(1, step+1, freq):
                     window_rewards = step_reward[(k <= step_reward[:, 0]) * (step_reward[:, 0] < k + freq)][:, 1]
@@ -659,12 +665,13 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_1p/RSS/rad rot/push'
+    base = '/media/dian/hdd/mrun_results/close_loop_1p/RSS_depth/aux/bowl'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 1000, window=20)
     # plotEvalCurve(base, 5000, freq=200)
     # showPerformance(base)
     # plotLoss(base, 30000)
 
+    # plotStepRewardCurve(base, 2000, freq=200, file_name='train_step_reward')
     plotStepRewardCurve(base, 10000, freq=200)
 
