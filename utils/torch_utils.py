@@ -146,6 +146,23 @@ def argmax4d(tensor):
 
     return torch.cat((d0, d1, d2, d3), dim=1)
 
+def argmax5d(tensor):
+    n = tensor.size(0)
+    c1 = tensor.size(1)
+    c2 = tensor.size(2)
+    c3 = tensor.size(3)
+    c4 = tensor.size(4)
+    c5 = tensor.size(5)
+    m = tensor.reshape(n, -1).argmax(1)
+
+    d0 = (m//(c5*c4*c3*c2)).reshape(-1, 1)
+    d1 = ((m%(c5*c4*c3*c2))//(c5*c4*c3)).reshape(-1, 1)
+    d2 = (((m%(c5*c4*c3*c2))%(c5*c4*c3))//(c5*c4)).reshape(-1, 1)
+    d3 = ((((m%(c5*c4*c3*c2))%(c5*c4*c3))%(c5*c4))//c5).reshape(-1, 1)
+    d4 = ((((m%(c5*c4*c3*c2))%(c5*c4*c3))%(c5*c4))%c5).reshape(-1, 1)
+
+    return torch.cat((d0, d1, d2, d3, d4), dim=1)
+
 def softUpdate(target_net, source_net, tau):
     '''
     Move target  net to source net a small amount

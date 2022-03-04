@@ -7,7 +7,7 @@ from agents.sdqfd_agent_com_drq import SDQfDComDrQ
 from agents.curl_dqn_com import CURLDQNCom
 from agents.curl_sdqfd_com import CURLSDQfDCom
 from networks.cnn import CNNFac, CNNCom, CNNCom2
-from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, EquivariantCNNFac3, EquivariantCNNCom, EquivariantCNNCom2
+from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, EquivariantCNNFac3, EquivariantCNNCom, EquivariantCNNCom2, EquivariantCNNComD4
 
 from agents.ddpg import DDPG
 from agents.ddpgfd import DDPGfD
@@ -22,6 +22,8 @@ from agents.bc_continuous import BehaviorCloningContinuous
 from agents.sac_drq import SACDrQ
 from agents.sacfd_drq import SACfDDrQ
 from agents.sac_aux import SACAux
+from agents.fcn_dqn import FCNDQN
+from agents.fcn_sdqfd import FCNSDQfD
 from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy, SACCritic2, SACGaussianPolicy2
 from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy, EquivariantSACCriticNoGP, EquivariantSACActor3, EquivariantSACActorDihedral, EquivariantSACCriticDihedral, EquivariantSACActorDihedralShareEnc, EquivariantSACCriticDihedralShareEnc, EquivariantEncoder128Dihedral
 from networks.equivariant_sac_net import EquivariantSACActorSO2_1, EquivariantSACCriticSO2_1, EquivariantSACActorSO2_2, EquivariantSACCriticSO2_2, EquivariantSACActorSO2_3, EquivariantSACCriticSO2_3, EquivariantPolicySO2, EquivariantSACActorO2, EquivariantSACCriticO2, EquivariantPolicyO2, EquivariantSACActorO2_2, EquivariantSACCriticO2_2, EquivariantSACActorO2_3, EquivariantSACCriticO2_3
@@ -29,6 +31,8 @@ from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGC
 from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy, CURLSACEncoderOri, CURLSACEncoder2
 from networks.curl_equi_sac_net import CURLEquiSACEncoder, CURLEquiSACCritic, CURLEquiSACGaussianPolicy
 from networks.cnn import DQNComCURL, DQNComCURLOri
+from networks.equivariant_fcn import EquFCN
+from networks.cnn_fcn import FCN
 
 def createAgent(test=False):
     print('initializing agent')
@@ -77,6 +81,8 @@ def createAgent(test=False):
             net = EquivariantCNNCom(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_2':
             net = EquivariantCNNCom2(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
+        elif model == 'equi_d':
+            net = EquivariantCNNComD4(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(net, initialize_target=not test)
@@ -92,6 +98,21 @@ def createAgent(test=False):
         # network from curl paper
         elif model == 'cnn_curl':
             net = DQNComCURLOri((obs_channel, crop_size, crop_size), n_p, n_theta).to(device)
+        else:
+            raise NotImplementedError
+        agent.initNetwork(net)
+
+    elif alg in ['dqn_fcn', 'sdqfd_fcn']:
+        if alg == 'dqn_fcn':
+            agent = FCNDQN(workspace, heightmap_size, lr, gamma, device, dpos, dpos, dpos, drot, tau)
+        elif alg == 'sdqfd_fcn':
+            agent = FCNSDQfD(workspace, heightmap_size, lr, gamma, device, dpos, dpos, dpos, drot, tau, margin_l, margin_weight)
+        else:
+            raise NotImplementedError
+        if model == 'equi':
+            net = EquFCN(obs_channel, n_p*n_theta*3, 4, n_middle_channels=(16, 32, 64, 128), kernel_size=3, flip=True, initialize=True).to(device)
+        elif model == 'cnn':
+            net = FCN(obs_channel, n_p*n_theta*3).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(net)
