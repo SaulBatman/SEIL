@@ -24,6 +24,8 @@ from agents.sacfd_drq import SACfDDrQ
 from agents.sac_aux import SACAux
 from agents.fcn_dqn import FCNDQN
 from agents.fcn_sdqfd import FCNSDQfD
+from agents.fcn_dqn_fac import FCNDQNFac
+from agents.fcn_sdqfd_fac import FCNSDQfDFac
 from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy, SACCritic2, SACGaussianPolicy2
 from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy, EquivariantSACCriticNoGP, EquivariantSACActor3, EquivariantSACActorDihedral, EquivariantSACCriticDihedral, EquivariantSACActorDihedralShareEnc, EquivariantSACCriticDihedralShareEnc, EquivariantEncoder128Dihedral
 from networks.equivariant_sac_net import EquivariantSACActorSO2_1, EquivariantSACCriticSO2_1, EquivariantSACActorSO2_2, EquivariantSACCriticSO2_2, EquivariantSACActorSO2_3, EquivariantSACCriticSO2_3, EquivariantPolicySO2, EquivariantSACActorO2, EquivariantSACCriticO2, EquivariantPolicyO2, EquivariantSACActorO2_2, EquivariantSACCriticO2_2, EquivariantSACActorO2_3, EquivariantSACCriticO2_3
@@ -32,6 +34,7 @@ from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussian
 from networks.curl_equi_sac_net import CURLEquiSACEncoder, CURLEquiSACCritic, CURLEquiSACGaussianPolicy
 from networks.cnn import DQNComCURL, DQNComCURLOri
 from networks.equivariant_fcn import EquFCN
+from networks.equivariant_fcn import EquFCNFac
 from networks.cnn_fcn import FCN
 
 def createAgent(test=False):
@@ -102,17 +105,32 @@ def createAgent(test=False):
             raise NotImplementedError
         agent.initNetwork(net)
 
-    elif alg in ['dqn_fcn', 'sdqfd_fcn']:
-        if alg == 'dqn_fcn':
+    elif alg in ['fcn_dqn', 'fcn_sdqfd']:
+        if alg == 'fcn_dqn':
             agent = FCNDQN(workspace, heightmap_size, lr, gamma, device, dpos, dpos, dpos, drot, tau)
-        elif alg == 'sdqfd_fcn':
+        elif alg == 'fcn_sdqfd':
             agent = FCNSDQfD(workspace, heightmap_size, lr, gamma, device, dpos, dpos, dpos, drot, tau, margin_l, margin_weight)
         else:
             raise NotImplementedError
         if model == 'equi':
-            net = EquFCN(obs_channel, n_p*n_theta*3, 4, n_middle_channels=(16, 32, 64, 128), kernel_size=3, flip=True, initialize=True).to(device)
+            net = EquFCN(obs_channel, n_p*n_theta*3, 4, n_middle_channels=(16, 32, 64, 64), kernel_size=3, flip=True, initialize=initialize).to(device)
         elif model == 'cnn':
             net = FCN(obs_channel, n_p*n_theta*3).to(device)
+        else:
+            raise NotImplementedError
+        agent.initNetwork(net)
+
+    elif alg in ['fcn_dqn_fac', 'fcn_sdqfd_fac']:
+        if alg == 'fcn_dqn_fac':
+            agent = FCNDQNFac(workspace, heightmap_size, lr, gamma, device, dpos, dpos, dpos, drot, tau)
+        elif alg == 'fcn_sdqfd_fac':
+            agent = FCNSDQfDFac(workspace, heightmap_size, lr, gamma, device, dpos, dpos, dpos, drot, tau, margin_l, margin_weight)
+        else:
+            raise NotImplementedError
+        if model == 'equi':
+            net = EquFCNFac(obs_channel, 4, n_middle_channels=(16, 32, 64, 64), kernel_size=3, flip=True, initialize=initialize).to(device)
+        # elif model == 'cnn':
+        #     net = FCN(obs_channel, n_p*n_theta*3).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(net)

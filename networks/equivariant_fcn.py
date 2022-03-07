@@ -214,3 +214,53 @@ class EquFCN(torch.nn.Module):
 
     def forward(self, obs):
         return self.net(obs).tensor
+
+class EquFCNFac(torch.nn.Module):
+    def __init__(self, n_input_channel=1, N=8,
+                 n_middle_channels=(16, 32, 64, 128), kernel_size=3, flip=False, initialize=True):
+        super().__init__()
+        self.N = N
+        if flip:
+            self.r2_act = gspaces.FlipRot2dOnR2(N=N)
+        else:
+            self.r2_act = gspaces.Rot2dOnR2(N=N)
+
+        self.repr = self.r2_act.regular_repr
+
+        self.unet = EquResUNet(n_input_channel=n_input_channel, n_output_channel=n_middle_channels[0],
+                       n_middle_channels=n_middle_channels, kernel_size=kernel_size, N=N, flip=flip,
+                       quotient=False, initialize=initialize)
+        self.q_equ = nn.R2Conv(nn.FieldType(self.r2_act, n_middle_channels[0] * [self.repr]),
+                               nn.FieldType(self.r2_act, 1 * [self.r2_act.trivial_repr]), kernel_size=1,
+                               initialize=initialize)
+        self.q_inv = torch.nn.Sequential(
+            # 8x8
+            nn.R2Conv(nn.FieldType(self.r2_act, n_middle_channels[3] * [self.repr]),
+                      nn.FieldType(self.r2_act, n_middle_channels[3] * [self.repr]),
+                      kernel_size=3, padding=0, initialize=initialize),
+            # 6x6
+            nn.ReLU(nn.FieldType(self.r2_act, n_middle_channels[3] * [self.repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, n_middle_channels[3] * [self.repr]), 2),
+            # 3x3
+            nn.R2Conv(nn.FieldType(self.r2_act, n_middle_channels[3] * [self.repr]),
+                      nn.FieldType(self.r2_act, n_middle_channels[3] * [self.repr]),
+                      kernel_size=3, padding=0, initialize=initialize),
+            # 1x1
+            nn.ReLU(nn.FieldType(self.r2_act, n_middle_channels[3] * [self.repr]), inplace=True),
+            nn.R2Conv(nn.FieldType(self.r2_act, n_middle_channels[3] * [self.repr]),
+                      nn.FieldType(self.r2_act, 8 * [self.r2_act.trivial_repr]), kernel_size=1,
+                      initialize=initialize),
+        )
+
+    def forward(self, obs):
+        batch_size = obs.shape[0]
+        feature_map_1, feature_map_2, feature_map_4, feature_map_8, feature_map_16 = self.unet.forwardEncoder(obs)
+        decoder_out = self.unet.forwardDecoder(feature_map_1, feature_map_2, feature_map_4, feature_map_8, feature_map_16)
+        q_equ_out = self.q_equ(decoder_out).tensor
+        q_equ_out = q_equ_out.reshape(batch_size, q_equ_out.shape[-2], q_equ_out.shape[-1])
+        q_inv_out = self.q_inv(feature_map_16).tensor.reshape(batch_size, -1)
+        dz = q_inv_out[:, :3]
+        p = q_inv_out[:, 3:3+2]
+        dtheta = q_inv_out[:, 3+2: 3+2+3]
+        return p, q_equ_out, dz, dtheta
+
