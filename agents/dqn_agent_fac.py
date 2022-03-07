@@ -63,6 +63,8 @@ class DQNAgentFac(DQNBase):
         q_dtheta_pred = q_dtheta[torch.arange(batch_size), dtheta_id]
         q_pred = q_p_pred + q_dxy_pred + q_dz_pred + q_dtheta_pred
         td_loss = F.smooth_l1_loss(q_pred, q_target)
+        self.loss_calc_dict['q_output'] = q_p, q_dxy, q_dz, q_dtheta
+        self.loss_calc_dict['q_pred'] = q_p_pred, q_dxy_pred, q_dz_pred, q_dtheta_pred
         with torch.no_grad():
             td_error = torch.abs(q_pred - q_target)
         return td_loss, td_error
