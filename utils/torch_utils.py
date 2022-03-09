@@ -301,6 +301,76 @@ def perturb(current_image, next_image, dxy, set_theta_zero=False, set_trans_zero
         transformed_next_image = None
     return transformed_current_image, transformed_next_image, rotated_dxy, transform_params
 
+def perturbPixel(current_image, next_image, pixels, set_theta_zero=False, set_trans_zero=False):
+  image_size = current_image.shape[-2:]
+  if np.any(np.array(pixels) > image_size[0]-5) or np.any(np.array(pixels) < 5):
+      set_theta_zero = True
+
+  # Compute random rigid transform.
+  while True:
+    theta, trans, pivot = get_random_image_transform_params(image_size)
+    if set_theta_zero:
+      theta = 0.
+    if set_trans_zero:
+      trans = [0., 0.]
+    transform = get_image_transform(theta, trans, pivot)
+    transform_params = theta, trans, pivot
+
+    # Ensure pixels remain in the image after transform.
+    is_valid = True
+    new_pixels = []
+    new_rounded_pixels = []
+    for pixel in pixels:
+      pixel = np.float32([pixel[1], pixel[0], 1.]).reshape(3, 1)
+
+      rounded_pixel = np.int32(np.round(transform @ pixel))[:2].squeeze()
+      rounded_pixel = np.flip(rounded_pixel)
+
+      pixel = (transform @ pixel)[:2].squeeze()
+      pixel = np.flip(pixel)
+
+      in_fov_rounded = rounded_pixel[0] < image_size[0] and rounded_pixel[
+        1] < image_size[1]
+      in_fov = pixel[0] < image_size[0] and pixel[1] < image_size[1]
+
+      is_valid = is_valid and np.all(rounded_pixel >= 0) and np.all(
+        pixel >= 0) and in_fov_rounded and in_fov
+
+      new_pixels.append(pixel)
+      new_rounded_pixels.append(rounded_pixel)
+    if is_valid:
+      break
+
+  # Apply rigid transform to image and pixel labels.
+  transformed_current_image = []
+  for i in range(current_image.shape[0]):
+      transformed_current_image.append(
+          affine_transform(current_image[i], transform, mode='nearest', order=1))
+  transformed_current_image = np.stack(transformed_current_image)
+  if next_image is not None:
+      transformed_next_image = []
+      for i in range(next_image.shape[0]):
+          transformed_next_image.append(
+              affine_transform(next_image[i], transform, mode='nearest', order=1))
+      transformed_next_image = np.stack(transformed_next_image)
+  else:
+      transformed_next_image = None
+
+  return transformed_current_image, transformed_next_image, new_rounded_pixels[0], transform_params
+
+
+  # current_image = cv2.warpAffine(
+  #     current_image,
+  #     transform[:2, :], (image_size[1], image_size[0]),
+  #     flags=cv2.INTER_NEAREST)
+  # if next_image is not None:
+  #     next_image = cv2.warpAffine(
+  #         next_image,
+  #         transform[:2, :], (image_size[1], image_size[0]),
+  #         flags=cv2.INTER_NEAREST)
+  #
+  # return current_image, next_image, new_rounded_pixels[0], transform_params
+
 def perturbVec(current_state, next_state, dxy, set_theta_zero=False, set_trans_zero=False):
     assert not set_theta_zero
     assert set_trans_zero
@@ -386,10 +456,22 @@ def augmentDQNTransitionC4(d):
     return ExpertTransition(d.state, obs, action, d.reward, d.next_state,
                             next_obs, d.done, d.step_left, d.expert)
 
-def augmentTransitionCn(d):
+def augmentTransitionSO2(d):
     obs, next_obs, dxy, transform_params = perturb(d.obs.copy(),
                                                    d.next_obs.copy(),
                                                    d.action[1:3].copy(),
+                                                   set_trans_zero=True)
+    action = d.action.copy()
+    action[1] = dxy[0]
+    action[2] = dxy[1]
+    return ExpertTransition(d.state, obs, action, d.reward, d.next_state,
+                            next_obs, d.done, d.step_left, d.expert)
+
+def augmentTransitionSO2Pixel(d):
+    import matplotlib.pyplot as plt
+    obs, next_obs, dxy, transform_params = perturbPixel(d.obs.copy(),
+                                                   d.next_obs.copy(),
+                                                   [d.action[1:3].copy()],
                                                    set_trans_zero=True)
     action = d.action.copy()
     action[1] = dxy[0]
@@ -466,8 +548,10 @@ def augmentTransitionCrop(d):
 def augmentTransition(d, aug_type):
     if aug_type == 'se2':
         return augmentTransitionSE2(d)
-    elif aug_type == 'cn':
-        return augmentTransitionCn(d)
+    elif aug_type == 'so2':
+        return augmentTransitionSO2(d)
+    elif aug_type == 'so2_pixel':
+        return augmentTransitionSO2Pixel(d)
     elif aug_type == 't':
         return augmentTransitionTranslate(d)
     elif aug_type == 'dqn_c4':
