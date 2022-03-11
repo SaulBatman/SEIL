@@ -15,7 +15,7 @@ def test():
     agent.train()
     agent.loadModel(load_model_pre)
     states, obs = envs.reset()
-    test_episode = 50
+    test_episode = 100
     total = 0
     s = 0
     step_times = []

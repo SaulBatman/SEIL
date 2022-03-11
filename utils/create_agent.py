@@ -138,6 +138,8 @@ def createAgent(test=False):
             raise NotImplementedError
         if model == 'equi':
             net = EquFCNFac(obs_channel, 4, n_middle_channels=(16, 32, 64, 64), kernel_size=3, flip=True, initialize=initialize).to(device)
+        elif model == 'equi_small':
+            net = EquFCNFac(obs_channel, 4, n_middle_channels=(8, 16, 32, 64), kernel_size=3, flip=True, initialize=initialize).to(device)
         # elif model == 'cnn':
         #     net = FCN(obs_channel, n_p*n_theta*3).to(device)
         else:
