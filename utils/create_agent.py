@@ -37,6 +37,7 @@ from networks.cnn import DQNComCURL, DQNComCURLOri
 from networks.equivariant_fcn import EquFCN
 from networks.equivariant_fcn import EquFCNFac
 from networks.cnn_fcn import FCN
+from networks.equivariant import EquiCNNFacD4WithNonEquiFCN, EquiCNNFacD4WithNonEquiEnc
 
 def createAgent(test=False):
     print('initializing agent')
@@ -70,6 +71,10 @@ def createAgent(test=False):
             net = EquivariantCNNFac3(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_d':
             net = EquivariantCNNFacD4(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
+        elif model == 'equi_d_w_fcn':
+            net = EquiCNNFacD4WithNonEquiFCN(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
+        elif model == 'equi_d_w_enc':
+            net = EquiCNNFacD4WithNonEquiEnc(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(net, initialize_target=not test)

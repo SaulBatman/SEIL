@@ -665,13 +665,13 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_fcn/0307_dqn_vs_sdqfd'
+    base = '/media/dian/hdd/mrun_results/close_loop_fcn/0310_fcn_small'
     # plotLearningCurve(base, 1000, window=20)
     plotSuccessRate(base, 3000, window=100)
     plotEvalCurve(base, 10000, freq=1000)
     # showPerformance(base)
     # plotLoss(base, 30000)
 
-    # plotStepRewardCurve(base, 2000, freq=200, file_name='train_step_reward')
+    plotStepRewardCurve(base, 10000, freq=200, file_name='step_success_rate')
     # plotStepRewardCurve(base, 10000, freq=200)
 
