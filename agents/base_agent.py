@@ -70,9 +70,9 @@ class BaseAgent:
         step_lefts_tensor = torch.tensor(np.stack(step_lefts)).to(self.device)
         is_experts_tensor = torch.tensor(np.stack(is_experts)).bool().to(self.device)
 
-        if obs_type is 'pixel':
-            image_tensor = image_tensor/255*0.4
-            next_obs_tensor = next_obs_tensor/255*0.4
+        # if obs_type is 'pixel':
+        #     image_tensor = image_tensor/255*0.4
+        #     next_obs_tensor = next_obs_tensor/255*0.4
 
         self.loss_calc_dict['batch_size'] = len(batch)
         self.loss_calc_dict['states'] = states_tensor

@@ -19,7 +19,7 @@ from utils.env_wrapper import EnvWrapper
 from utils.create_agent import createAgent
 import threading
 
-from utils.torch_utils import ExpertTransition, normalizeTransition, augmentBuffer
+from utils.torch_utils import ExpertTransition, augmentBuffer
 
 def set_seed(s):
     np.random.seed(s)
@@ -173,8 +173,8 @@ def train():
                 transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), planner_actions_star_idx[i].numpy(),
                                               rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
                                               steps_lefts[i].numpy(), np.array(1))
-                if obs_type == 'pixel':
-                    transition = normalizeTransition(transition)
+                # if obs_type == 'pixel':
+                    # transition = normalizeTransition(transition)
                 # replay_buffer.add(transition)
                 local_transitions[i].append(transition)
             states = copy.copy(states_)
@@ -256,8 +256,8 @@ def train():
                         transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), sim_actions_star_idx[i].numpy(),
                                                       sim_rewards[i].numpy(), sim_states_[i].numpy(), sim_obs_[i].numpy(), sim_dones[i].numpy(),
                                                       sim_steps_lefts[i].numpy(), np.array(is_expert))
-                        if obs_type == 'pixel':
-                            transition = normalizeTransition(transition)
+                        # if obs_type == 'pixel':
+                        #     transition = normalizeTransition(transition)
                         replay_buffer.add(transition)
                         # insert extra training steps after simulation
                         if train_simulate:
@@ -291,8 +291,8 @@ def train():
                 transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), actions_star_idx[i].numpy(),
                                               rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
                                               steps_lefts[i].numpy(), np.array(is_expert))
-                if obs_type == 'pixel':
-                    transition = normalizeTransition(transition)
+                # if obs_type == 'pixel':
+                #     transition = normalizeTransition(transition)
                 replay_buffer.add(transition)
         logger.stepBookkeeping(rewards.numpy(), steps_lefts.numpy(), dones.numpy())
 

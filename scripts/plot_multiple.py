@@ -729,7 +729,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_fcn/0311_1p_dqn_vs_fd'
+    base = '/media/dian/hdd/mrun_results/close_loop_fcn/0311_dqn_1p'
     # plotLearningCurve(base, 1000, window=20)
     plotSuccessRate(base, 3000, window=100)
     plotEvalCurve(base, 10000, freq=1000)
