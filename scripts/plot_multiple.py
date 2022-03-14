@@ -353,6 +353,70 @@ def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000, file_
     plt.tight_layout()
     plt.savefig(os.path.join(base, 'step_reward.png'), bbox_inches='tight',pad_inches = 0)
 
+def plotStepSRCurve(base, step=50000, use_default_cm=False, freq=1000, file_name='step_success_rate'):
+    plt.style.use('ggplot')
+    plt.figure(dpi=300)
+    MEDIUM_SIZE = 12
+    BIGGER_SIZE = 14
+
+    plt.rc('axes', titlesize=BIGGER_SIZE)  # fontsize of the axes title
+    plt.rc('axes', labelsize=BIGGER_SIZE)  # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
+    plt.rc('ytick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
+
+    colors = "bgrycmkwbgrycmkw"
+    if use_default_cm:
+        color_map = {}
+    else:
+        color_map = {
+        }
+
+    linestyle_map = {
+    }
+    name_map = {
+    }
+
+    sequence = {
+    }
+
+    i = 0
+    methods = filter(lambda x: x[0] != '.', get_immediate_subdirectories(base))
+    for method in sorted(methods, key=lambda x: sequence[x] if x in sequence.keys() else x):
+        rs = []
+        for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
+            try:
+                step_reward = np.load(os.path.join(base, method, run, 'info/{}.npy'.format(file_name)))
+                r = []
+                for k in range(1, step+1, freq):
+                    window_rewards = step_reward[(k <= step_reward[:, 0]) * (step_reward[:, 0] < k + freq)][:, 1]
+                    if window_rewards.shape[0] > 0:
+                        r.append(window_rewards.mean())
+                    else:
+                        break
+                    # r.append(step_reward[(i <= step_reward[:, 0]) * (step_reward[:, 0] < i + freq)][:, 1].mean())
+                rs.append(r)
+            except Exception as e:
+                print(e)
+                continue
+
+        plotEvalCurveAvg(rs, freq, label=name_map[method] if method in name_map else method,
+                         color=color_map[method] if method in color_map else colors[i],
+                         linestyle=linestyle_map[method] if method in linestyle_map else '-')
+        i += 1
+
+
+    # plt.plot([0, ep], [1.450, 1.450], label='planner')
+    plt.legend(loc=0, facecolor='w', fontsize='x-large')
+    plt.xlabel('number of training steps')
+    # if base.find('bbp') > -1:
+    plt.ylabel('success rate')
+    # plt.xlim((-100, step+100))
+    # plt.yticks(np.arange(0., 1.05, 0.1))
+    # plt.ylim(bottom=-0.05)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(base, 'step_reward.png'), bbox_inches='tight',pad_inches = 0)
+
 def get_immediate_subdirectories(a_dir):
     return [name for name in os.listdir(a_dir)
             if os.path.isdir(os.path.join(a_dir, name))]
@@ -665,13 +729,13 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_fcn/0310_fcn_small'
+    base = '/media/dian/hdd/mrun_results/close_loop_fcn/0311_1p_dqn_vs_fd'
     # plotLearningCurve(base, 1000, window=20)
     plotSuccessRate(base, 3000, window=100)
     plotEvalCurve(base, 10000, freq=1000)
     # showPerformance(base)
     # plotLoss(base, 30000)
 
-    plotStepRewardCurve(base, 10000, freq=200, file_name='step_success_rate')
+    plotStepSRCurve(base, 10000, freq=500, file_name='step_success_rate')
     # plotStepRewardCurve(base, 10000, freq=200)
 
