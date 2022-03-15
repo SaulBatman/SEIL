@@ -92,7 +92,7 @@ from networks.cnn_fcn import FCN, BasicBlock
 #         return p, dxy, dz, dtheta
 
 class EquivariantCNNFac(torch.nn.Module):
-    def __init__(self, initialize=True, n_p=2, n_theta=1):
+    def __init__(self, n_input_channel=2, initialize=True, n_p=2, n_theta=1):
         super().__init__()
         self.n_inv = 3 + n_p
         self.n_theta = n_theta
@@ -101,7 +101,7 @@ class EquivariantCNNFac(torch.nn.Module):
         self.c4_act = gspaces.Rot2dOnR2(4)
         self.c4_conv = torch.nn.Sequential(
             # 128x128
-            nn.R2Conv(nn.FieldType(self.c4_act, 2 * [self.c4_act.trivial_repr]),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_input_channel * [self.c4_act.trivial_repr]),
                       nn.FieldType(self.c4_act, 16 * [self.c4_act.regular_repr]),
                       kernel_size=3, padding=1, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, 16 * [self.c4_act.regular_repr]), inplace=True),
@@ -163,7 +163,7 @@ class EquivariantCNNFac(torch.nn.Module):
         return p, dxy, dz, dtheta
 
 class EquivariantCNNFacD4(torch.nn.Module):
-    def __init__(self, initialize=True, n_p=2, n_theta=1):
+    def __init__(self, n_input_channel=2, initialize=True, n_p=2, n_theta=1):
         super().__init__()
         self.n_inv = 3 + n_p
         self.n_theta = n_theta
@@ -172,7 +172,7 @@ class EquivariantCNNFacD4(torch.nn.Module):
         self.d4_act = gspaces.FlipRot2dOnR2(4)
         self.d4_conv = torch.nn.Sequential(
             # 128x128
-            nn.R2Conv(nn.FieldType(self.d4_act, 2 * [self.d4_act.trivial_repr]),
+            nn.R2Conv(nn.FieldType(self.d4_act, n_input_channel * [self.d4_act.trivial_repr]),
                       nn.FieldType(self.d4_act, 16 * [self.d4_act.regular_repr]),
                       kernel_size=3, padding=1, initialize=initialize),
             nn.ReLU(nn.FieldType(self.d4_act, 16 * [self.d4_act.regular_repr]), inplace=True),
@@ -234,18 +234,19 @@ class EquivariantCNNFacD4(torch.nn.Module):
         return p, dxy, dz, dtheta
 
 class EquiCNNFacD4WithNonEquiFCN(torch.nn.Module):
-    def __init__(self, initialize=True, n_p=2, n_theta=1):
+    def __init__(self, n_input_channel=2, initialize=True, n_p=2, n_theta=1):
         super().__init__()
+        self.n_input_channel = n_input_channel
         self.n_inv = 3 + n_p
         self.n_theta = n_theta
         self.n_p = n_p
 
-        self.fcn = FCN(1, 1)
+        self.fcn = FCN(n_input_channel-1, n_input_channel-1)
 
         self.d4_act = gspaces.FlipRot2dOnR2(4)
         self.d4_conv = torch.nn.Sequential(
             # 128x128
-            nn.R2Conv(nn.FieldType(self.d4_act, 2 * [self.d4_act.trivial_repr]),
+            nn.R2Conv(nn.FieldType(self.d4_act, n_input_channel * [self.d4_act.trivial_repr]),
                       nn.FieldType(self.d4_act, 16 * [self.d4_act.regular_repr]),
                       kernel_size=3, padding=1, initialize=initialize),
             nn.ReLU(nn.FieldType(self.d4_act, 16 * [self.d4_act.regular_repr]), inplace=True),
@@ -297,8 +298,8 @@ class EquiCNNFacD4WithNonEquiFCN(torch.nn.Module):
 
     def forward(self, x):
         batch_size = x.shape[0]
-        x[:, 0:1] = self.fcn(x[:, 0:1])
-        x = nn.GeometricTensor(x, nn.FieldType(self.d4_act, 2 * [self.d4_act.trivial_repr]))
+        x[:, 0:self.n_input_channel-1] = self.fcn(x[:, 0:self.n_input_channel-1])
+        x = nn.GeometricTensor(x, nn.FieldType(self.d4_act, self.n_input_channel * [self.d4_act.trivial_repr]))
         h = self.d4_conv(x)
         dxy = self.d4_33_out(h).tensor.reshape(batch_size, -1)
         inv_out = self.d4_11_out(h).tensor.reshape(batch_size, -1)
@@ -308,14 +309,14 @@ class EquiCNNFacD4WithNonEquiFCN(torch.nn.Module):
         return p, dxy, dz, dtheta
 
 class EquiCNNFacD4WithNonEquiEnc(torch.nn.Module):
-    def __init__(self, initialize=True, n_p=2, n_theta=1):
+    def __init__(self, n_input_channel=2, initialize=True, n_p=2, n_theta=1):
         super().__init__()
         self.n_inv = 3 + n_p
         self.n_theta = n_theta
         self.n_p = n_p
 
         self.non_equi_enc = torch.nn.Sequential(
-            torch.nn.Conv2d(2, 32, kernel_size=3, stride=1, padding=1, ),
+            torch.nn.Conv2d(n_input_channel, 32, kernel_size=3, stride=1, padding=1, ),
             torch.nn.ReLU(inplace=True),
             BasicBlock(32, 32, dilation=1),
 
@@ -376,203 +377,6 @@ class EquiCNNFacD4WithNonEquiEnc(torch.nn.Module):
         dz = inv_out[:, :3]
         p = inv_out[:, 3:3+self.n_p]
         dtheta = inv_out[:, 3+self.n_p:]
-        return p, dxy, dz, dtheta
-
-class EquivariantCNNFac3(torch.nn.Module):
-    def __init__(self, initialize=True, n_p=2, n_theta=1):
-        super().__init__()
-        self.n_inv = 3 + n_p
-        self.n_theta = n_theta
-        self.n_p = n_p
-
-        self.c4_act = gspaces.Rot2dOnR2(4)
-        self.c4_conv = torch.nn.Sequential(
-            # 128x128
-            nn.R2Conv(nn.FieldType(self.c4_act, 2 * [self.c4_act.trivial_repr]),
-                      nn.FieldType(self.c4_act, 16 * [self.c4_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 16 * [self.c4_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, 16 * [self.c4_act.regular_repr]), 2),
-            # 64x64
-            nn.R2Conv(nn.FieldType(self.c4_act, 16 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, 32 * [self.c4_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 32 * [self.c4_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, 32 * [self.c4_act.regular_repr]), 2),
-            # 32x32
-            nn.R2Conv(nn.FieldType(self.c4_act, 32 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, 64 * [self.c4_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 64 * [self.c4_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, 64 * [self.c4_act.regular_repr]), 2),
-            # 16x16
-            nn.R2Conv(nn.FieldType(self.c4_act, 64 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]), 2),
-            # 8x8
-            nn.R2Conv(nn.FieldType(self.c4_act, 128 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), inplace=True),
-
-            nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                      kernel_size=3, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), 2),
-            # 3x3
-        )
-
-        self.c4_33_out = nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                                   nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
-                                   kernel_size=1, padding=0, initialize=initialize)
-        self.c4_11_out = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                      kernel_size=3, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]), inplace=True),
-            nn.R2Conv(nn.FieldType(self.c4_act, 256 * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, self.n_inv * [self.c4_act.trivial_repr] + self.n_theta * [self.c4_act.regular_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-        )
-
-        self.r_act = gspaces.Flip2dOnR2()
-        self.r_conv = torch.nn.Sequential(
-            # 128x128
-            nn.R2Conv(nn.FieldType(self.r_act, 2 * [self.r_act.trivial_repr]),
-                      nn.FieldType(self.r_act, 16 * [self.r_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r_act, 16 * [self.r_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r_act, 16 * [self.r_act.regular_repr]), 2),
-            # 64x64
-            nn.R2Conv(nn.FieldType(self.r_act, 16 * [self.r_act.regular_repr]),
-                      nn.FieldType(self.r_act, 32 * [self.r_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r_act, 32 * [self.r_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r_act, 32 * [self.r_act.regular_repr]), 2),
-            # 32x32
-            nn.R2Conv(nn.FieldType(self.r_act, 32 * [self.r_act.regular_repr]),
-                      nn.FieldType(self.r_act, 64 * [self.r_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r_act, 64 * [self.r_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r_act, 64 * [self.r_act.regular_repr]), 2),
-            # 16x16
-            nn.R2Conv(nn.FieldType(self.r_act, 64 * [self.r_act.regular_repr]),
-                      nn.FieldType(self.r_act, 128 * [self.r_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r_act, 128 * [self.r_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r_act, 128 * [self.r_act.regular_repr]), 2),
-            # 8x8
-            nn.R2Conv(nn.FieldType(self.r_act, 128 * [self.r_act.regular_repr]),
-                      nn.FieldType(self.r_act, 256 * [self.r_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r_act, 256 * [self.r_act.regular_repr]), inplace=True),
-
-            nn.R2Conv(nn.FieldType(self.r_act, 256 * [self.r_act.regular_repr]),
-                      nn.FieldType(self.r_act, 256 * [self.r_act.regular_repr]),
-                      kernel_size=3, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r_act, 256 * [self.r_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r_act, 256 * [self.r_act.regular_repr]), 2),
-            # 3x3
-            nn.R2Conv(nn.FieldType(self.r_act, 256 * [self.r_act.regular_repr]),
-                      nn.FieldType(self.r_act, 256 * [self.r_act.regular_repr]),
-                      kernel_size=3, padding=0, initialize=initialize),
-            # 1x1
-            nn.ReLU(nn.FieldType(self.r_act, 256 * [self.r_act.regular_repr]), inplace=True),
-            nn.R2Conv(nn.FieldType(self.r_act, 256 * [self.r_act.regular_repr]),
-                      nn.FieldType(self.r_act, 1 * [self.r_act.trivial_repr] + 1 * [self.r_act.regular_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-        )
-
-    def forward(self, x):
-        batch_size = x.shape[0]
-        x_c4 = nn.GeometricTensor(x, nn.FieldType(self.c4_act, 2 * [self.c4_act.trivial_repr]))
-        h = self.c4_conv(x_c4)
-        dxy = self.c4_33_out(h).tensor.reshape(batch_size, -1)
-        inv_out = self.c4_11_out(h).tensor.reshape(batch_size, -1)
-        dz = inv_out[:, :3]
-        p = inv_out[:, 3:3+self.n_p]
-
-        x_r = nn.GeometricTensor(x, nn.FieldType(self.r_act, 2 * [self.r_act.trivial_repr]))
-        dtheta = self.r_conv(x_r).tensor.reshape(batch_size, -1)
-        if self.n_theta == 3:
-            dtheta = torch.stack((dtheta[:, 1], dtheta[:, 0], dtheta[:, 2]), dim=1)
-        else:
-            dtheta = dtheta[:, 0:1]
-        return p, dxy, dz, dtheta
-
-class EquivariantCNNFac2(torch.nn.Module):
-    def __init__(self, initialize=True, n_p=2, n_theta=1):
-        super().__init__()
-        self.n_inv = 1 + 3 + n_theta + n_p
-        self.n_theta = n_theta
-        self.n_p = n_p
-
-        self.r2_act = gspaces.Rot2dOnR2(4)
-        self.conv = torch.nn.Sequential(
-            # 128x128
-            nn.R2Conv(nn.FieldType(self.r2_act, 2 * [self.r2_act.trivial_repr]),
-                      nn.FieldType(self.r2_act, 16 * [self.r2_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r2_act, 16 * [self.r2_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 16 * [self.r2_act.regular_repr]), 2),
-            # 64x64
-            nn.R2Conv(nn.FieldType(self.r2_act, 16 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, 32 * [self.r2_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r2_act, 32 * [self.r2_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 32 * [self.r2_act.regular_repr]), 2),
-            # 32x32
-            nn.R2Conv(nn.FieldType(self.r2_act, 32 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, 64 * [self.r2_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r2_act, 64 * [self.r2_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 64 * [self.r2_act.regular_repr]), 2),
-            # 16x16
-            nn.R2Conv(nn.FieldType(self.r2_act, 64 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, 128 * [self.r2_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r2_act, 128 * [self.r2_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 128 * [self.r2_act.regular_repr]), 2),
-            # 8x8
-            nn.R2Conv(nn.FieldType(self.r2_act, 128 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
-                      kernel_size=3, padding=1, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]), inplace=True),
-
-            # 8x8
-            nn.R2Conv(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
-                      kernel_size=3, padding=0),
-            nn.ReLU(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]), inplace=True),
-            nn.PointwiseMaxPool(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]), 2),
-            # 3x3
-            nn.R2Conv(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
-                      kernel_size=3, padding=0),
-            nn.ReLU(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]), inplace=True),
-            # 1x1
-            nn.R2Conv(nn.FieldType(self.r2_act, 256 * [self.r2_act.regular_repr]),
-                      nn.FieldType(self.r2_act, self.n_inv * [self.r2_act.trivial_repr] + 2 * [self.r2_act.regular_repr]),
-                      kernel_size=1, padding=0),
-        )
-
-    def forward(self, x):
-        batch_size = x.shape[0]
-        x = nn.GeometricTensor(x, nn.FieldType(self.r2_act, 2 * [self.r2_act.trivial_repr]))
-        out = self.conv(x)
-        dxy0 = out[:, 0:1].tensor.reshape(batch_size, 1)
-        dz = out[:, 1:4].tensor.reshape(batch_size, 3)
-        dtheta = out[:, 4:4+self.n_theta].tensor.reshape(batch_size, self.n_theta)
-        p = out[:, 4+self.n_theta:4+self.n_theta+self.n_p].tensor.reshape(batch_size, self.n_p)
-        dxy = out[:, 4+self.n_theta+self.n_p:].tensor.reshape(batch_size, 2, 4)
-
-        dxy = torch.stack((dxy[:, 0, 0], dxy[:, 1, 0], dxy[:, 0, 1],
-                           dxy[:, 1, 3], dxy0[:, 0], dxy[:, 1, 1],
-                           dxy[:, 0, 3], dxy[:, 1, 2], dxy[:, 0, 2]),
-                          dim=1)
         return p, dxy, dz, dtheta
 
 # 3x3 out

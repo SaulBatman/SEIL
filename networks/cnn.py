@@ -7,11 +7,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class CNNFac(nn.Module):
-    def __init__(self, n_p=2, n_theta=1):
+    def __init__(self, n_input_channel=2, n_p=2, n_theta=1):
         super().__init__()
         self.conv = torch.nn.Sequential(
             # 128x128
-            nn.Conv2d(2, 32, kernel_size=3, padding=1),
+            nn.Conv2d(n_input_channel, 32, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2),
             # 64x64

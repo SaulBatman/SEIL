@@ -8,7 +8,7 @@ from agents.sdqfd_agent_com_drq import SDQfDComDrQ
 from agents.curl_dqn_com import CURLDQNCom
 from agents.curl_sdqfd_com import CURLSDQfDCom
 from networks.cnn import CNNFac, CNNCom, CNNCom2
-from networks.equivariant import EquivariantCNNFac, EquivariantCNNFac2, EquivariantCNNFac3, EquivariantCNNCom, EquivariantCNNCom2, EquivariantCNNComD4, EquivariantCNNFacD4
+from networks.equivariant import EquivariantCNNFac, EquivariantCNNCom, EquivariantCNNCom2, EquivariantCNNComD4, EquivariantCNNFacD4
 
 from agents.ddpg import DDPG
 from agents.ddpgfd import DDPGfD
@@ -41,7 +41,10 @@ from networks.equivariant import EquiCNNFacD4WithNonEquiFCN, EquiCNNFacD4WithNon
 
 def createAgent(test=False):
     print('initializing agent')
-    obs_channel = 2
+    if view_type == 'camera_fix_rgbd':
+        obs_channel = 2+3
+    else:
+        obs_channel = 2
     if load_sub is not None or load_model_pre is not None or test:
         initialize = False
     else:
@@ -62,19 +65,15 @@ def createAgent(test=False):
         else:
             raise NotImplementedError
         if model == 'cnn':
-            net = CNNFac(n_p=n_p, n_theta=n_theta).to(device)
+            net = CNNFac(n_input_channel=obs_channel, n_p=n_p, n_theta=n_theta).to(device)
         elif model == 'equi':
-            net = EquivariantCNNFac(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
-        elif model == 'equi_2':
-            net = EquivariantCNNFac2(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
-        elif model == 'equi_3':
-            net = EquivariantCNNFac3(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
+            net = EquivariantCNNFac(n_input_channel=obs_channel, n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_d':
-            net = EquivariantCNNFacD4(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
+            net = EquivariantCNNFacD4(n_input_channel=obs_channel, n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_d_w_fcn':
-            net = EquiCNNFacD4WithNonEquiFCN(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
+            net = EquiCNNFacD4WithNonEquiFCN(n_input_channel=obs_channel, n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_d_w_enc':
-            net = EquiCNNFacD4WithNonEquiEnc(n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
+            net = EquiCNNFacD4WithNonEquiEnc(n_input_channel=obs_channel, n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(net, initialize_target=not test)
