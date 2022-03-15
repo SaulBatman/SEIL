@@ -165,6 +165,7 @@ class EquivariantCNNFac(torch.nn.Module):
 class EquivariantCNNFacD4(torch.nn.Module):
     def __init__(self, n_input_channel=2, initialize=True, n_p=2, n_theta=1):
         super().__init__()
+        self.n_input_channel = n_input_channel
         self.n_inv = 3 + n_p
         self.n_theta = n_theta
         self.n_p = n_p
@@ -224,7 +225,7 @@ class EquivariantCNNFacD4(torch.nn.Module):
 
     def forward(self, x):
         batch_size = x.shape[0]
-        x = nn.GeometricTensor(x, nn.FieldType(self.d4_act, 2 * [self.d4_act.trivial_repr]))
+        x = nn.GeometricTensor(x, nn.FieldType(self.d4_act, self.n_input_channel * [self.d4_act.trivial_repr]))
         h = self.d4_conv(x)
         dxy = self.d4_33_out(h).tensor.reshape(batch_size, -1)
         inv_out = self.d4_11_out(h).tensor.reshape(batch_size, -1)
