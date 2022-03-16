@@ -3,6 +3,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from agents.dqn_base import DQNBase
+from utils.parameters import heightmap_size, crop_size
+from utils.torch_utils import centerCrop
 
 class DQNAgentFac(DQNBase):
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/16, n_p=1, n_theta=1):
@@ -26,6 +28,8 @@ class DQNAgentFac(DQNBase):
 
     def getEGreedyActions(self, state, obs, eps):
         with torch.no_grad():
+            if heightmap_size > crop_size:
+                obs = centerCrop(obs, out=crop_size)
             q_p, q_dxy, q_dz, q_dtheta = self.forwardNetwork(state, obs, to_cpu=True)
             p_id = torch.argmax(q_p, 1)
             dxy_id = torch.argmax(q_dxy, 1)

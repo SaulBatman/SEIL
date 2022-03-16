@@ -530,17 +530,17 @@ def augmentTransitionShift(d):
                             next_obs, d.done, d.step_left, d.expert)
 
 def augmentTransitionCrop(d):
-    obs = d.obs[0]
-    next_obs = d.next_obs[0]
+    obs = d.obs
+    next_obs = d.next_obs
     heightmap_size = obs.shape[-1]
 
     crop_max = heightmap_size - crop_size + 1
     w1 = np.random.randint(0, crop_max)
     h1 = np.random.randint(0, crop_max)
-    obs = obs[w1:w1 + crop_size, h1:h1 + crop_size]
-    next_obs = next_obs[w1:w1 + crop_size, h1:h1 + crop_size]
-    obs = obs.reshape(1, *obs.shape)
-    next_obs = next_obs.reshape(1, *next_obs.shape)
+    obs = obs[:, w1:w1 + crop_size, h1:h1 + crop_size]
+    next_obs = next_obs[:, w1:w1 + crop_size, h1:h1 + crop_size]
+    # obs = obs.reshape(1, *obs.shape)
+    # next_obs = next_obs.reshape(1, *next_obs.shape)
     return ExpertTransition(d.state, obs, d.action, d.reward, d.next_state,
                             next_obs, d.done, d.step_left, d.expert)
 
