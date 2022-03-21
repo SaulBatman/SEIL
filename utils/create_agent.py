@@ -302,9 +302,9 @@ def createAgent(test=False):
             policy = EquivariantPolicy((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
         elif model == 'cnn':
             policy = Actor(len(action_sequence)).to(device)
-        elif model == 'equi_both_so2':
+        elif model == 'equi_so2':
             policy = EquivariantPolicySO2((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, kernel_size=3).to(device)
-        elif model == 'equi_both_o2':
+        elif model == 'equi_o2':
             policy = EquivariantPolicyO2((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, kernel_size=3).to(device)
         else:
             raise NotImplementedError
