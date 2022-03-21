@@ -42,7 +42,7 @@ from networks.equivariant import EquiCNNFacD4WithNonEquiFCN, EquiCNNFacD4WithNon
 def createAgent(test=False):
     print('initializing agent')
     if view_type == 'camera_fix_rgbd':
-        obs_channel = 2+3
+        obs_channel = 7
     else:
         obs_channel = 2
     if load_sub is not None or load_model_pre is not None or test:
@@ -141,9 +141,9 @@ def createAgent(test=False):
         else:
             raise NotImplementedError
         if model == 'equi':
-            net = EquFCNFac(obs_channel, 4, n_middle_channels=(16, 32, 64, 64), kernel_size=3, flip=True, initialize=initialize).to(device)
+            net = EquFCNFac(obs_channel, equi_n, n_middle_channels=(16, 32, 64, 64), kernel_size=3, flip=True, initialize=initialize).to(device)
         elif model == 'equi_small':
-            net = EquFCNFac(obs_channel, 4, n_middle_channels=(8, 16, 32, 64), kernel_size=3, flip=True, initialize=initialize).to(device)
+            net = EquFCNFac(obs_channel, equi_n, n_middle_channels=(8, 16, 32, 64), kernel_size=3, flip=True, initialize=initialize).to(device)
         # elif model == 'cnn':
         #     net = FCN(obs_channel, n_p*n_theta*3).to(device)
         else:
