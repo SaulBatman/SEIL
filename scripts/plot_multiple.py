@@ -3,6 +3,7 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 import os
+import pickle
 
 def getRewardsSingle(rewards, window=1000):
     moving_avg = []
@@ -203,7 +204,10 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
         rs = []
         for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
             try:
-                r = np.load(os.path.join(base, method, run, 'info/eval_rewards.npy'))
+                # r = np.load(os.path.join(base, method, run, 'info/eval_rewards.npy'))
+                data = pickle.load(open(os.path.join(base, method, run, 'log_data.pkl'), 'rb'))
+                rewards = data['eval_eps_rewards']
+                r = [np.mean(x) for x in rewards[:-1]]
                 rs.append(r[:step//freq])
             except Exception as e:
                 print(e)
@@ -729,13 +733,13 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_fcn/0315_pick_p20_side_view_dqn/rgbd'
+    base = '/media/dian/hdd/mrun_results/env_paper/bt'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 3000, window=100)
-    # plotEvalCurve(base, 10000, freq=1000)
+    plotEvalCurve(base, 20000, freq=500)
     # showPerformance(base)
     # plotLoss(base, 30000)
 
-    plotStepSRCurve(base, 20000, freq=500, file_name='step_success_rate')
+    # plotStepSRCurve(base, 20000, freq=500, file_name='step_success_rate')
     # plotStepRewardCurve(base, 10000, freq=200)
 
