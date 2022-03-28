@@ -56,12 +56,20 @@ def createAgent(test=False):
         n_theta = 3
 
     # setup agent
-    if alg in ['dqn_fac', 'sdqfd_fac']:
+    if alg in ['dqn_fac', 'sdqfd_fac', 'dqn_fac_mul', 'sdqfd_fac_mul']:
         if alg == 'dqn_fac':
             agent = DQNAgentFac(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p, n_theta=n_theta)
         elif alg == 'sdqfd_fac':
             agent = SDQfDFac(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
                              n_theta=n_theta, l=margin_l, w=margin_weight)
+        elif alg == 'dqn_fac_mul':
+            agent = DQNAgentFac(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p, n_theta=n_theta)
+            agent.com = 'mul'
+        elif alg == 'sdqfd_fac_mul':
+            agent = SDQfDFac(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
+                             n_theta=n_theta, l=margin_l, w=margin_weight)
+            agent.com = 'mul'
+
         else:
             raise NotImplementedError
         if model == 'cnn':

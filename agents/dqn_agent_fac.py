@@ -9,6 +9,7 @@ from utils.torch_utils import centerCrop
 class DQNAgentFac(DQNBase):
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/16, n_p=1, n_theta=1):
         super().__init__(lr, gamma, device, dx, dy, dz, dr, n_p, n_theta)
+        self.com = 'add'
 
     def forwardNetwork(self, state, obs, target_net=False, to_cpu=False):
         if target_net:
@@ -57,7 +58,12 @@ class DQNAgentFac(DQNBase):
 
         with torch.no_grad():
             q_p_prime, q_dxy_prime, q_dz_prime, q_dtheta_prime = self.forwardNetwork(next_states, next_obs, target_net=True)
-            q_prime = q_p_prime.max(1)[0] + q_dxy_prime.max(1)[0] + q_dz_prime.max(1)[0] + q_dtheta_prime.max(1)[0]
+            if self.com == 'add':
+                q_prime = q_p_prime.max(1)[0] + q_dxy_prime.max(1)[0] + q_dz_prime.max(1)[0] + q_dtheta_prime.max(1)[0]
+            elif self.com == 'mul':
+                q_prime = q_p_prime.max(1)[0] * q_dxy_prime.max(1)[0] * q_dz_prime.max(1)[0] * q_dtheta_prime.max(1)[0]
+            else:
+                raise NotImplementedError
             q_target = rewards + self.gamma * q_prime * non_final_masks
 
         q_p, q_dxy, q_dz, q_dtheta = self.forwardNetwork(states, obs)
@@ -65,7 +71,12 @@ class DQNAgentFac(DQNBase):
         q_dxy_pred = q_dxy[torch.arange(batch_size), dxy_id]
         q_dz_pred = q_dz[torch.arange(batch_size), dz_id]
         q_dtheta_pred = q_dtheta[torch.arange(batch_size), dtheta_id]
-        q_pred = q_p_pred + q_dxy_pred + q_dz_pred + q_dtheta_pred
+        if self.com == 'add':
+            q_pred = q_p_pred + q_dxy_pred + q_dz_pred + q_dtheta_pred
+        elif self.com == 'mul':
+            q_pred = q_p_pred * q_dxy_pred * q_dz_pred * q_dtheta_pred
+        else:
+            raise NotImplementedError
         td_loss = F.smooth_l1_loss(q_pred, q_target)
         self.loss_calc_dict['q_output'] = q_p, q_dxy, q_dz, q_dtheta
         self.loss_calc_dict['q_pred'] = q_p_pred, q_dxy_pred, q_dz_pred, q_dtheta_pred
