@@ -74,6 +74,7 @@ class Logger(object):
         self.step_success = list()
 
         self.eval_rewards = list()
+        self.eval_success = list()
         self.success = list()
 
         # Buffer of transitions
@@ -198,6 +199,11 @@ class Logger(object):
             plt.plot(xs, self.eval_rewards)
             plt.savefig(os.path.join(self.info_dir, 'eval_curve.pdf'))
             plt.close()
+        if len(self.eval_success) > 0:
+            xs = np.arange(eval_freq, (len(self.eval_success)+1) * eval_freq, eval_freq)
+            plt.plot(xs, self.eval_success)
+            plt.savefig(os.path.join(self.info_dir, 'eval_success_curve.pdf'))
+            plt.close()
 
     def saveModel(self, iteration, name, agent):
         '''
@@ -227,6 +233,7 @@ class Logger(object):
 
     def saveEvalRewards(self):
         np.save(os.path.join(self.info_dir, 'eval_rewards.npy'), self.eval_rewards)
+        np.save(os.path.join(self.info_dir, 'eval_success.npy'), self.eval_success)
 
     def saveTransitions(self, iteration="final", n=0):
         '''Saves last n stored transitions to file '''

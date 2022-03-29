@@ -72,6 +72,7 @@ def evaluate(envs, agent, logger):
     evaled = 0
     temp_reward = [[] for _ in range(num_eval_processes)]
     eval_rewards = []
+    eval_success = []
     if not no_bar:
         eval_bar = tqdm(total=num_eval_episodes)
     while evaled < num_eval_episodes:
@@ -90,10 +91,12 @@ def evaluate(envs, agent, logger):
                 for r in reversed(temp_reward[i]):
                     R = r + gamma * R
                 eval_rewards.append(R)
+                eval_success.append(np.sum(temp_reward[i]))
                 temp_reward[i] = []
         if not no_bar:
             eval_bar.update(evaled - eval_bar.n)
     logger.eval_rewards.append(np.mean(eval_rewards[:num_eval_episodes]))
+    logger.eval_success.append(np.mean(eval_success[:num_eval_episodes]))
     if not no_bar:
         eval_bar.close()
 
