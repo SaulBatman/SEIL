@@ -289,6 +289,7 @@ class Logger(object):
                 'td_errors': self.td_errors,
                 'expert_samples': self.expert_samples,
                 'eval_rewards': self.eval_rewards,
+                'eval_success': self.eval_success,
                 'success': self.success,
                 'step_reward': self.step_discounted_reward,
                 'step_success': self.step_success,
@@ -322,6 +323,7 @@ class Logger(object):
         self.td_errors =checkpoint['logger']['td_errors']
         self.expert_samples = checkpoint['logger']['expert_samples']
         self.eval_rewards = checkpoint['logger']['eval_rewards']
+        self.eval_success = checkpoint['logger']['eval_success']
         self.success = checkpoint['logger']['success']
         self.step_discounted_reward = checkpoint['logger']['step_reward']
         self.step_success = checkpoint['logger']['step_success']
