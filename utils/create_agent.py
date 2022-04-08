@@ -8,7 +8,7 @@ from agents.sdqfd_agent_com_drq import SDQfDComDrQ
 from agents.curl_dqn_com import CURLDQNCom
 from agents.curl_sdqfd_com import CURLSDQfDCom
 from networks.cnn import CNNFac, CNNCom, CNNCom2
-from networks.equivariant import EquivariantCNNFac, EquivariantCNNCom, EquivariantCNNCom2, EquivariantCNNComD4, EquivariantCNNFacD4, EquivariantCNNFacD45x5
+from networks.equivariant import EquivariantCNNFac, EquivariantCNNCom, EquivariantCNNCom2, EquivariantCNNComD4, EquivariantCNNFacD4, EquivariantCNNFacD45x5, EquivariantResFacD4
 
 from agents.ddpg import DDPG
 from agents.ddpgfd import DDPGfD
@@ -85,6 +85,12 @@ def createAgent(test=False):
         elif model == 'equi_d_5x5':
             agent.setDXYRange(5)
             net = EquivariantCNNFacD45x5(n_input_channel=obs_channel, n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
+        elif model == 'equi_d_5x5x5':
+            agent.setDXYRange(5)
+            agent.setDZRange(5)
+            net = EquivariantCNNFacD45x5(n_input_channel=obs_channel, n_p=n_p, n_theta=n_theta, n_z=5, initialize=initialize).to(device)
+        elif model == 'equi_d_res':
+            net = EquivariantResFacD4(n_input_channel=obs_channel, n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(net, initialize_target=not test)

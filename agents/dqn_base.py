@@ -46,6 +46,13 @@ class DQNBase(BaseAgent):
         else:
             raise NotImplementedError
 
+    def setDZRange(self, dz_size):
+        dz = self.dz
+        if dz_size == 3:
+            self.dz_range = torch.tensor([-dz, 0, dz])
+        elif dz_size == 5:
+            self.dz_range = torch.tensor([-2*dz, -dz, 0, dz, 2*dz])
+
     def targetSoftUpdate(self):
         """Soft-update: target = tau*local + (1-tau)*target."""
         tau = 1e-2

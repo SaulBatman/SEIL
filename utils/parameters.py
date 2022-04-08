@@ -64,6 +64,8 @@ training_group.add_argument('--tau', type=float, default=1e-2)
 training_group.add_argument('--init_temp', type=float, default=1e-2)
 training_group.add_argument('--dpos', type=float, default=0.005)
 training_group.add_argument('--drot_n', type=int, default=32)
+training_group.add_argument('--planner_dpos', type=float, default=0.005)
+training_group.add_argument('--planner_drot_n', type=int, default=32)
 training_group.add_argument('--demon_w', type=float, default=1)
 training_group.add_argument('--equi_n', type=int, default=4)
 training_group.add_argument('--n_hidden', type=int, default=128)
@@ -148,6 +150,11 @@ transparent_bin = args.transparent_bin
 collision_penalty = args.collision_penalty
 fix_set = args.fix_set
 collision_terminate = args.collision_terminate
+
+if env == 'close_loop_clutter_picking':
+  tray = True
+else:
+  tray = False
 
 ######################################################################################
 # training
@@ -235,6 +242,9 @@ if load_sub == 'None':
 dpos = args.dpos
 drot = np.pi/args.drot_n
 
+planner_dpos = args.planner_dpos
+planner_drot = np.pi/args.planner_drot_n
+
 ######################################################################################
 env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size': heightmap_size,
               'fast_mode': fast_mode,  'action_sequence': action_sequence, 'render': render, 'num_objects': num_objects,
@@ -242,8 +252,8 @@ env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size'
               'workspace_check': 'point', 'object_scale_range': (1, 1),
               'hard_reset_freq': 1000, 'physics_mode' : 'fast', 'view_type': view_type, 'obs_type': obs_type,
               'transparent_bin': transparent_bin, 'collision_penalty': collision_penalty, 'fix_set': fix_set,
-              'collision_terminate': collision_terminate, 'view_scale': view_scale}
-planner_config = {'random_orientation':random_orientation, 'dpos': dpos, 'drot': drot}
+              'collision_terminate': collision_terminate, 'view_scale': view_scale, 'close_loop_tray': tray}
+planner_config = {'random_orientation':random_orientation, 'dpos': planner_dpos, 'drot': planner_drot}
 if env == 'close_loop_household_picking':
     env_config['object_scale_range'] = (0.6, 0.6)
 elif env == 'close_loop_clutter_picking':

@@ -235,12 +235,13 @@ class EquivariantCNNFacD4(torch.nn.Module):
         return p, dxy, dz, dtheta
 
 class EquivariantCNNFacD45x5(torch.nn.Module):
-    def __init__(self, n_input_channel=2, initialize=True, n_p=2, n_theta=1):
+    def __init__(self, n_input_channel=2, initialize=True, n_p=2, n_theta=1, n_z=3):
         super().__init__()
         self.n_input_channel = n_input_channel
-        self.n_inv = 3 + n_p
         self.n_theta = n_theta
         self.n_p = n_p
+        self.n_z = n_z
+        self.n_inv = n_theta + n_p + n_z
 
         self.d4_act = gspaces.FlipRot2dOnR2(4)
         self.d4_conv = torch.nn.Sequential(
@@ -292,7 +293,7 @@ class EquivariantCNNFacD45x5(torch.nn.Module):
                       kernel_size=3, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.d4_act, 256 * [self.d4_act.regular_repr]), inplace=True),
             nn.R2Conv(nn.FieldType(self.d4_act, 256 * [self.d4_act.regular_repr]),
-                      nn.FieldType(self.d4_act, (self.n_inv+self.n_theta) * [self.d4_act.trivial_repr]),
+                      nn.FieldType(self.d4_act, self.n_inv * [self.d4_act.trivial_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
         )
 
@@ -302,9 +303,9 @@ class EquivariantCNNFacD45x5(torch.nn.Module):
         h = self.d4_conv(x)
         dxy = self.d4_33_out(h).tensor.reshape(batch_size, -1)
         inv_out = self.d4_11_out(h).tensor.reshape(batch_size, -1)
-        dz = inv_out[:, :3]
-        p = inv_out[:, 3:3+self.n_p]
-        dtheta = inv_out[:, 3+self.n_p:]
+        dz = inv_out[:, :self.n_z]
+        p = inv_out[:, self.n_z:self.n_z+self.n_p]
+        dtheta = inv_out[:, self.n_z+self.n_p:]
         return p, dxy, dz, dtheta
 
 class EquiCNNFacD4WithNonEquiFCN(torch.nn.Module):
