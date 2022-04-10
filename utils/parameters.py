@@ -64,8 +64,8 @@ training_group.add_argument('--tau', type=float, default=1e-2)
 training_group.add_argument('--init_temp', type=float, default=1e-2)
 training_group.add_argument('--dpos', type=float, default=0.005)
 training_group.add_argument('--drot_n', type=int, default=32)
-training_group.add_argument('--planner_dpos', type=float, default=0.005)
-training_group.add_argument('--planner_drot_n', type=int, default=32)
+training_group.add_argument('--planner_dpos', type=float, default=None)
+training_group.add_argument('--planner_drot_n', type=int, default=None)
 training_group.add_argument('--demon_w', type=float, default=1)
 training_group.add_argument('--equi_n', type=int, default=4)
 training_group.add_argument('--n_hidden', type=int, default=128)
@@ -243,7 +243,12 @@ dpos = args.dpos
 drot = np.pi/args.drot_n
 
 planner_dpos = args.planner_dpos
-planner_drot = np.pi/args.planner_drot_n
+if planner_dpos is None:
+    planner_dpos = dpos
+if args.planner_drot_n is None:
+    planner_drot = drot
+else:
+    planner_drot = np.pi / args.planner_drot_n
 
 ######################################################################################
 env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size': heightmap_size,
