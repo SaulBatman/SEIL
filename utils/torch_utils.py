@@ -6,7 +6,7 @@ import torch.nn.functional as F
 # import torchvision.transforms.functional as TF
 from torch.autograd import Variable
 import numpy as np
-import cv2
+# import cv2
 import collections
 from utils.parameters import crop_size
 

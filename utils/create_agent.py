@@ -39,6 +39,9 @@ from networks.equivariant_fcn import EquFCNFac
 from networks.cnn_fcn import FCN
 from networks.equivariant import EquiCNNFacD4WithNonEquiFCN, EquiCNNFacD4WithNonEquiEnc
 
+from agents.ibc import ImplicitBehaviorCloning
+from networks.cnn import CNNEBM
+
 def createAgent(test=False):
     print('initializing agent')
     if view_type == 'camera_fix_rgbd':
@@ -325,6 +328,12 @@ def createAgent(test=False):
             policy = EquivariantPolicyO2((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, kernel_size=3).to(device)
         else:
             raise NotImplementedError
+        agent.initNetwork(policy)
+
+    elif alg in ['bc_implicit']:
+        agent = ImplicitBehaviorCloning(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
+                                          n_a=len(action_sequence))
+        policy = CNNEBM(len(action_sequence)).to(device)
         agent.initNetwork(policy)
 
     elif alg in ['curl_sac', 'curl_sacfd', 'curl_sacfd_mean']:
