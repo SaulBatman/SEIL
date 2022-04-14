@@ -58,7 +58,7 @@ def saveModelAndInfo(logger, agent):
     logger.saveModel(logger.num_steps, env, agent)
     logger.saveLearningCurve(20)
     logger.saveLossCurve(100)
-    logger.saveTdErrorCurve(100)
+    # logger.saveTdErrorCurve(100)
     logger.saveStepLeftCurve(100)
     logger.saveExpertSampleCurve(100)
     logger.saveEvalCurve()
@@ -74,7 +74,7 @@ def evaluate(envs, agent, logger):
     eval_rewards = []
     eval_success = []
     if not no_bar:
-        eval_bar = tqdm(total=num_eval_episodes)
+        eval_bar = tqdm(total=num_eval_episodes, position=1, leave=False)
     while evaled < num_eval_episodes:
         actions_star_idx, actions_star = agent.getGreedyActions(states, obs)
         states_, obs_, rewards, dones = envs.step(actions_star, auto_reset=True)
@@ -98,6 +98,7 @@ def evaluate(envs, agent, logger):
     logger.eval_rewards.append(np.mean(eval_rewards[:num_eval_episodes]))
     logger.eval_success.append(np.mean(eval_success[:num_eval_episodes]))
     if not no_bar:
+        eval_bar.clear()
         eval_bar.close()
 
 def countParameters(m):
@@ -111,7 +112,6 @@ def train():
     # setup env
     print('creating envs')
     envs = EnvWrapper(num_processes, simulator, env, env_config, planner_config)
-    eval_envs = EnvWrapper(num_eval_processes, simulator, env, env_config, planner_config)
 
     # setup agent
     agent = createAgent()
@@ -165,7 +165,7 @@ def train():
         states, obs = planner_envs.reset()
         s = 0
         if not no_bar:
-            planner_bar = tqdm(total=planner_episode)
+            planner_bar = tqdm(total=planner_episode, leave=True)
         local_transitions = [[] for _ in range(planner_num_process)]
         while j < planner_episode:
             plan_actions = planner_envs.getNextAction()
@@ -195,6 +195,8 @@ def train():
                         planner_bar.update(1)
                 elif dones[i]:
                     local_transitions[i] = []
+        if not no_bar:
+            planner_bar.close()
 
         if expert_aug_n > 0:
             augmentBuffer(replay_buffer, buffer_aug_type, expert_aug_n)
@@ -216,7 +218,7 @@ def train():
             train_step(agent, replay_buffer, logger, p_beta_schedule)
             if logger.num_training_steps % 1000 == 0:
                 logger.saveLossCurve(100)
-                logger.saveTdErrorCurve(100)
+                # logger.saveTdErrorCurve(100)
             if not no_bar:
                 pbar.set_description('loss: {:.3f}, time: {:.2f}'.format(float(logger.getCurrentLoss()), time.time()-t0))
                 pbar.update()
@@ -228,102 +230,33 @@ def train():
         logger.saveModel(0, 'pretrain', agent)
 
     if not no_bar:
-        pbar = tqdm(total=max_train_step)
+        pbar = tqdm(total=max_train_step, position=0, leave=True)
         pbar.set_description('Episodes:0; Reward:0.0; Explore:0.0; Loss:0.0; Time:0.0')
     timer_start = time.time()
 
-    states, obs = envs.reset()
     while logger.num_training_steps < max_train_step:
-        if fixed_eps:
-            eps = final_eps
-        else:
-            eps = exploration.value(logger.num_training_steps)
-
-        is_expert = 0
-
-        # simulate actions
-        if simulate_n > 0 and envs.canSimulate():
-            sim_obs = obs
-            sim_states = states
-            for _ in range(simulate_n):
-                if not envs.canSimulate():
-                    envs.resetSimPose()
-                    sim_obs = obs
-                    sim_states = states
-                sim_actions_star_idx, sim_actions_star = agent.getEGreedyActions(sim_states, sim_obs, eps)
-                sim_states_, sim_obs_, sim_rewards, sim_dones = envs.simulate(sim_actions_star)
-                sim_steps_lefts = envs.getStepLeft()
-
-                if not alg[:2] == 'bc':
-                    for i in range(num_processes):
-                        transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), sim_actions_star_idx[i].numpy(),
-                                                      sim_rewards[i].numpy(), sim_states_[i].numpy(), sim_obs_[i].numpy(), sim_dones[i].numpy(),
-                                                      sim_steps_lefts[i].numpy(), np.array(is_expert))
-                        # if obs_type == 'pixel':
-                        #     transition = normalizeTransition(transition)
-                        replay_buffer.add(transition)
-                        # insert extra training steps after simulation
-                        if train_simulate:
-                            if len(replay_buffer) >= training_offset:
-                                for training_iter in range(training_iters):
-                                    train_step(agent, replay_buffer, logger, p_beta_schedule)
-
-                sim_obs = sim_obs_
-                sim_states = sim_states_
-
-        actions_star_idx, actions_star = agent.getEGreedyActions(states, obs, eps)
-
-        envs.stepAsync(actions_star, auto_reset=False)
-
-        if len(replay_buffer) >= training_offset:
-            for training_iter in range(training_iters):
-                train_step(agent, replay_buffer, logger, p_beta_schedule)
-
-        states_, obs_, rewards, dones = envs.stepWait()
-        steps_lefts = envs.getStepLeft()
-
-        done_idxes = torch.nonzero(dones).squeeze(1)
-        if done_idxes.shape[0] != 0:
-            reset_states_, reset_obs_ = envs.reset_envs(done_idxes)
-            for j, idx in enumerate(done_idxes):
-                states_[idx] = reset_states_[j]
-                obs_[idx] = reset_obs_[j]
-
-        if not alg[:2] == 'bc':
-            for i in range(num_processes):
-                transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), actions_star_idx[i].numpy(),
-                                              rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
-                                              steps_lefts[i].numpy(), np.array(is_expert))
-                # if obs_type == 'pixel':
-                #     transition = normalizeTransition(transition)
-                replay_buffer.add(transition)
-        logger.stepBookkeeping(rewards.numpy(), steps_lefts.numpy(), dones.numpy())
-
-        states = copy.copy(states_)
-        obs = copy.copy(obs_)
+        train_step(agent, replay_buffer, logger, p_beta_schedule)
 
         if (time.time() - start_time)/3600 > time_limit:
             break
 
         if not no_bar:
             timer_final = time.time()
-            description = 'Action Step:{}; Episode: {}; Reward:{:.03f}; Eval Reward:{:.03f}; Explore:{:.02f}; Loss:{:.03f}; Time:{:.03f}'.format(
-                logger.num_steps, logger.num_episodes, logger.getCurrentAvgReward(20), logger.eval_rewards[-1] if len(logger.eval_rewards) > 0 else 0, eps, float(logger.getCurrentLoss()),
+            description = 'Eval Reward:{:.03f}; Loss:{:.03f}; Time:{:.03f}'.format(
+                logger.eval_rewards[-1] if len(logger.eval_rewards) > 0 else 0, float(logger.getCurrentLoss()),
                 timer_final - timer_start)
             pbar.set_description(description)
             timer_start = timer_final
             pbar.update(logger.num_training_steps-pbar.n)
-        logger.num_steps += num_processes
 
         if logger.num_training_steps > 0 and eval_freq > 0 and logger.num_training_steps % eval_freq == 0:
             if eval_thread is not None:
                 eval_thread.join()
             eval_agent.copyNetworksFrom(agent)
-            eval_thread = threading.Thread(target=evaluate, args=(eval_envs, eval_agent, logger))
+            eval_thread = threading.Thread(target=evaluate, args=(envs, eval_agent, logger))
             eval_thread.start()
-            # evaluate(eval_envs, agent, logger)
 
-        if logger.num_steps % (num_processes * save_freq) == 0:
+        if logger.num_training_steps % save_freq == 0:
             saveModelAndInfo(logger, agent)
 
     if eval_thread is not None:
@@ -333,7 +266,6 @@ def train():
     if logger.num_training_steps >= max_train_step:
         logger.saveResult()
     envs.close()
-    eval_envs.close()
     print('training finished')
     if not no_bar:
         pbar.close()

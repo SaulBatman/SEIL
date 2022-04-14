@@ -733,13 +733,13 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/close_loop_fcn/0329_grasp15_dqn_fac/success/5x5'
+    base = '/media/dian/hdd/implicit/bs_im'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 3000, window=100)
-    plotEvalCurve(base, 20000, freq=500)
+    plotEvalCurve(base, 10000, freq=1000)
     # showPerformance(base)
     # plotLoss(base, 30000)
 
-    plotStepSRCurve(base, 10000, freq=500, file_name='step_success_rate')
+    # plotStepSRCurve(base, 10000, freq=500, file_name='step_success_rate')
     # plotStepRewardCurve(base, 10000, freq=200)
 

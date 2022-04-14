@@ -28,7 +28,7 @@ from agents.fcn_sdqfd import FCNSDQfD
 from agents.fcn_dqn_fac import FCNDQNFac
 from agents.fcn_sdqfd_fac import FCNSDQfDFac
 from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy, SACCritic2, SACGaussianPolicy2
-from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy, EquivariantSACCriticNoGP, EquivariantSACActor3, EquivariantSACActorDihedral, EquivariantSACCriticDihedral, EquivariantSACActorDihedralShareEnc, EquivariantSACCriticDihedralShareEnc, EquivariantEncoder128Dihedral
+from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy, EquivariantSACCriticNoGP, EquivariantSACActor3, EquivariantSACActorDihedral, EquivariantSACCriticDihedral, EquivariantSACActorDihedralShareEnc, EquivariantSACCriticDihedralShareEnc, EquivariantEncoder128Dihedral, EquivariantPolicyDihedral
 from networks.equivariant_sac_net import EquivariantSACActorSO2_1, EquivariantSACCriticSO2_1, EquivariantSACActorSO2_2, EquivariantSACCriticSO2_2, EquivariantSACActorSO2_3, EquivariantSACCriticSO2_3, EquivariantPolicySO2, EquivariantSACActorO2, EquivariantSACCriticO2, EquivariantPolicyO2, EquivariantSACActorO2_2, EquivariantSACCriticO2_2, EquivariantSACActorO2_3, EquivariantSACCriticO2_3
 from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
 from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy, CURLSACEncoderOri, CURLSACEncoder2
@@ -41,6 +41,7 @@ from networks.equivariant import EquiCNNFacD4WithNonEquiFCN, EquiCNNFacD4WithNon
 
 from agents.ibc import ImplicitBehaviorCloning
 from networks.cnn import CNNEBM
+from networks.equivariant_sac_net import EquivariantEBMDihedral
 
 def createAgent(test=False):
     print('initializing agent')
@@ -318,6 +319,8 @@ def createAgent(test=False):
 
         if model == 'equi':
             policy = EquivariantPolicy((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+        elif model == 'equi_d':
+            policy = EquivariantPolicyDihedral((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
         elif model == 'equi_enc_2':
             policy = EquivariantPolicy((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
         elif model == 'cnn':
@@ -332,8 +335,13 @@ def createAgent(test=False):
 
     elif alg in ['bc_implicit']:
         agent = ImplicitBehaviorCloning(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
-                                          n_a=len(action_sequence))
-        policy = CNNEBM(len(action_sequence)).to(device)
+                                          n_a=len(action_sequence), ibc_ts=ibc_ts, ibc_is=ibc_is)
+        if model == 'cnn':
+            policy = CNNEBM(len(action_sequence)).to(device)
+        elif model == 'equi_d':
+            policy = EquivariantEBMDihedral((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+        else:
+            raise NotImplementedError
         agent.initNetwork(policy)
 
     elif alg in ['curl_sac', 'curl_sacfd', 'curl_sacfd_mean']:

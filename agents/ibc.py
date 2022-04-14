@@ -7,16 +7,18 @@ from copy import deepcopy
 
 class DerivativeFreeOptimizer:
     """A simple derivative-free optimizer. Great for up to 5 dimensions."""
-    device = torch.device('cpu')
-    noise_scale: float = 0.33
-    noise_shrink: float = 0.5
-    iters: int = 3
-    train_samples: int = 256
-    inference_samples: int = 2**14
-    bounds: np.ndarray = np.array([[-1.0, -1.0, -1.0, -1.0, -1.0], [1.0, 1.0, 1.0, 1.0, 1.0]])
-
-    def __init__(self, device):
+    def __init__(self, device, train_samples=512, inference_samples=2048, boundary_buffer=0.05):
+        self.noise_scale = 0.33
+        self.noise_shrink = 0.5
+        self.iters = 3
         self.device = device
+        self.train_samples = train_samples
+        self.inference_samples = inference_samples
+        self.boundary_buffer = boundary_buffer
+        self.bounds = np.array([[-1.0, -1.0, -1.0, -1.0, -1.0], [1.0, 1.0, 1.0, 1.0, 1.0]])
+        action_range = self.bounds[1, :] - self.bounds[0, :]
+        self.bounds[1, :] += action_range * self.boundary_buffer
+        self.bounds[0, :] -= action_range * self.boundary_buffer
 
     def _sample(self, num_samples: int) -> torch.Tensor:
         """Helper method for drawing samples from the uniform random distribution."""
@@ -60,9 +62,9 @@ class DerivativeFreeOptimizer:
         return samples[torch.arange(samples.size(0)), best_idxs, :]
 
 class ImplicitBehaviorCloning(A2CBase):
-    def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/16, n_a=5):
+    def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/16, n_a=5, ibc_ts=512, ibc_is=2048):
         super().__init__(lr, gamma, device, dx, dy, dz, dr, n_a)
-        self.stochastic_optimizer = DerivativeFreeOptimizer(device)
+        self.stochastic_optimizer = DerivativeFreeOptimizer(device, train_samples=ibc_ts, inference_samples=ibc_is)
 
     def forwardNetwork(self, state, obs, action, to_cpu=False):
         actor = self.actor
@@ -77,7 +79,8 @@ class ImplicitBehaviorCloning(A2CBase):
 
     def initNetwork(self, actor):
         self.actor = actor
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr, weight_decay=1e-5)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.lr)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.actor_optimizer, step_size=100, gamma=0.99)
         self.networks.append(self.actor)
         self.optimizers.append(self.actor_optimizer)
 
@@ -121,6 +124,7 @@ class ImplicitBehaviorCloning(A2CBase):
         self.actor_optimizer.zero_grad()
         loss.backward()
         self.actor_optimizer.step()
+        self.scheduler.step()
 
         return loss.item(), torch.tensor(0.)
 

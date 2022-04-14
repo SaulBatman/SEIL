@@ -336,9 +336,10 @@ class Actor(nn.Module):
             nn.Conv2d(256, 512, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
 
-            nn.Flatten(),
-            torch.nn.Linear(512*8*8, 1024),
-            nn.ReLU(inplace=True),
+            # nn.Flatten(),
+            # torch.nn.Linear(512*8*8, 1024),
+            # nn.ReLU(inplace=True),
+            SpatialSoftArgmax(),
             torch.nn.Linear(1024, action_dim),
             nn.Tanh()
         )
