@@ -193,6 +193,8 @@ def train():
                     if not no_bar:
                         planner_bar.set_description('{:.3f}/{}, AVG: {:.3f}'.format(s, j, float(s) / j if j != 0 else 0))
                         planner_bar.update(1)
+                    if j == planner_episode:
+                        break
                 elif dones[i]:
                     local_transitions[i] = []
         if not no_bar:
@@ -243,7 +245,7 @@ def train():
         if not no_bar:
             timer_final = time.time()
             description = 'Eval Reward:{:.03f}; Loss:{:.03f}; Time:{:.03f}'.format(
-                logger.eval_rewards[-1] if len(logger.eval_rewards) > 0 else 0, float(logger.getCurrentLoss()),
+                logger.eval_success[-1] if len(logger.eval_success) > 0 else 0, float(logger.getCurrentLoss()),
                 timer_final - timer_start)
             pbar.set_description(description)
             timer_start = timer_final
