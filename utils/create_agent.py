@@ -43,6 +43,8 @@ from agents.ibc import ImplicitBehaviorCloning
 from networks.cnn import CNNEBM
 from networks.equivariant_sac_net import EquivariantEBMDihedral
 
+from agents.bc_fac import BCFac
+
 def createAgent(test=False):
     print('initializing agent')
     if view_type == 'camera_fix_rgbd':
@@ -60,7 +62,7 @@ def createAgent(test=False):
         n_theta = 3
 
     # setup agent
-    if alg in ['dqn_fac', 'sdqfd_fac', 'dqn_fac_mul', 'sdqfd_fac_mul']:
+    if alg in ['dqn_fac', 'sdqfd_fac', 'dqn_fac_mul', 'sdqfd_fac_mul', 'bc_fac']:
         if alg == 'dqn_fac':
             agent = DQNAgentFac(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p, n_theta=n_theta)
         elif alg == 'sdqfd_fac':
@@ -73,6 +75,8 @@ def createAgent(test=False):
             agent = SDQfDFac(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p,
                              n_theta=n_theta, l=margin_l, w=margin_weight)
             agent.com = 'mul'
+        elif alg == 'bc_fac':
+            agent = BCFac(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot, n_p=n_p, n_theta=n_theta)
 
         else:
             raise NotImplementedError
@@ -81,7 +85,7 @@ def createAgent(test=False):
         elif model == 'equi':
             net = EquivariantCNNFac(n_input_channel=obs_channel, n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_d':
-            net = EquivariantCNNFacD4(n_input_channel=obs_channel, n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
+            net = EquivariantCNNFacD4(n_input_channel=obs_channel, n_hidden=n_hidden, n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_d_w_fcn':
             net = EquiCNNFacD4WithNonEquiFCN(n_input_channel=obs_channel, n_p=n_p, n_theta=n_theta, initialize=initialize).to(device)
         elif model == 'equi_d_w_enc':
