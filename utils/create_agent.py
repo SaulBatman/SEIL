@@ -44,6 +44,8 @@ from networks.cnn import CNNEBM
 from networks.equivariant_sac_net import EquivariantEBMDihedral
 
 from agents.bc_fac import BCFac
+from agents.ibc_fac import ImplicitBehaviorCloningFactored
+from networks.equivariant_sac_net import EquivariantEBMDihedralFac, EquivariantEBMDihedralFacSepEnc
 
 def createAgent(test=False):
     print('initializing agent')
@@ -347,6 +349,20 @@ def createAgent(test=False):
         else:
             raise NotImplementedError
         agent.initNetwork(policy)
+
+    elif alg in ['bc_implicit_fac']:
+        agent = ImplicitBehaviorCloningFactored(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
+                                                n_a=len(action_sequence), ibc_ts=ibc_ts, ibc_is=ibc_is)
+        if model == 'equi_d':
+            policy = EquivariantEBMDihedralFac((obs_channel, crop_size, crop_size), len(action_sequence),
+                                               n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+        elif model == 'equi_d_sep':
+            policy = EquivariantEBMDihedralFacSepEnc((obs_channel, crop_size, crop_size), len(action_sequence),
+                                                     n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+        else:
+            raise NotImplementedError
+        agent.initNetwork(policy)
+
 
     elif alg in ['curl_sac', 'curl_sacfd', 'curl_sacfd_mean']:
         curl_sac_lr = [actor_lr, critic_lr, lr, lr]

@@ -1836,6 +1836,164 @@ class EquivariantEBMDihedral(torch.nn.Module):
         out = self.cat_conv(fused_geo).tensor.reshape(B, N)
         return out
 
+class EquivariantEBMDihedralFac(torch.nn.Module):
+    def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
+        super().__init__()
+        assert kernel_size in [3, 5]
+        self.obs_channel = obs_shape[0]
+        self.n_hidden = n_hidden
+        self.c4_act = gspaces.FlipRot2dOnR2(N)
+        enc = EquivariantEncoder128Dihedral if kernel_size == 3 else EquivariantEncoder128DihedralK5
+        self.img_conv = enc(self.obs_channel, n_hidden, initialize, N)
+        self.n_rho1 = 2 if N==2 else 1
+        self.cat_conv_equ = torch.nn.Sequential(
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]),
+                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
+            nn.GroupPooling(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr])),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+        )
+
+        self.cat_conv_inv = torch.nn.Sequential(
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim - 2) * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
+            nn.GroupPooling(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr])),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+        )
+
+    def forward(self, obs, act):
+        batch_size = obs.shape[0]
+        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
+        conv_out = self.img_conv(obs_geo)
+        dxy = act[:, :, 1:3]
+        inv_act = torch.cat((act[:, :, 0:1], act[:, :, 3:]), dim=2)
+        n_inv = inv_act.shape[2]
+
+        fused_equ = torch.cat([conv_out.tensor.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1), dxy.reshape(batch_size, act.size(1), 2, 1, 1)], dim=2)
+        B, N, D, _, _ = fused_equ.size()
+        fused_equ = fused_equ.reshape(B * N, D, 1, 1)
+        fused_equ_geo = nn.GeometricTensor(fused_equ, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]))
+        equ_out = self.cat_conv_equ(fused_equ_geo).tensor.reshape(B, N)
+
+        fused_inv = torch.cat([conv_out.tensor.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1), inv_act.reshape(batch_size, act.size(1), n_inv, 1, 1)], dim=2)
+        B, N, D, _, _ = fused_inv.size()
+        fused_inv = fused_inv.reshape(B * N, D, 1, 1)
+        fused_inv_geo = nn.GeometricTensor(fused_inv, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr]))
+        inv_out = self.cat_conv_inv(fused_inv_geo).tensor.reshape(B, N)
+        return equ_out, inv_out
+
+    def forwardEqu(self, obs, equ_act):
+        batch_size = obs.shape[0]
+        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel * [self.c4_act.trivial_repr]))
+        conv_out = self.img_conv(obs_geo)
+
+        fused_equ = torch.cat([conv_out.tensor.unsqueeze(1).expand(-1, equ_act.size(1), -1, -1, -1),
+                               equ_act.reshape(batch_size, equ_act.size(1), 2, 1, 1)], dim=2)
+        B, N, D, _, _ = fused_equ.size()
+        fused_equ = fused_equ.reshape(B * N, D, 1, 1)
+        fused_equ_geo = nn.GeometricTensor(fused_equ, nn.FieldType(self.c4_act, self.n_hidden * [
+            self.c4_act.regular_repr] + self.n_rho1 * [self.c4_act.irrep(1, 1)]))
+        return self.cat_conv_equ(fused_equ_geo).tensor.reshape(B, N)
+
+    def forwardInv(self, obs, inv_act):
+        batch_size = obs.shape[0]
+        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
+        conv_out = self.img_conv(obs_geo)
+        fused_inv = torch.cat([conv_out.tensor.unsqueeze(1).expand(-1, inv_act.size(1), -1, -1, -1),
+                               inv_act.reshape(batch_size, inv_act.size(1), 3, 1, 1)], dim=2)
+        B, N, D, _, _ = fused_inv.size()
+        fused_inv = fused_inv.reshape(B * N, D, 1, 1)
+        fused_inv_geo = nn.GeometricTensor(fused_inv, nn.FieldType(self.c4_act, self.n_hidden * [
+            self.c4_act.regular_repr] + 3 * [self.c4_act.trivial_repr]))
+        return self.cat_conv_inv(fused_inv_geo).tensor.reshape(B, N)
+
+class EquivariantEBMDihedralFacSepEnc(torch.nn.Module):
+    def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
+        super().__init__()
+        assert kernel_size in [3, 5]
+        self.obs_channel = obs_shape[0]
+        self.n_hidden = n_hidden
+        self.c4_act = gspaces.FlipRot2dOnR2(N)
+        enc = EquivariantEncoder128Dihedral if kernel_size == 3 else EquivariantEncoder128DihedralK5
+        self.img_conv_equ = enc(self.obs_channel, n_hidden, initialize, N)
+        self.img_conv_inv = enc(self.obs_channel, n_hidden, initialize, N)
+        self.n_rho1 = 2 if N==2 else 1
+        self.cat_conv_equ = torch.nn.Sequential(
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]),
+                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
+            nn.GroupPooling(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr])),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+        )
+
+        self.cat_conv_inv = torch.nn.Sequential(
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim - 2) * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
+            nn.GroupPooling(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr])),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+        )
+
+    def forward(self, obs, act):
+        batch_size = obs.shape[0]
+        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
+        conv_equ = self.img_conv_equ(obs_geo)
+        conv_inv = self.img_conv_inv(obs_geo)
+        dxy = act[:, :, 1:3]
+        inv_act = torch.cat((act[:, :, 0:1], act[:, :, 3:]), dim=2)
+        n_inv = inv_act.shape[2]
+
+        fused_equ = torch.cat([conv_equ.tensor.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1), dxy.reshape(batch_size, act.size(1), 2, 1, 1)], dim=2)
+        B, N, D, _, _ = fused_equ.size()
+        fused_equ = fused_equ.reshape(B * N, D, 1, 1)
+        fused_equ_geo = nn.GeometricTensor(fused_equ, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]))
+        equ_out = self.cat_conv_equ(fused_equ_geo).tensor.reshape(B, N)
+
+        fused_inv = torch.cat([conv_inv.tensor.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1), inv_act.reshape(batch_size, act.size(1), n_inv, 1, 1)], dim=2)
+        B, N, D, _, _ = fused_inv.size()
+        fused_inv = fused_inv.reshape(B * N, D, 1, 1)
+        fused_inv_geo = nn.GeometricTensor(fused_inv, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr]))
+        inv_out = self.cat_conv_inv(fused_inv_geo).tensor.reshape(B, N)
+        return equ_out, inv_out
+
+    def forwardEqu(self, obs, equ_act):
+        batch_size = obs.shape[0]
+        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel * [self.c4_act.trivial_repr]))
+        conv_out = self.img_conv_equ(obs_geo)
+
+        fused_equ = torch.cat([conv_out.tensor.unsqueeze(1).expand(-1, equ_act.size(1), -1, -1, -1),
+                               equ_act.reshape(batch_size, equ_act.size(1), 2, 1, 1)], dim=2)
+        B, N, D, _, _ = fused_equ.size()
+        fused_equ = fused_equ.reshape(B * N, D, 1, 1)
+        fused_equ_geo = nn.GeometricTensor(fused_equ, nn.FieldType(self.c4_act, self.n_hidden * [
+            self.c4_act.regular_repr] + self.n_rho1 * [self.c4_act.irrep(1, 1)]))
+        return self.cat_conv_equ(fused_equ_geo).tensor.reshape(B, N)
+
+    def forwardInv(self, obs, inv_act):
+        batch_size = obs.shape[0]
+        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
+        conv_out = self.img_conv_inv(obs_geo)
+        fused_inv = torch.cat([conv_out.tensor.unsqueeze(1).expand(-1, inv_act.size(1), -1, -1, -1),
+                               inv_act.reshape(batch_size, inv_act.size(1), 3, 1, 1)], dim=2)
+        B, N, D, _, _ = fused_inv.size()
+        fused_inv = fused_inv.reshape(B * N, D, 1, 1)
+        fused_inv_geo = nn.GeometricTensor(fused_inv, nn.FieldType(self.c4_act, self.n_hidden * [
+            self.c4_act.regular_repr] + 3 * [self.c4_act.trivial_repr]))
+        return self.cat_conv_inv(fused_inv_geo).tensor.reshape(B, N)
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     critic = EquivariantSACCriticO2_3(obs_shape=(2, 128, 128), action_dim=5, n_hidden=32, initialize=False)

@@ -7,7 +7,7 @@ from copy import deepcopy
 
 class DerivativeFreeOptimizer:
     """A simple derivative-free optimizer. Great for up to 5 dimensions."""
-    def __init__(self, device, train_samples=512, inference_samples=2048, boundary_buffer=0.05):
+    def __init__(self, device, n_a=5, train_samples=512, inference_samples=2048, boundary_buffer=0.05):
         self.noise_scale = 0.33
         self.noise_shrink = 0.5
         self.iters = 3
@@ -15,7 +15,7 @@ class DerivativeFreeOptimizer:
         self.train_samples = train_samples
         self.inference_samples = inference_samples
         self.boundary_buffer = boundary_buffer
-        self.bounds = np.array([[-1.0, -1.0, -1.0, -1.0, -1.0], [1.0, 1.0, 1.0, 1.0, 1.0]])
+        self.bounds = np.array([[-1.0 for _ in range(n_a)], [1.0 for _ in range(n_a)]])
         action_range = self.bounds[1, :] - self.bounds[0, :]
         self.bounds[1, :] += action_range * self.boundary_buffer
         self.bounds[0, :] -= action_range * self.boundary_buffer
@@ -64,7 +64,7 @@ class DerivativeFreeOptimizer:
 class ImplicitBehaviorCloning(A2CBase):
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/16, n_a=5, ibc_ts=512, ibc_is=2048):
         super().__init__(lr, gamma, device, dx, dy, dz, dr, n_a)
-        self.stochastic_optimizer = DerivativeFreeOptimizer(device, train_samples=ibc_ts, inference_samples=ibc_is)
+        self.stochastic_optimizer = DerivativeFreeOptimizer(device, n_a=n_a, train_samples=ibc_ts, inference_samples=ibc_is)
 
     def forwardNetwork(self, state, obs, action, to_cpu=False):
         actor = self.actor

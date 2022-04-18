@@ -77,7 +77,7 @@ training_group.add_argument('--buffer_aug_n', type=int, default=4)
 training_group.add_argument('--expert_aug_n', type=int, default=0)
 training_group.add_argument('--simulate_n', type=int, default=0)
 training_group.add_argument('--train_simulate', type=strToBool, default=False)
-training_group.add_argument('--ibc_ts', type=int, default=512)
+training_group.add_argument('--ibc_ts', type=int, default=2048)
 training_group.add_argument('--ibc_is', type=int, default=2048)
 
 eval_group = parser.add_argument_group('eval')
