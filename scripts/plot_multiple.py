@@ -285,15 +285,20 @@ def plotEvalBarChart(base, step=50000, use_default_cm=False, freq=1000):
         bar_colors.append(color_map[method] if method in color_map else colors[i])
         i += 1
 
+    for j in range(i):
+        print('{}: {:.1f}+{:.1f}'.format(names[j], ys[j]*100, errs[j]*100))
+
     plt.style.use('seaborn-whitegrid')
+    plt.figure(figsize=(2*i, 5))
     plt.bar(np.arange(i), ys, yerr=errs, color=bar_colors, width=0.3, ecolor='black', capsize=5)
     plt.xticks(np.arange(i), names)
     plt.ylabel('eval success rate')
     plt.yticks(np.arange(0., 1.05, 0.1))
-    plt.xlim((-0.5, 5))
+    plt.xlim((-0.5, i-0.5))
     plt.grid(axis='x')
     # plt.tight_layout()
-    plt.savefig(os.path.join(base, 'eval.png'), bbox_inches='tight',pad_inches = 0)
+    plt.savefig(os.path.join(base, 'eval_bar.png'), bbox_inches='tight',pad_inches = 0)
+    plt.close()
 
 def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000, file_name='step_reward'):
     plt.style.use('ggplot')
@@ -797,10 +802,11 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/ibc/0415_do_planner20'
+    base = '/media/dian/hdd/mrun_results/ibc/0417_do_planner20_b128'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 3000, window=100)
-    plotEvalBarChart(base, 10000, freq=1000)
+    plotEvalCurve(base, 20000, freq=1000)
+    plotEvalBarChart(base, 20000, freq=1000)
     # showPerformance(base)
     # plotLoss(base, 30000)
 
