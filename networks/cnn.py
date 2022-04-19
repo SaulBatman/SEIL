@@ -553,3 +553,59 @@ class CNNEBM(nn.Module):
         fused = fused.reshape(B * N, D)
         out = self.fc(fused)
         return out.view(B, N)
+
+class CNNMSE(nn.Module):
+    def __init__(self, action_dim=5, reducer='maxpool'):
+        assert reducer in ['maxpool', 'spatial_softmax']
+        super().__init__()
+        self.state_conv = torch.nn.Sequential(
+            # 128x128
+            nn.Conv2d(2, 32, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 64x64
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 32x32
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 16x16
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            # 8x8
+        )
+
+        if reducer == 'maxpool':
+            self.reducer = torch.nn.Sequential(
+                nn.MaxPool2d(8),
+                nn.Flatten()
+            )
+            mlp_in = 256
+        elif reducer == 'spatial_softmax':
+            self.reducer = SpatialSoftArgmax()
+            mlp_in = 512
+        else:
+            raise NotImplementedError
+
+        self.fc = torch.nn.Sequential(
+            torch.nn.Linear(mlp_in, 512),
+            nn.ReLU(inplace=True),
+            torch.nn.Linear(512, action_dim),
+            nn.Tanh()
+        )
+
+        for m in self.named_modules():
+            if isinstance(m[1], nn.Conv2d):
+                # nn.init.kaiming_normal_(m[1].weight.data)
+                nn.init.xavier_normal_(m[1].weight.data)
+            elif isinstance(m[1], nn.BatchNorm2d):
+                m[1].weight.data.fill_(1)
+                m[1].bias.data.zero_()
+
+    def forward(self, x):
+        x = self.state_conv(x)
+        x = self.reducer(x)
+        return self.fc(x)

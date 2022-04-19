@@ -50,6 +50,8 @@ from networks.equivariant_sac_net import EquivariantEBMDihedralFac, EquivariantE
 from agents.ibc_fac_all import ImplicitBehaviorCloningFactoredAll
 from networks.equivariant_sac_net import EquivariantEBMDihedralFacAll
 
+from networks.cnn import CNNMSE
+
 def createAgent(test=False):
     print('initializing agent')
     if view_type == 'camera_fix_rgbd':
@@ -334,6 +336,10 @@ def createAgent(test=False):
             policy = EquivariantPolicy((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
         elif model == 'cnn':
             policy = Actor(len(action_sequence)).to(device)
+        elif model == 'cnn_maxpool':
+            policy = CNNMSE(len(action_sequence), reducer='maxpool').to(device)
+        elif model == 'cnn_ssm':
+            policy = CNNMSE(len(action_sequence), reducer='spatial_softmax').to(device)
         elif model == 'equi_so2':
             policy = EquivariantPolicySO2((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, kernel_size=3).to(device)
         elif model == 'equi_o2':

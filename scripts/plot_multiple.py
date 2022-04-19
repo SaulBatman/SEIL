@@ -802,7 +802,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/ibc/0418_bowl_planner3'
+    base = '/media/dian/hdd/mrun_results/ibc/0419_drawer_planner10'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 3000, window=100)
     plotEvalCurve(base, 20000, freq=1000)
