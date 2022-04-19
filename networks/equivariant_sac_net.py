@@ -1929,10 +1929,6 @@ class EquivariantEBMDihedralFacAll(torch.nn.Module):
                       nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
             nn.GroupPooling(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr])),
             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]),
                       nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
@@ -1941,10 +1937,6 @@ class EquivariantEBMDihedralFacAll(torch.nn.Module):
 
         self.cat_conv_inv_1 = torch.nn.Sequential(
             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + 1 * [self.c4_act.trivial_repr]),
-                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
                       nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
@@ -1959,10 +1951,6 @@ class EquivariantEBMDihedralFacAll(torch.nn.Module):
                       nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
             nn.GroupPooling(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr])),
             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]),
                       nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
@@ -1971,10 +1959,6 @@ class EquivariantEBMDihedralFacAll(torch.nn.Module):
 
         self.cat_conv_inv_3 = torch.nn.Sequential(
             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + 1 * [self.c4_act.trivial_repr]),
-                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
                       nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
