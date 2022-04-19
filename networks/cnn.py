@@ -500,7 +500,8 @@ class SpatialSoftArgmax(nn.Module):
 
 
 class CNNEBM(nn.Module):
-    def __init__(self, action_dim=5):
+    def __init__(self, action_dim=5, reducer='maxpool'):
+        assert reducer in ['maxpool', 'spatial_softmax']
         super().__init__()
         self.state_conv = torch.nn.Sequential(
             # 128x128
@@ -520,21 +521,28 @@ class CNNEBM(nn.Module):
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2),
             # 8x8
-            nn.Conv2d(256, 512, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
         )
 
-        self.reducer = SpatialSoftArgmax()
-        # self.reducer = torch.nn.Sequential(
-        #     nn.Flatten(),
-        #     torch.nn.Linear(512*8*8, 1024),
-        #     nn.ReLU(inplace=True),
-        # )
+        if reducer == 'maxpool':
+            self.reducer = torch.nn.Sequential(
+                nn.MaxPool2d(8),
+                nn.Flatten()
+            )
+            mlp_in = 256
+        elif reducer == 'spatial_softmax':
+            self.reducer = SpatialSoftArgmax()
+            mlp_in = 512
+        else:
+            raise NotImplementedError
 
         self.fc = torch.nn.Sequential(
-            torch.nn.Linear(1024+action_dim, 512),
+            torch.nn.Linear(mlp_in+action_dim, 512),
             nn.ReLU(inplace=True),
-            torch.nn.Linear(512, 1)
+            torch.nn.Linear(512, 512),
+            nn.ReLU(inplace=True),
+            torch.nn.Linear(512, 512),
+            nn.ReLU(inplace=True),
+            torch.nn.Linear(512, 1),
         )
 
     def forward(self, obs, act):
