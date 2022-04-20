@@ -538,10 +538,6 @@ class CNNEBM(nn.Module):
         self.fc = torch.nn.Sequential(
             torch.nn.Linear(mlp_in+action_dim, 512),
             nn.ReLU(inplace=True),
-            torch.nn.Linear(512, 512),
-            nn.ReLU(inplace=True),
-            torch.nn.Linear(512, 512),
-            nn.ReLU(inplace=True),
             torch.nn.Linear(512, 1),
         )
 
