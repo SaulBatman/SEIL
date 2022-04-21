@@ -552,7 +552,7 @@ class CNNEBM(nn.Module):
 
 class CNNMSE(nn.Module):
     def __init__(self, action_dim=5, reducer='maxpool'):
-        assert reducer in ['maxpool', 'spatial_softmax']
+        assert reducer in ['maxpool', 'spatial_softmax', 'progressive_maxpool']
         super().__init__()
         self.state_conv = torch.nn.Sequential(
             # 128x128
@@ -583,6 +583,18 @@ class CNNMSE(nn.Module):
         elif reducer == 'spatial_softmax':
             self.reducer = SpatialSoftArgmax()
             mlp_in = 512
+        elif reducer == 'progressive_maxpool':
+            self.reducer = torch.nn.Sequential(
+                nn.Conv2d(256, 512, kernel_size=3, padding=1),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(512, 256, kernel_size=3, padding=0),
+                nn.ReLU(inplace=True),
+                nn.MaxPool2d(2),
+                nn.Conv2d(256, 256, kernel_size=3, padding=0),
+                nn.ReLU(inplace=True),
+                nn.Flatten()
+            )
+            mlp_in = 256
         else:
             raise NotImplementedError
 
@@ -605,3 +617,22 @@ class CNNMSE(nn.Module):
         x = self.state_conv(x)
         x = self.reducer(x)
         return self.fc(x)
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    sm = SpatialSoftArgmax()
+    inp = torch.zeros(1, 1, 100, 100)
+    inp[:, :, 10:30, 10:20] = 1
+    plt.imshow(inp[0, 0])
+    plt.show()
+    out = sm(inp)
+    print(out)
+
+    inp = torch.zeros(1, 1, 100, 100)
+    inp[:, :, -30:-10, 10:20] = 1
+    plt.imshow(inp[0, 0])
+    plt.show()
+    out = sm(inp)
+    print(out)
+
+    pass

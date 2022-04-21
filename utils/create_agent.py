@@ -338,6 +338,8 @@ def createAgent(test=False):
             policy = Actor(len(action_sequence)).to(device)
         elif model == 'cnn_maxpool':
             policy = CNNMSE(len(action_sequence), reducer='maxpool').to(device)
+        elif model == 'cnn_pro_maxpool':
+            policy = CNNMSE(len(action_sequence), reducer='progressive_maxpool').to(device)
         elif model == 'cnn_ssm':
             policy = CNNMSE(len(action_sequence), reducer='spatial_softmax').to(device)
         elif model == 'equi_so2':
