@@ -41,7 +41,7 @@ from networks.equivariant import EquiCNNFacD4WithNonEquiFCN, EquiCNNFacD4WithNon
 
 from agents.ibc import ImplicitBehaviorCloning
 from networks.cnn import CNNEBM
-from networks.equivariant_sac_net import EquivariantEBMDihedral
+from networks.equivariant_sac_net import EquivariantEBMDihedral, EquivariantEBMDihedralSpatialSoftmax
 
 from agents.bc_fac import BCFac
 from agents.ibc_fac import ImplicitBehaviorCloningFactored
@@ -51,6 +51,8 @@ from agents.ibc_fac_all import ImplicitBehaviorCloningFactoredAll
 from networks.equivariant_sac_net import EquivariantEBMDihedralFacAll
 
 from networks.cnn import CNNMSE
+
+from networks.equivariant_sac_net import EquivariantPolicyDihedralSpatialSoftmax
 
 def createAgent(test=False):
     print('initializing agent')
@@ -332,6 +334,8 @@ def createAgent(test=False):
             policy = EquivariantPolicy((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
         elif model == 'equi_d':
             policy = EquivariantPolicyDihedral((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+        elif model == 'equi_d_ssm':
+            policy = EquivariantPolicyDihedralSpatialSoftmax((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
         elif model == 'equi_enc_2':
             policy = EquivariantPolicy((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n, enc_id=2).to(device)
         elif model == 'cnn':
@@ -359,6 +363,8 @@ def createAgent(test=False):
             policy = CNNEBM(len(action_sequence), reducer='spatial_softmax').to(device)
         elif model == 'equi_d':
             policy = EquivariantEBMDihedral((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+        elif model == 'equi_d_ssm':
+            policy = EquivariantEBMDihedralSpatialSoftmax((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(policy)
