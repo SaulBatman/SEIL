@@ -126,5 +126,32 @@ class A2CBase(BaseAgent):
         unscaled_actions[rand_mask] = rand_act
         return self.decodeActions(*[unscaled_actions[:, i] for i in range(self.n_a)])
 
+    def getExpertActions(self, state, obs, eps):
+        with torch.no_grad():
+            unscaled_actions = self.forwardActor(state, obs, to_cpu=True)
+        return self.decodeActions(*[unscaled_actions[:, i] for i in range(self.n_a)])
+
+    def getInvBCActions(self, unscaled_action1, unscaled_action2, method='gaussian'):
+        if method == 'gaussian':
+            p_inv = unscaled_action1[0]
+            sigma = 0.001
+            x_inv = np.random.normal(-unscaled_action2[1], sigma)
+            y_inv = np.random.normal(-unscaled_action2[2], sigma)
+            z_inv = -unscaled_action2[3]+abs(np.random.normal(0, sigma))
+            r_inv = np.random.normal(-unscaled_action2[4], sigma)
+        elif method == 'uniform':
+            pass
+        
+        # return self.decodeActions(*[unscaled_actions_new[:, i] for i in range(self.n_a)])
+        unscaled_actions = torch.tensor([[p_inv, x_inv, y_inv, z_inv, r_inv]])
+        return self.decodeActions(*[unscaled_actions[:, i] for i in range(self.n_a)])
+
+    def getGaussianBCActions(self, unscaled_action_inv):
+        unscaled_actions_new = -torch.tensor(unscaled_action_inv.clone())
+        unscaled_actions_new[0][0] = abs(unscaled_actions_new[0][0])
+        # return self.decodeActions(*[unscaled_actions_new[:, i] for i in range(self.n_a)])
+        return self.decodeActions(*[unscaled_actions_new[:, i] for i in range(self.n_a)])
+
+
     def updateTarget(self):
         pass

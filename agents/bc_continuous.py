@@ -20,7 +20,7 @@ class BehaviorCloningContinuous(A2CBase):
         assert is_experts.all()
         pi = self.forwardActor(states, obs)
 
-        policy_loss = F.mse_loss(pi, action)
+        policy_loss = F.mse_loss(pi.float(), action.float())
 
         self.actor_optimizer.zero_grad()
         policy_loss.backward()
