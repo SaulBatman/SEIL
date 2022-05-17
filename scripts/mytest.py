@@ -101,25 +101,27 @@ def countParameters(m):
     return sum(p.numel() for p in m.parameters() if p.requires_grad)
 
 def transition_simulate(local_transition, agent, envs):
-    flag = 1
-    sim_startpoint = -3
-    sim_obs0 = local_transition[sim_startpoint].obs
-    sim_states0 = local_transition[sim_startpoint].state
-    sim_actions0_star_idx = local_transition[sim_startpoint].action
-    sim_states1, sim_obs1 = local_transition[sim_startpoint+1].state, local_transition[sim_startpoint+1].obs
-    sim_actions1_star_idx = local_transition[sim_startpoint+1].action
-    sim_states2, sim_obs2 = local_transition[sim_startpoint+2].state, local_transition[sim_startpoint+2].obs
-    sim_rewards2, sim_dones2 = local_transition[sim_startpoint+2].reward, local_transition[sim_startpoint+2].done
-    if sim_states1 == 1:
-        flag = 0
-        return None, flag
-    sim_actions1_star_idx_inv, sim_actions1_star_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx)
-    sim_states_new, sim_obs_new, _, _ = envs.simulate(sim_actions1_star_inv)
-    sim_actions_new_star_idx,  sim_actions_new_star= agent.getGaussianBCActions(sim_actions1_star_idx_inv)
+    
 
     sim_steps_lefts = envs.getStepLeft()
     #num_processes=1 # only support single process now
     for i in range(num_processes):
+        flag = 1
+        sim_startpoint = -3
+        sim_obs0 = local_transition[sim_startpoint].obs
+        sim_states0 = local_transition[sim_startpoint].state
+        sim_actions0_star_idx = local_transition[sim_startpoint].action
+        sim_states1, sim_obs1 = local_transition[sim_startpoint+1].state, local_transition[sim_startpoint+1].obs
+        sim_actions1_star_idx = local_transition[sim_startpoint+1].action
+        sim_states2, sim_obs2 = local_transition[sim_startpoint+2].state, local_transition[sim_startpoint+2].obs
+        sim_rewards2, sim_dones2 = local_transition[sim_startpoint+2].reward, local_transition[sim_startpoint+2].done
+        if sim_states1 == 1:
+            flag = 0
+            return None, flag
+        sim_actions1_star_idx_inv, sim_actions1_star_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx)
+        sim_states_new, sim_obs_new, _, _ = envs.simulate(sim_actions1_star_inv)
+
+        sim_actions_new_star_idx,  sim_actions_new_star= agent.getGaussianBCActions(sim_actions1_star_idx_inv)
         is_expert = 1
         transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy(), sim_actions_new_star_idx[i].numpy(),
                                     sim_rewards2, sim_states2, sim_obs2, sim_dones2,
@@ -210,13 +212,13 @@ def train():
                 local_transitions[i].append(transition)
 
                 if len(local_transitions[i]) >=3:
-                    for _ in range(simulate_n):
-                        flag=0
-                        if planner_envs.canSimulate():
+                    if planner_envs.canSimulate() and simulate_n>0:
+                        for _ in range(simulate_n):
+                            flag=0
                             planner_envs.resetSimPose()
                             new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs)
-                        if flag == 1:
-                            local_transitions[i].append(new_transition)
+                            if flag == 1:
+                                local_transitions[i].append(new_transition)
             states = copy.copy(states_)
             obs = copy.copy(obs_)
 
