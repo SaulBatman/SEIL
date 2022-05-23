@@ -15,6 +15,7 @@ from storage.per_aug_buffer import PrioritizedQLearningBufferAug
 from utils.logger import Logger
 from utils.schedules import LinearSchedule
 from utils.env_wrapper import EnvWrapper
+from debug import visualizeBC, visualizeExpert
 
 from utils.create_agent import createAgent
 import threading
@@ -105,30 +106,38 @@ def transition_simulate(local_transition, agent, envs):
 
     sim_steps_lefts = envs.getStepLeft()
     #num_processes=1 # only support single process now
-    for i in range(num_processes):
-        flag = 1
-        sim_startpoint = -3
-        sim_obs0 = local_transition[sim_startpoint].obs
-        sim_states0 = local_transition[sim_startpoint].state
-        sim_actions0_star_idx = local_transition[sim_startpoint].action
-        sim_states1, sim_obs1 = local_transition[sim_startpoint+1].state, local_transition[sim_startpoint+1].obs
-        sim_actions1_star_idx = local_transition[sim_startpoint+1].action
-        sim_states2, sim_obs2 = local_transition[sim_startpoint+2].state, local_transition[sim_startpoint+2].obs
-        sim_rewards2, sim_dones2 = local_transition[sim_startpoint+2].reward, local_transition[sim_startpoint+2].done
-        if sim_states1 == 1:
-            flag = 0
-            return None, flag
-        sim_actions1_star_idx_inv, sim_actions1_star_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx)
-        sim_states_new, sim_obs_new, _, _ = envs.simulate(sim_actions1_star_inv)
 
-        sim_actions_new_star_idx,  sim_actions_new_star= agent.getGaussianBCActions(sim_actions1_star_idx_inv)
-        is_expert = 1
-        transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy(), sim_actions_new_star_idx[i].numpy(),
-                                    sim_rewards2, sim_states2, sim_obs2, sim_dones2,
-                                    sim_steps_lefts[i].numpy(), np.array(is_expert))
-        # if obs_type == 'pixel':
-        #     transition = normalizeTransition(transition)
-        return transition, flag
+    flag = 1
+    sim_startpoint = -3
+    sim_obs0 = local_transition[sim_startpoint].obs
+    sim_states0 = local_transition[sim_startpoint].state
+    sim_actions0_star_idx = local_transition[sim_startpoint].action
+    sim_states1, sim_obs1 = local_transition[sim_startpoint+1].state, local_transition[sim_startpoint+1].obs
+    sim_actions1_star_idx = local_transition[sim_startpoint+1].action
+    sim_states2, sim_obs2 = local_transition[sim_startpoint+2].state, local_transition[sim_startpoint+2].obs
+    sim_rewards2, sim_dones2 = local_transition[sim_startpoint+2].reward, local_transition[sim_startpoint+2].done
+    if sim_states1 == 1:
+        flag = 0
+        return None, flag
+    sim_actions1_star_idx_inv, sim_actions1_star_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx)
+    sim_states_new, sim_obs_new, _, _ = envs.simulate(sim_actions1_star_inv)
+
+    sim_actions_new_star_idx,  sim_actions_new_star= agent.getGaussianBCActions(sim_actions1_star_idx_inv)
+    
+    sim_obs = [sim_obs0, sim_obs1, sim_obs2, sim_obs_new]
+    actions = [sim_actions1_star_idx, sim_actions_new_star_idx]
+
+    # fig = visualizeBC(agent, sim_obs, actions)
+    # fig.clf()
+
+    is_expert = 1
+    transition = ExpertTransition(sim_states_new[0].numpy(), sim_obs_new[0].numpy(), sim_actions_new_star_idx[0].numpy(),
+                                sim_rewards2, sim_states2, sim_obs2, sim_dones2,
+                                sim_steps_lefts[0].numpy(), np.array(is_expert))
+    # if obs_type == 'pixel':
+    #     transition = normalizeTransition(transition)
+
+    return transition, flag
         
 
 def train():
@@ -226,8 +235,8 @@ def train():
                 if dones[i] and rewards[i]:
                     for t in local_transitions[i]:
                         replay_buffer.add(t)
-                    global_transitions.append(local_transitions[i])
-                    
+                    # global_transitions.append(local_transitions[i])
+                    # visualizeExpert(agent, local_transitions[i])
                     local_transitions[i] = []
                     j += 1
                     s += 1

@@ -95,6 +95,25 @@ class A2CBase(BaseAgent):
 
         return unscaled_actions, actions
 
+    def decodeSingleActions(self, *args):
+        unscaled_p, unscaled_dx, unscaled_dy, unscaled_dz = args[0], args[1], args[2], args[3]
+
+        p = 0.5 * (unscaled_p + 1) * (self.p_range[1] - self.p_range[0]) + self.p_range[0]
+        dx = 0.5 * (unscaled_dx + 1) * (self.dx_range[1] - self.dx_range[0]) + self.dx_range[0]
+        dy = 0.5 * (unscaled_dy + 1) * (self.dy_range[1] - self.dy_range[0]) + self.dy_range[0]
+        dz = 0.5 * (unscaled_dz + 1) * (self.dz_range[1] - self.dz_range[0]) + self.dz_range[0]
+
+        if self.n_a == 5:
+            unscaled_dtheta = args[4]
+            dtheta = 0.5 * (unscaled_dtheta + 1) * (self.dtheta_range[1] - self.dtheta_range[0]) + self.dtheta_range[0]
+            actions = torch.stack([p, dx, dy, dz, dtheta], dim=0)
+            unscaled_actions = torch.stack([unscaled_p, unscaled_dx, unscaled_dy, unscaled_dz, unscaled_dtheta], dim=0)
+        else:
+            actions = torch.stack([p, dx, dy, dz], dim=0)
+            unscaled_actions = torch.stack([unscaled_p, unscaled_dx, unscaled_dy, unscaled_dz], dim=0)
+
+        return unscaled_actions, actions
+
     def getActionFromPlan(self, plan):
         def getUnscaledAction(action, action_range):
             unscaled_action = 2 * (action - action_range[0]) / (action_range[1] - action_range[0]) - 1
@@ -134,11 +153,11 @@ class A2CBase(BaseAgent):
     def getInvBCActions(self, unscaled_action1, unscaled_action2, method='gaussian'):
         if method == 'gaussian':
             p_inv = unscaled_action1[0]
-            sigma = 0.001
+            sigma = 0
             x_inv = np.random.normal(-unscaled_action2[1], sigma)
             y_inv = np.random.normal(-unscaled_action2[2], sigma)
             z_inv = -unscaled_action2[3]+abs(np.random.normal(0, sigma))
-            r_inv = np.random.normal(-unscaled_action2[4], sigma)
+            r_inv = np.random.normal(-unscaled_action2[4], 0)
         elif method == 'uniform':
             pass
         
@@ -147,7 +166,7 @@ class A2CBase(BaseAgent):
         return self.decodeActions(*[unscaled_actions[:, i] for i in range(self.n_a)])
 
     def getGaussianBCActions(self, unscaled_action_inv):
-        unscaled_actions_new = -torch.tensor(unscaled_action_inv.clone())
+        unscaled_actions_new = -torch.tensor(unscaled_action_inv.clone().detach())
         unscaled_actions_new[0][0] = abs(unscaled_actions_new[0][0])
         # return self.decodeActions(*[unscaled_actions_new[:, i] for i in range(self.n_a)])
         return self.decodeActions(*[unscaled_actions_new[:, i] for i in range(self.n_a)])
