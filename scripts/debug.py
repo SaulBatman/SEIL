@@ -47,7 +47,8 @@ def visualizeExpert(agent, local_transition):
         print(f"action{i}", sim_action)
         current_ax.arrow(x=64, y=64, dx=sim_action[2]/0.3*128, dy=sim_action[1]/0.3*128, width=.8)
         current_ax.text(0, 0, u"\u2191", rotation = sim_action[4]*180/np.pi)
-        # current_ax.set_title("sim_obs_"+str(i))
+        if sim_action.dtype is torch.float64:
+            current_ax.set_title("sim_obs")
     plt.show()
 
     return fig
