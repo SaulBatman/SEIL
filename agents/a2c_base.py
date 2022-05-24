@@ -150,32 +150,32 @@ class A2CBase(BaseAgent):
             unscaled_actions = self.forwardActor(state, obs, to_cpu=True)
         return self.decodeActions(*[unscaled_actions[:, i] for i in range(self.n_a)])
 
-    def getInvBCActions(self, unscaled_action1, unscaled_action2, method='gaussian'):
+    def getInvBCActions(self, scaled_action1, scaled_action2, sigma, method='gaussian'):
         if method == 'gaussian':
-            p_inv = unscaled_action1[0]
-            sigma = 0
-            x_inv = np.random.normal(-unscaled_action2[1], sigma)
-            y_inv = np.random.normal(-unscaled_action2[2], sigma)
-            z_inv = -unscaled_action2[3]+abs(np.random.normal(0, sigma))
-            r_inv = np.random.normal(-unscaled_action2[4], 0)
+            p_inv = scaled_action1[0]
+            # sigma = 0.2 # 20% disturbance
+            x_inv = np.random.normal(-scaled_action2[1], sigma)
+            y_inv = np.random.normal(-scaled_action2[2], sigma)
+            z_inv = -scaled_action2[3]-abs(np.random.normal(0, sigma))
+            r_inv = np.random.normal(-scaled_action2[4], sigma)
         elif method == 'identical':
-            p_inv = unscaled_action1[0]
-            x_inv = -unscaled_action2[1]
-            y_inv = -unscaled_action2[2]
-            z_inv = -unscaled_action2[3]
-            r_inv = -unscaled_action2[4]
+            p_inv = scaled_action1[0]
+            x_inv = -scaled_action2[1]
+            y_inv = -scaled_action2[2]
+            z_inv = -scaled_action2[3]
+            r_inv = -scaled_action2[4]
         elif method == 'uniform':
             pass
         
-        # return self.decodeActions(*[unscaled_actions_new[:, i] for i in range(self.n_a)])
-        unscaled_actions = torch.tensor([[p_inv, x_inv, y_inv, z_inv, r_inv]])
-        return self.decodeActions(*[unscaled_actions[:, i] for i in range(self.n_a)])
+        # return self.decodeActions(*[scaled_actions_new[:, i] for i in range(self.n_a)])
+        scaled_actions = torch.tensor([[p_inv, x_inv, y_inv, z_inv, r_inv]])
+        return self.decodeActions(*[scaled_actions[:, i] for i in range(self.n_a)])
 
-    def getGaussianBCActions(self, unscaled_action_inv):
-        unscaled_actions_new = -unscaled_action_inv.clone().detach()
-        unscaled_actions_new[0][0] = abs(unscaled_actions_new[0][0])
-        # return self.decodeActions(*[unscaled_actions_new[:, i] for i in range(self.n_a)])
-        return self.decodeActions(*[unscaled_actions_new[:, i] for i in range(self.n_a)])
+    def getGaussianBCActions(self, scaled_action_inv):
+        scaled_actions_new = -scaled_action_inv.clone().detach()
+        scaled_actions_new[0][0] = abs(scaled_actions_new[0][0])
+        # return self.decodeActions(*[scaled_actions_new[:, i] for i in range(self.n_a)])
+        return self.decodeActions(*[scaled_actions_new[:, i] for i in range(self.n_a)])
 
 
     def updateTarget(self):
