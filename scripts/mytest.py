@@ -101,7 +101,7 @@ def evaluate(envs, agent, logger):
 def countParameters(m):
     return sum(p.numel() for p in m.parameters() if p.requires_grad)
 
-def transition_simulate(local_transition, agent, envs, i=0):
+def transition_simulate(local_transition, agent, envs, sigma, i=0):
     
 
     
@@ -117,10 +117,10 @@ def transition_simulate(local_transition, agent, envs, i=0):
     sim_steps_lefts = local_transition[sim_startpoint+1].step_left
     sim_states2, sim_obs2 = local_transition[sim_startpoint+2].state, local_transition[sim_startpoint+2].obs
     sim_rewards2, sim_dones2 = local_transition[sim_startpoint+2].reward, local_transition[sim_startpoint+2].done
-    if sim_states1 == 1:
+    if sim_dones2:
         flag = 0
         return None, flag
-    sim_actions1_star_idx_inv, sim_actions1_star_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx, "identical")
+    sim_actions1_star_idx_inv, sim_actions1_star_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx, sigma, "gaussian")
     sim_states_new, sim_obs_new, _, _ = envs.simulate(sim_actions1_star_inv)
 
     sim_actions_new_star_idx,  sim_actions_new_star= agent.getGaussianBCActions(sim_actions1_star_idx_inv)
@@ -204,9 +204,10 @@ def train():
         if not no_bar:
             planner_bar = tqdm(total=planner_episode)
         local_transitions = [[] for _ in range(planner_num_process)]
-        global_transitions = []
-        
+       
+        simulate_buffer = [[] for _ in range(planner_num_process)]
         while j < planner_episode:
+            
             plan_actions = planner_envs.getNextAction()
             planner_actions_star_idx, planner_actions_star = agent.getActionFromPlan(plan_actions)
             states_, obs_, rewards, dones = planner_envs.step(planner_actions_star, auto_reset=True)
@@ -219,27 +220,33 @@ def train():
                     # transition = normalizeTransition(transition)
                 # replay_buffer.add(transition)
                 local_transitions[i].append(transition)
+                # print("1")
+                if len(local_transitions[i]) >=3 and ("bc" in alg) and (simulate_n>0):
 
-                if len(local_transitions[i]) >=3 and ("bc" in alg):
-                    if planner_envs.canSimulate().all() and simulate_n>0:
-                        simulate_buffer = []
+                    f1, f2 = planner_envs.canSimulate()
+                    if f1.all() and not local_transitions[i][-2].state:
+                        
                         for _ in range(simulate_n):
                             flag=0
                             planner_envs.resetSimPose()
-                            new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, i)
+                            # sigma = 0.2
+                            new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i)
                             if flag == 1:
-                                simulate_buffer.append(new_transition)
-                        local_transitions[i]+=simulate_buffer
+                                simulate_buffer[i].append(new_transition)
+                        
             states = copy.copy(states_)
             obs = copy.copy(obs_)
 
             for i in range(planner_num_process):
                 if dones[i] and rewards[i]:
+                    local_transitions[i]+=simulate_buffer[i]
                     for t in local_transitions[i]:
                         replay_buffer.add(t)
                     # global_transitions.append(local_transitions[i])
+                    
                     # visualizeExpert(agent, local_transitions[i])
                     local_transitions[i] = []
+                    simulate_buffer[i] = []
                     j += 1
                     s += 1
                     

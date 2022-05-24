@@ -28,27 +28,40 @@ def visualizeBC(agent, sim_obs, actions):
 
     axes[3].imshow(sim_obs2[0])
     axes[3].set_title("sim_obs2")
+    plt.colorbar()
     return fig
     
 
 
-def visualizeExpert(agent, local_transition):
+def visualizeExpert(agent, local_transition, column_num = 4, delete_num=0):
+    SMALL_SIZE = 8
 
-    column_num = 4
+    
     fig, axes = plt.subplots(np.ceil(len(local_transition)/column_num).astype(int),column_num)
+    plt.rc('axes', titlesize=SMALL_SIZE)
+    plt.subplots_adjust(top = 0.90, bottom=0.15, right=0.95, left=0.08, hspace=0.4, wspace=0.2)
+    
     for i in range(len(local_transition)):
         obs = local_transition[i].obs
         state = local_transition[i].state
         action = local_transition[i].action
-
-        current_ax=axes[i//column_num, i%column_num]  
+        if len(local_transition)>column_num:
+            current_ax=axes[i//column_num, i%column_num]  
+        else:
+            current_ax=axes[i%column_num] 
         current_ax.imshow(obs[0])
         unscaled, sim_action = agent.decodeSingleActions(*[torch.tensor(action)[i] for i in range(5)])
         print(f"action{i}", sim_action)
-        current_ax.arrow(x=64, y=64, dx=sim_action[2]/0.3*128, dy=sim_action[1]/0.3*128, width=.8)
+        current_ax.arrow(x=64, y=64, dx=sim_action[2]/0.3*128, dy=sim_action[1]/0.3*128, width=.8, color='y')
         current_ax.text(0, 0, u"\u2191", rotation = sim_action[4]*180/np.pi)
+        current_ax.axis('off')
         if sim_action.dtype is torch.float64:
             current_ax.set_title("sim_obs")
+        else:
+            current_ax.set_title("expert_obs_ "+str(i))
+    if delete_num > 0:
+        for i in range(delete_num):
+            fig.delaxes(axes[len(local_transition)//column_num, column_num-1-i])
     plt.show()
 
     return fig
