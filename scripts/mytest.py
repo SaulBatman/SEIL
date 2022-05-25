@@ -101,7 +101,7 @@ def evaluate(envs, agent, logger):
 def countParameters(m):
     return sum(p.numel() for p in m.parameters() if p.requires_grad)
 
-def transition_simulate(local_transition, agent, envs, sigma, i=0):
+def transition_simulate(local_transition, agent, envs, sigma, i, planner_num_process):
     
 
     
@@ -121,7 +121,9 @@ def transition_simulate(local_transition, agent, envs, sigma, i=0):
         flag = 0
         return None, flag
     sim_actions1_star_idx_inv, sim_actions1_star_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx, sigma, "gaussian")
-    sim_states_new, sim_obs_new, _, _ = envs.simulate(sim_actions1_star_inv)
+    temp = np.zeros([planner_num_process, agent.n_a])
+    temp[i, :] = sim_actions1_star_inv
+    sim_states_new, sim_obs_new, _, _ = envs.simulate(torch.from_numpy(temp))
 
     sim_actions_new_star_idx,  sim_actions_new_star= agent.getGaussianBCActions(sim_actions1_star_idx_inv)
     
@@ -131,7 +133,7 @@ def transition_simulate(local_transition, agent, envs, sigma, i=0):
     # fig.clf()
 
     is_expert = 1
-    transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy(), sim_actions_new_star_idx[i].numpy(),
+    transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy(), sim_actions_new_star_idx[0].numpy(),
                                 sim_rewards2, sim_states2, sim_obs2, sim_dones2,
                                 sim_steps_lefts, np.array(is_expert))
     # if obs_type == 'pixel':
@@ -224,13 +226,13 @@ def train():
                 if len(local_transitions[i]) >=3 and ("bc" in alg) and (simulate_n>0):
 
                     f1, f2 = planner_envs.canSimulate()
-                    if f1.all() and not local_transitions[i][-2].state:
+                    if f1[i] and not local_transitions[i][-2].state:
                         
                         for _ in range(simulate_n):
                             flag=0
                             planner_envs.resetSimPose()
                             # sigma = 0.2
-                            new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i)
+                            new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
                             if flag == 1:
                                 simulate_buffer[i].append(new_transition)
                         
@@ -302,12 +304,13 @@ def train():
         is_expert = 0
 
         # simulate actions
-        if simulate_n > 0 and envs.canSimulate():
-            sim_obs = obs
-            sim_states = states
-            for _ in range(simulate_n):
-                # for non-BC algs
-                if not alg[:2] == 'bc':
+        if not alg[:2] == 'bc':
+            if simulate_n > 0 and envs.canSimulate():
+                sim_obs = obs
+                sim_states = states
+                for _ in range(simulate_n):
+                    # for non-BC algs
+                    
                     if not envs.canSimulate():
                         envs.resetSimPose()
                         sim_obs = obs
@@ -331,42 +334,7 @@ def train():
                     
                     sim_obs = sim_obs_
                     sim_states = sim_states_
-                # for bc algs
-                else:
-                    pass
-                    
-
-                #     sampled_expert_seq = global_transitions[np.random.randint(0,planner_episode)]
-                #     if len(sampled_expert_seq) < 3:
-                #         break
-                #     sim_startpoint = np.random.randint(0,len(sampled_expert_seq)-2)
-                #     sim_obs0 = sampled_expert_seq[sim_startpoint].obs
-                #     sim_states0 = sampled_expert_seq[sim_startpoint].state
-                #     sim_actions0_star_idx = sampled_expert_seq[sim_startpoint].action
-                #     sim_states1, sim_obs1 = sampled_expert_seq[sim_startpoint+1].state, sampled_expert_seq[sim_startpoint+1].obs
-                #     sim_actions1_star_idx = sampled_expert_seq[sim_startpoint+1].action
-                #     sim_states2, sim_obs2 = sampled_expert_seq[sim_startpoint+2].state, sampled_expert_seq[sim_startpoint+2].obs
-                #     sim_rewards2, sim_dones2 = sampled_expert_seq[sim_startpoint+2].reward, sampled_expert_seq[sim_startpoint+2].done
-                #     if sim_states0 == 1 or sim_states1 == 1:
-                #         break
-                #     sim_actions1_star_idx_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx)
-                #     sim_states_new, sim_obs_new, _, _ = envs.simulate(sim_actions1_star_idx_inv)
-                #     sim_actions_new_star_idx = agent.getGaussianBCActions(sim_actions1_star_idx_inv)
-                #     sim_steps_lefts = envs.getStepLeft()
-                #     #num_processes=1 # only support single process now
-                #     for i in range(num_processes):
-                #         is_expert = 1
-                #         transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy(), sim_actions_new_star_idx[i].numpy(),
-                #                                     sim_rewards2, sim_states2, sim_obs2, sim_dones2,
-                #                                     sim_steps_lefts[i].numpy(), np.array(is_expert))
-                #         # if obs_type == 'pixel':
-                #         #     transition = normalizeTransition(transition)
-                #         replay_buffer.add(transition)
-                #         # insert extra training steps after simulation
-                #         if train_simulate:
-                #             if len(replay_buffer) >= training_offset:
-                #                 for training_iter in range(training_iters):
-                #                     train_step(agent, replay_buffer, logger, p_beta_schedule)
+                
 
                 
 
