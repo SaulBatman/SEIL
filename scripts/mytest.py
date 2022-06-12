@@ -225,7 +225,7 @@ def train():
                 # print("1")
                 if len(local_transitions[i]) >=3 and ("bc" in alg) and (simulate_n>0):
 
-                    f1, f2 = planner_envs.canSimulate()
+                    f1 = planner_envs.canSimulate()
                     if f1[i] and not local_transitions[i][-2].state:
                         
                         for _ in range(simulate_n):
