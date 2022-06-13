@@ -39,12 +39,12 @@ class EnvWrapper:
 
     def simulate(self, actions):
         actions = actions.cpu().numpy()
-        (states_, in_hands_, obs_), rewards, dones = self.envs.simulate(actions)
+        (states_, in_hands_, obs_, flag), rewards, dones = self.envs.simulate(actions)
         states_ = torch.tensor(states_).float()
         obs_ = torch.tensor(obs_).float()
         rewards = torch.tensor(rewards).float()
         dones = torch.tensor(dones).float()
-        return states_, obs_, rewards, dones
+        return states_, obs_, rewards, dones, flag
 
     def resetSimPose(self):
         self.envs.resetSimPose()

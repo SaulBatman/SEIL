@@ -123,7 +123,7 @@ def transition_simulate(local_transition, agent, envs, sigma, i, planner_num_pro
     sim_actions1_star_idx_inv, sim_actions1_star_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx, sigma, "gaussian")
     temp = np.zeros([planner_num_process, agent.n_a])
     temp[i, :] = sim_actions1_star_inv
-    sim_states_new, sim_obs_new, _, _ = envs.simulate(torch.from_numpy(temp))
+    sim_states_new, sim_obs_new, _, _, sim_flag = envs.simulate(torch.from_numpy(temp))
 
     sim_actions_new_star_idx,  sim_actions_new_star= agent.getGaussianBCActions(sim_actions1_star_idx_inv)
     
@@ -138,7 +138,8 @@ def transition_simulate(local_transition, agent, envs, sigma, i, planner_num_pro
                                 sim_steps_lefts, np.array(is_expert))
     # if obs_type == 'pixel':
     #     transition = normalizeTransition(transition)
-
+    if sim_flag == False:
+        flag = 0
     return transition, flag
         
 
