@@ -228,14 +228,34 @@ def train():
 
                     f1 = planner_envs.canSimulate()
                     if f1[i] and not local_transitions[i][-2].state:
+                        if sim_type == "breadth":
+                            for _ in range(simulate_n):
+                                flag=0
+                                planner_envs.resetSimPose()
+                                # sigma = 0.2
+                                new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                if flag == 1:
+                                    simulate_buffer[i].append(new_transition)
                         
-                        for _ in range(simulate_n):
-                            flag=0
+                        elif sim_type == "depth":
                             planner_envs.resetSimPose()
-                            # sigma = 0.2
-                            new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
-                            if flag == 1:
-                                simulate_buffer[i].append(new_transition)
+                            for _ in range(simulate_n):
+                                flag=0
+                                
+                                # sigma = 0.2
+                                new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                if flag == 1:
+                                    simulate_buffer[i].append(new_transition)
+
+                        elif sim_type == "hybrid":
+                            for _ in range(simulate_n):
+                                planner_envs.resetSimPose()
+                                for _ in range(simulate_n):
+                                    flag=0
+                                    # sigma = 0.2
+                                    new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                    if flag == 1:
+                                        simulate_buffer[i].append(new_transition)
                         
             states = copy.copy(states_)
             obs = copy.copy(obs_)

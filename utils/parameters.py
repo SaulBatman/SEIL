@@ -76,6 +76,8 @@ training_group.add_argument('--expert_aug_n', type=int, default=0)
 training_group.add_argument('--simulate_n', type=int, default=0)
 training_group.add_argument('--train_simulate', type=strToBool, default=False)
 training_group.add_argument('--sigma', type=float, default=0.2)
+training_group.add_argument('--sim_type', type=str, choices=['depth', 'breadth', 'hybrid'], default='breadth')
+
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -176,6 +178,7 @@ save_freq = args.save_freq
 action_selection = args.action_selection
 planner_episode = args.planner_episode
 sigma = args.sigma
+sim_type = args.sim_type
 
 load_model_pre = args.load_model_pre
 is_test = args.test
