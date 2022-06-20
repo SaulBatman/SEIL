@@ -11,7 +11,9 @@ LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
 epsilon = 1e-6
 
-class SpatialSoftArgmax(torch.nn.Module):
+from networks.cnn import SpatialSoftArgmax
+
+class SpatialSoftArgmaxCycle(torch.nn.Module):
     """Spatial softmax as defined in https://arxiv.org/abs/1504.00702.
 
     Concretely, the spatial softmax of each feature map is used to compute a weighted
@@ -896,7 +898,7 @@ class EquivariantSACCriticDihedral(torch.nn.Module):
         self.img_conv = enc(self.obs_channel, n_hidden, initialize, N)
         self.n_rho1 = 2 if N==2 else 1
         self.critic_1 = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim-2) * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim-3) * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)] + 1*[self.c4_act.quotient_repr((None, 4))]),
                       nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
@@ -907,7 +909,7 @@ class EquivariantSACCriticDihedral(torch.nn.Module):
         )
 
         self.critic_2 = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim-2) * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim-3) * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)] + 1*[self.c4_act.quotient_repr((None, 4))]),
                       nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
@@ -922,58 +924,11 @@ class EquivariantSACCriticDihedral(torch.nn.Module):
         obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
         conv_out = self.img_conv(obs_geo)
         dxy = act[:, 1:3]
-        inv_act = torch.cat((act[:, 0:1], act[:, 3:]), dim=1)
+        inv_act = torch.cat((act[:, 0:1], act[:, 3:4]), dim=1)
+        dtheta = act[:, 4:5]
         n_inv = inv_act.shape[1]
-        # dxy_geo = nn.GeometricTensor(dxy.reshape(batch_size, 2, 1, 1), nn.FieldType(self.c4_act, 1*[self.c4_act.irrep(1)]))
-        # inv_act_geo = nn.GeometricTensor(inv_act.reshape(batch_size, n_inv, 1, 1), nn.FieldType(self.c4_act, n_inv*[self.c4_act.trivial_repr]))
-        cat = torch.cat((conv_out.tensor, inv_act.reshape(batch_size, n_inv, 1, 1), dxy.reshape(batch_size, 2, 1, 1)), dim=1)
-        cat_geo = nn.GeometricTensor(cat, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]))
-        out1 = self.critic_1(cat_geo).tensor.reshape(batch_size, 1)
-        out2 = self.critic_2(cat_geo).tensor.reshape(batch_size, 1)
-        return out1, out2
-
-class EquivariantSACCriticDihedralShareEnc(torch.nn.Module):
-    def __init__(self, enc, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
-        super().__init__()
-        assert kernel_size in [3, 5]
-        self.obs_channel = obs_shape[0]
-        self.n_hidden = n_hidden
-        self.c4_act = gspaces.FlipRot2dOnR2(N)
-        self.img_conv = enc
-        self.n_rho1 = 2 if N==2 else 1
-        self.critic_1 = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim-2) * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]),
-                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
-            nn.GroupPooling(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr])),
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]),
-                      nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-        )
-
-        self.critic_2 = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim-2) * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]),
-                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
-            nn.GroupPooling(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr])),
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]),
-                      nn.FieldType(self.c4_act, 1 * [self.c4_act.trivial_repr]),
-                      kernel_size=1, padding=0, initialize=initialize),
-        )
-
-    def forward(self, obs, act):
-        batch_size = obs.shape[0]
-        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
-        conv_out = self.img_conv(obs_geo)
-        dxy = act[:, 1:3]
-        inv_act = torch.cat((act[:, 0:1], act[:, 3:]), dim=1)
-        n_inv = inv_act.shape[1]
-        # dxy_geo = nn.GeometricTensor(dxy.reshape(batch_size, 2, 1, 1), nn.FieldType(self.c4_act, 1*[self.c4_act.irrep(1)]))
-        # inv_act_geo = nn.GeometricTensor(inv_act.reshape(batch_size, n_inv, 1, 1), nn.FieldType(self.c4_act, n_inv*[self.c4_act.trivial_repr]))
-        cat = torch.cat((conv_out.tensor, inv_act.reshape(batch_size, n_inv, 1, 1), dxy.reshape(batch_size, 2, 1, 1)), dim=1)
-        cat_geo = nn.GeometricTensor(cat, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]))
+        cat = torch.cat((conv_out.tensor, inv_act.reshape(batch_size, n_inv, 1, 1), dxy.reshape(batch_size, 2, 1, 1), dtheta.reshape(batch_size, 1, 1, 1), (-dtheta).reshape(batch_size, 1, 1, 1)), dim=1)
+        cat_geo = nn.GeometricTensor(cat, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]  + 1*[self.c4_act.quotient_repr((None, 4))]))
         out1 = self.critic_1(cat_geo).tensor.reshape(batch_size, 1)
         out2 = self.critic_2(cat_geo).tensor.reshape(batch_size, 1)
         return out1, out2
@@ -1359,7 +1314,7 @@ class EquivariantSACActorDihedral(SACGaussianPolicyBase):
         self.conv = torch.nn.Sequential(
             enc(self.obs_channel, n_hidden, initialize, N),
             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, self.n_rho1 * [self.c4_act.irrep(1, 1)] + (action_dim*2-2) * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, self.n_rho1 * [self.c4_act.irrep(1, 1)] + 1 * [self.c4_act.quotient_repr((None, 4))] + (action_dim*2-3) * [self.c4_act.trivial_repr]),
                       kernel_size=1, padding=0, initialize=initialize)
         )
 
@@ -1368,9 +1323,10 @@ class EquivariantSACActorDihedral(SACGaussianPolicyBase):
         obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
         conv_out = self.conv(obs_geo).tensor.reshape(batch_size, -1)
         dxy = conv_out[:, 0:2]
-        inv_act = conv_out[:, 2:self.action_dim]
-        mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:]), dim=1)
-        log_std = conv_out[:, self.action_dim:]
+        dtheta = conv_out[:, 2:3] - conv_out[:, 3:4]
+        inv_act = conv_out[:, 4:self.action_dim+1]
+        mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:2], dtheta), dim=1)
+        log_std = conv_out[:, self.action_dim+1:]
         log_std = torch.clamp(log_std, min=LOG_SIG_MIN, max=LOG_SIG_MAX)
         return mean, log_std
 
@@ -1737,7 +1693,7 @@ class EquivariantPolicyDihedral(SACGaussianPolicyBase):
         self.conv = torch.nn.Sequential(
             enc(self.obs_channel, n_hidden, initialize, N),
             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, self.n_rho1 * [self.c4_act.irrep(1, 1)] + (action_dim-2) * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, self.n_rho1 * [self.c4_act.irrep(1, 1)] + 1 * [self.c4_act.quotient_repr((None, 4))] + (action_dim*2-3) * [self.c4_act.trivial_repr]),
                       kernel_size=1, padding=0, initialize=initialize)
         )
 
@@ -1746,74 +1702,76 @@ class EquivariantPolicyDihedral(SACGaussianPolicyBase):
         obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
         conv_out = self.conv(obs_geo).tensor.reshape(batch_size, -1)
         dxy = conv_out[:, 0:2]
-        inv_act = conv_out[:, 2:]
-        mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:]), dim=1)
+        dtheta = conv_out[:, 2:3] - conv_out[:, 3:4]
+        inv_act = conv_out[:, 4:self.action_dim + 1]
+        mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:2], dtheta), dim=1)
         return mean
 
-# class EquivariantPolicyDihedralSpatialSoftmax(SACGaussianPolicyBase):
-#     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
-#         super().__init__()
-#         assert obs_shape[1] in [128, 64]
-#         assert kernel_size in [3, 5]
-#         self.obs_channel = obs_shape[0]
-#         self.action_dim = action_dim
-#         self.c4_act = gspaces.FlipRot2dOnR2(N)
-#         self.n_rho1 = 2 if N==2 else 1
-#         self.n_hidden = n_hidden
-#         self.img_conv = torch.nn.Sequential(
-#             # 128x128
-#             nn.R2Conv(nn.FieldType(self.c4_act, obs_shape[0] * [self.c4_act.trivial_repr]),
-#                       nn.FieldType(self.c4_act, n_hidden // 8 * [self.c4_act.regular_repr]),
-#                       kernel_size=3, padding=1, initialize=initialize),
-#             nn.ReLU(nn.FieldType(self.c4_act, n_hidden // 8 * [self.c4_act.regular_repr]), inplace=True),
-#             nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden // 8 * [self.c4_act.regular_repr]), 2),
-#             # 64x64
-#             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden // 8 * [self.c4_act.regular_repr]),
-#                       nn.FieldType(self.c4_act, n_hidden // 4 * [self.c4_act.regular_repr]),
-#                       kernel_size=3, padding=1, initialize=initialize),
-#             nn.ReLU(nn.FieldType(self.c4_act, n_hidden // 4 * [self.c4_act.regular_repr]), inplace=True),
-#             nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden // 4 * [self.c4_act.regular_repr]), 2),
-#             # 32x32
-#             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden // 4 * [self.c4_act.regular_repr]),
-#                       nn.FieldType(self.c4_act, n_hidden // 2 * [self.c4_act.regular_repr]),
-#                       kernel_size=3, padding=1, initialize=initialize),
-#             nn.ReLU(nn.FieldType(self.c4_act, n_hidden // 2 * [self.c4_act.regular_repr]), inplace=True),
-#             nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden // 2 * [self.c4_act.regular_repr]), 2),
-#             # 16x16
-#             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden // 2 * [self.c4_act.regular_repr]),
-#                       nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-#                       kernel_size=3, padding=1, initialize=initialize),
-#             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
-#             nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), 2),
-#             # 8x8
-#             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-#                       nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]),
-#                       kernel_size=1, padding=0, initialize=initialize),
-#             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]), inplace=True)
-#         )
-#         self.reducer = SpatialSoftArgmax()
-#         self.out_conv = torch.nn.Sequential(
-#             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.irrep(1, 1)]),
-#                       nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-#                       kernel_size=1, padding=0, initialize=initialize),
-#             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
-#             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-#                       nn.FieldType(self.c4_act, self.n_rho1 * [self.c4_act.irrep(1, 1)] + (action_dim - 2) * [self.c4_act.trivial_repr]),
-#                       kernel_size=1, padding=0, initialize=initialize)
-#         )
-#
-#     def forward(self, obs):
-#         batch_size = obs.shape[0]
-#         obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
-#         conv_out = self.img_conv(obs_geo).tensor
-#         conv_out = self.reducer(conv_out)
-#         conv_out = conv_out.reshape(batch_size, self.n_hidden * 2, 1, 1)
-#         conv_out = nn.GeometricTensor(conv_out, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.irrep(1, 1)]))
-#         conv_out = self.out_conv(conv_out).tensor.reshape(batch_size, -1)
-#         dxy = conv_out[:, 0:2]
-#         inv_act = conv_out[:, 2:]
-#         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:]), dim=1)
-#         return mean
+class EquivariantPolicyDihedralSpatialSoftmax1(SACGaussianPolicyBase):
+    def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
+        super().__init__()
+        assert obs_shape[1] in [128, 64]
+        assert kernel_size in [3, 5]
+        self.obs_channel = obs_shape[0]
+        self.action_dim = action_dim
+        self.c4_act = gspaces.FlipRot2dOnR2(N)
+        self.n_rho1 = 2 if N==2 else 1
+        self.n_hidden = n_hidden
+        self.img_conv = torch.nn.Sequential(
+            # 128x128
+            nn.R2Conv(nn.FieldType(self.c4_act, obs_shape[0] * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, n_hidden // 8 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden // 8 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden // 8 * [self.c4_act.regular_repr]), 2),
+            # 64x64
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden // 8 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_hidden // 4 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden // 4 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden // 4 * [self.c4_act.regular_repr]), 2),
+            # 32x32
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden // 4 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_hidden // 2 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden // 2 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden // 2 * [self.c4_act.regular_repr]), 2),
+            # 16x16
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden // 2 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), 2),
+            # 8x8
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]), inplace=True)
+        )
+        self.reducer = SpatialSoftArgmax()
+        self.out_conv = torch.nn.Sequential(
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.irrep(1, 1)]),
+                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, self.n_rho1 * [self.c4_act.irrep(1, 1)] + 1 * [self.c4_act.quotient_repr((None, 4))] + (action_dim*2-3) * [self.c4_act.trivial_repr]),
+                      kernel_size=1, padding=0, initialize=initialize)
+        )
+
+    def forward(self, obs):
+        batch_size = obs.shape[0]
+        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
+        conv_out = self.img_conv(obs_geo).tensor
+        conv_out = self.reducer(conv_out)
+        conv_out = conv_out.reshape(batch_size, self.n_hidden * 2, 1, 1)
+        conv_out = nn.GeometricTensor(conv_out, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.irrep(1, 1)]))
+        conv_out = self.out_conv(conv_out).tensor.reshape(batch_size, -1)
+        dxy = conv_out[:, 0:2]
+        dtheta = conv_out[:, 2:3] - conv_out[:, 3:4]
+        inv_act = conv_out[:, 4:self.action_dim+1]
+        mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:2], dtheta), dim=1)
+        return mean
 
 class EquivariantPolicyDihedralSpatialSoftmax(SACGaussianPolicyBase):
     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
@@ -1857,14 +1815,14 @@ class EquivariantPolicyDihedralSpatialSoftmax(SACGaussianPolicyBase):
                       kernel_size=1, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True)
         )
-        self.reducer = SpatialSoftArgmax()
+        self.reducer = SpatialSoftArgmaxCycle()
         self.out_conv = torch.nn.Sequential(
             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
                       nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-                      nn.FieldType(self.c4_act, self.n_rho1 * [self.c4_act.irrep(1, 1)] + (action_dim - 2) * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, self.n_rho1 * [self.c4_act.irrep(1, 1)] + 1 * [self.c4_act.quotient_repr((None, 4))] + (action_dim*2-3) * [self.c4_act.trivial_repr]),
                       kernel_size=1, padding=0, initialize=initialize)
         )
 
@@ -1877,8 +1835,9 @@ class EquivariantPolicyDihedralSpatialSoftmax(SACGaussianPolicyBase):
         conv_out = nn.GeometricTensor(conv_out, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr]))
         conv_out = self.out_conv(conv_out).tensor.reshape(batch_size, -1)
         dxy = conv_out[:, 0:2]
-        inv_act = conv_out[:, 2:]
-        mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:]), dim=1)
+        dtheta = conv_out[:, 2:3] - conv_out[:, 3:4]
+        inv_act = conv_out[:, 4:self.action_dim + 1]
+        mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:2], dtheta), dim=1)
         return mean
 
 class EquivariantSACVecCriticBase(torch.nn.Module):
@@ -1998,7 +1957,7 @@ class EquivariantEBMDihedral(torch.nn.Module):
         self.img_conv = enc(self.obs_channel, n_hidden, initialize, N)
         self.n_rho1 = 2 if N==2 else 1
         self.cat_conv = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim-2) * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim-3) * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)] + 1*[self.c4_act.quotient_repr((None, 4))]),
                       nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
@@ -2012,13 +1971,14 @@ class EquivariantEBMDihedral(torch.nn.Module):
         batch_size = obs.shape[0]
         obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
         conv_out = self.img_conv(obs_geo)
-        dxy = act[:, :, 1:3]
-        inv_act = torch.cat((act[:, :, 0:1], act[:, :, 3:]), dim=2)
-        n_inv = inv_act.shape[2]
+        dxy = act[:, 1:3]
+        inv_act = torch.cat((act[:, 0:1], act[:, 3:4]), dim=1)
+        dtheta = act[:, 4:5]
+        n_inv = inv_act.shape[1]
         # dxy_geo = nn.GeometricTensor(dxy.reshape(batch_size, 2, 1, 1), nn.FieldType(self.c4_act, 1*[self.c4_act.irrep(1)]))
         # inv_act_geo = nn.GeometricTensor(inv_act.reshape(batch_size, n_inv, 1, 1), nn.FieldType(self.c4_act, n_inv*[self.c4_act.trivial_repr]))
 
-        fused = torch.cat([conv_out.tensor.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1), inv_act.reshape(batch_size, act.size(1), n_inv, 1, 1), dxy.reshape(batch_size, act.size(1), 2, 1, 1)], dim=2)
+        fused = torch.cat([conv_out.tensor.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1), inv_act.reshape(batch_size, act.size(1), n_inv, 1, 1), dxy.reshape(batch_size, act.size(1), 2, 1, 1), dtheta.reshape(batch_size, 1, 1, 1), (-dtheta).reshape(batch_size, 1, 1, 1)], dim=2)
         B, N, D, _, _ = fused.size()
         fused = fused.reshape(B * N, D, 1, 1)
         fused_geo = nn.GeometricTensor(fused, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]))
@@ -2028,7 +1988,7 @@ class EquivariantEBMDihedral(torch.nn.Module):
         out = self.cat_conv(fused_geo).tensor.reshape(B, N)
         return out
 
-# from networks.cnn import SpatialSoftArgmax
+# from networks.cnn import SpatialSoftArgmaxCycle
 # class EquivariantEBMDihedralSpatialSoftmax(torch.nn.Module):
 #     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
 #         super().__init__()
@@ -2068,7 +2028,7 @@ class EquivariantEBMDihedral(torch.nn.Module):
 #             nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.trivial_repr]), inplace=True)
 #         )
 #
-#         self.reducer = SpatialSoftArgmax()
+#         self.reducer = SpatialSoftArgmaxCycle()
 #
 #         self.n_rho1 = 2 if N==2 else 1
 #
@@ -2142,12 +2102,12 @@ class EquivariantEBMDihedralSpatialSoftmax(torch.nn.Module):
             # nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), 8),
         )
 
-        self.reducer = SpatialSoftArgmax()
+        self.reducer = SpatialSoftArgmaxCycle()
 
         self.n_rho1 = 2 if N==2 else 1
 
         self.cat_conv = torch.nn.Sequential(
-            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim-2) * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim-3) * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)] + 1*[self.c4_act.quotient_repr((None, 4))]),
             # nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr] + (action_dim-2) * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1)]),
                       nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
                       kernel_size=1, padding=0, initialize=initialize),
@@ -2167,13 +2127,18 @@ class EquivariantEBMDihedralSpatialSoftmax(torch.nn.Module):
         # conv_out = conv_out.permute(0, 2, 1, 3, 4)
         # conv_out = conv_out.reshape(batch_size, 2 * self.n_hidden * self.N * 2, 1, 1)
         dxy = act[:, :, 1:3]
-        inv_act = torch.cat((act[:, :, 0:1], act[:, :, 3:]), dim=2)
+        inv_act = torch.cat((act[:, :, 0:1], act[:, :, 3:4]), dim=2)
+        dtheta = act[:, :, 4:5]
         n_inv = inv_act.shape[2]
 
-        fused = torch.cat([conv_out.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1), inv_act.reshape(batch_size, act.size(1), n_inv, 1, 1), dxy.reshape(batch_size, act.size(1), 2, 1, 1)], dim=2)
+        fused = torch.cat([conv_out.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1),
+                           inv_act.reshape(batch_size, act.size(1), n_inv, 1, 1),
+                           dxy.reshape(batch_size, act.size(1), 2, 1, 1), dtheta.reshape(batch_size, 1, 1, 1, 1),
+                           (-dtheta).reshape(batch_size, 1, 1, 1, 1)], dim=2)
+
         B, N, D, _, _ = fused.size()
         fused = fused.reshape(B * N, D, 1, 1)
-        fused_geo = nn.GeometricTensor(fused, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]))
+        fused_geo = nn.GeometricTensor(fused, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)] + 1*[self.c4_act.quotient_repr((None, 4))]))
         # fused_geo = nn.GeometricTensor(fused, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1)]))
 
         out = self.cat_conv(fused_geo).tensor.reshape(B, N)
