@@ -20,6 +20,7 @@ from networks.equivariant_sac_net import EquivariantEBMDihedralFacAll
 from networks.cnn import CNNMSE
 
 from networks.equivariant_sac_net import EquivariantPolicyDihedralSpatialSoftmax, EquivariantPolicyDihedralSpatialSoftmax1, EquivariantPolicyDihedralSpatialSoftmax2
+from networks.equivariant_sac_net import EquivariantPolicyDihedralInvTheta
 
 def createAgent(test=False):
     print('initializing agent')
@@ -46,6 +47,8 @@ def createAgent(test=False):
             policy = EquivariantPolicy((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
         elif model == 'equi_d':
             policy = EquivariantPolicyDihedral((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+        elif model == 'equi_d_inv_theta':
+            policy = EquivariantPolicyDihedralInvTheta((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
         elif model == 'equi_d_ssm':
             policy = EquivariantPolicyDihedralSpatialSoftmax((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
         elif model == 'equi_d_ssm_1':
