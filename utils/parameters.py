@@ -15,9 +15,9 @@ env_group.add_argument('--env', type=str, default='close_loop_block_stacking', h
                                                                          'brick_inserting, block_cylinder_stacking')
 env_group.add_argument('--reward_type', type=str, default='sparse')
 env_group.add_argument('--simulator', type=str, default='pybullet')
-env_group.add_argument('--robot', type=str, default='kuka')
-env_group.add_argument('--num_objects', type=int, default=3)
-env_group.add_argument('--max_episode_steps', type=int, default=10)
+env_group.add_argument('--robot', type=str, default='panda')
+env_group.add_argument('--num_objects', type=int, default=1)
+env_group.add_argument('--max_episode_steps', type=int, default=50)
 env_group.add_argument('--fast_mode', type=strToBool, default=True)
 env_group.add_argument('--action_sequence', type=str, default='pxyzr')
 env_group.add_argument('--random_orientation', type=strToBool, default=True)
@@ -26,7 +26,7 @@ env_group.add_argument('--num_eval_processes', type=int, default=5)
 env_group.add_argument('--render', type=strToBool, default=False)
 env_group.add_argument('--workspace_size', type=float, default=0.3)
 env_group.add_argument('--heightmap_size', type=int, default=128)
-env_group.add_argument('--view_type', type=str, default='render_center_height')
+env_group.add_argument('--view_type', type=str, default='camera_center_xyz')
 env_group.add_argument('--view_scale', type=float, default=None)
 env_group.add_argument('--obs_type', type=str, default='pixel')
 env_group.add_argument('--transparent_bin', type=strToBool, default=False)
@@ -46,11 +46,11 @@ training_group.add_argument('--fixed_eps', action='store_true')
 training_group.add_argument('--init_eps', type=float, default=0.)
 training_group.add_argument('--final_eps', type=float, default=0.)
 training_group.add_argument('--training_iters', type=int, default=1)
-training_group.add_argument('--training_offset', type=int, default=100)
-training_group.add_argument('--max_train_step', type=int, default=50000)
+training_group.add_argument('--training_offset', type=int, default=10)
+training_group.add_argument('--max_train_step', type=int, default=10000)
 training_group.add_argument('--device_name', type=str, default='cuda')
 training_group.add_argument('--target_update_freq', type=int, default=100)
-training_group.add_argument('--save_freq', type=int, default=100)
+training_group.add_argument('--save_freq', type=int, default=1000)
 training_group.add_argument('--action_selection', type=str, default='egreedy')
 training_group.add_argument('--load_model_pre', type=str, default=None)
 training_group.add_argument('--planner_episode', type=int, default=0)
@@ -62,11 +62,13 @@ training_group.add_argument('--load_n', type=int, default=1000000)
 training_group.add_argument('--pre_train_step', type=int, default=0)
 training_group.add_argument('--tau', type=float, default=1e-2)
 training_group.add_argument('--init_temp', type=float, default=1e-2)
-training_group.add_argument('--dpos', type=float, default=0.005)
-training_group.add_argument('--drot_n', type=int, default=32)
+training_group.add_argument('--dpos', type=float, default=0.05)
+training_group.add_argument('--drot_n', type=int, default=4)
+training_group.add_argument('--planner_dpos', type=float, default=None)
+training_group.add_argument('--planner_drot_n', type=int, default=None)
 training_group.add_argument('--demon_w', type=float, default=1)
 training_group.add_argument('--equi_n', type=int, default=4)
-training_group.add_argument('--n_hidden', type=int, default=128)
+training_group.add_argument('--n_hidden', type=int, default=64)
 training_group.add_argument('--crop_size', type=int, default=128)
 training_group.add_argument('--aug', type=strToBool, default=False)
 training_group.add_argument('--buffer_aug_type', type=str, choices=['se2', 'so2', 'so2_pixel', 't', 'dqn_c4', 'cn_vec', 'shift', 'crop'], default='so2')
@@ -75,9 +77,14 @@ training_group.add_argument('--buffer_aug_n', type=int, default=4)
 training_group.add_argument('--expert_aug_n', type=int, default=0)
 training_group.add_argument('--simulate_n', type=int, default=0)
 training_group.add_argument('--train_simulate', type=strToBool, default=False)
+<<<<<<< HEAD
 training_group.add_argument('--sigma', type=float, default=0.2)
 training_group.add_argument('--sim_type', type=str, choices=['depth', 'breadth', 'hybrid'], default='breadth')
 
+=======
+training_group.add_argument('--ibc_ts', type=int, default=2048)
+training_group.add_argument('--ibc_is', type=int, default=2048)
+>>>>>>> 2786cca07681269677621d3c8d06544ce71c8581
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -95,7 +102,7 @@ buffer_group.add_argument('--per_eps', type=float, default=1e-6, help='Epsilon p
 buffer_group.add_argument('--per_alpha', type=float, default=0.6, help='Alpha parameter for PER')
 buffer_group.add_argument('--per_beta', type=float, default=0.4, help='Initial beta parameter for PER')
 buffer_group.add_argument('--per_expert_eps', type=float, default=1)
-buffer_group.add_argument('--batch_size', type=int, default=32)
+buffer_group.add_argument('--batch_size', type=int, default=64)
 buffer_group.add_argument('--buffer_size', type=int, default=100000)
 
 logging_group = parser.add_argument_group('logging')
@@ -152,6 +159,11 @@ collision_penalty = args.collision_penalty
 fix_set = args.fix_set
 collision_terminate = args.collision_terminate
 
+if env == 'close_loop_clutter_picking':
+  tray = True
+else:
+  tray = False
+
 ######################################################################################
 # training
 alg = args.alg
@@ -204,6 +216,9 @@ expert_aug_n = args.expert_aug_n
 simulate_n = args.simulate_n
 train_simulate = args.train_simulate
 
+ibc_ts = args.ibc_ts
+ibc_is = args.ibc_is
+
 # eval
 eval_freq = args.eval_freq
 num_eval_episodes = args.num_eval_episodes
@@ -240,6 +255,14 @@ if load_sub == 'None':
 dpos = args.dpos
 drot = np.pi/args.drot_n
 
+planner_dpos = args.planner_dpos
+if planner_dpos is None:
+    planner_dpos = dpos
+if args.planner_drot_n is None:
+    planner_drot = drot
+else:
+    planner_drot = np.pi / args.planner_drot_n
+
 ######################################################################################
 env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size': heightmap_size,
               'fast_mode': fast_mode,  'action_sequence': action_sequence, 'render': render, 'num_objects': num_objects,
@@ -247,8 +270,8 @@ env_config = {'workspace': workspace, 'max_steps': max_episode_steps, 'obs_size'
               'workspace_check': 'point', 'object_scale_range': (1, 1),
               'hard_reset_freq': 1000, 'physics_mode' : 'fast', 'view_type': view_type, 'obs_type': obs_type,
               'transparent_bin': transparent_bin, 'collision_penalty': collision_penalty, 'fix_set': fix_set,
-              'collision_terminate': collision_terminate, 'view_scale': view_scale}
-planner_config = {'random_orientation':random_orientation, 'dpos': dpos, 'drot': drot}
+              'collision_terminate': collision_terminate, 'view_scale': view_scale, 'close_loop_tray': tray}
+planner_config = {'random_orientation':random_orientation, 'dpos': planner_dpos, 'drot': planner_drot}
 if env == 'close_loop_household_picking':
     env_config['object_scale_range'] = (0.6, 0.6)
 elif env == 'close_loop_clutter_picking':

@@ -2,52 +2,37 @@ from copy import deepcopy
 import numpy as np
 import torch
 import torch.nn.functional as F
-from agents.dqn_base import DQNBase
+from agents.dqn_agent_fac import DQNAgentFac
 from utils.parameters import heightmap_size, crop_size
 from utils.torch_utils import centerCrop
 
-class DQNAgentFac(DQNBase):
+class BCFac(DQNAgentFac):
     def __init__(self, lr=1e-4, gamma=0.95, device='cuda', dx=0.005, dy=0.005, dz=0.005, dr=np.pi/16, n_p=1, n_theta=1):
         super().__init__(lr, gamma, device, dx, dy, dz, dr, n_p, n_theta)
-        self.com = 'add'
 
-    def forwardNetwork(self, state, obs, target_net=False, to_cpu=False):
-        if target_net:
-            net = self.target_net
-        else:
-            net = self.policy_net
+    def update(self, batch):
+        self._loadBatchToDevice(batch)
+        batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()
+        p_id = action_idx[:, 0]
+        dxy_id = action_idx[:, 1]
+        dz_id = action_idx[:, 2]
+        dtheta_id = action_idx[:, 3]
 
-        state_tile = state.reshape(state.size(0), 1, 1, 1).repeat(1, 1, obs.shape[2], obs.shape[3])
-        stacked = torch.cat([obs, state_tile], dim=1)
-        q_p, q_dxy, q_dz, q_dtheta = net(stacked.to(self.device))
-        if to_cpu:
-            q_p = q_p.to('cpu')
-            q_dxy = q_dxy.to('cpu')
-            q_dz = q_dz.to('cpu')
-            q_dtheta = q_dtheta.to('cpu')
-        return q_p, q_dxy, q_dz, q_dtheta
+        q_p, q_dxy, q_dz, q_dtheta = self.forwardNetwork(states, obs)
 
-    def getEGreedyActions(self, state, obs, eps):
-        with torch.no_grad():
-            if heightmap_size > crop_size:
-                obs = centerCrop(obs, out=crop_size)
-            q_p, q_dxy, q_dz, q_dtheta = self.forwardNetwork(state, obs, to_cpu=True)
-            p_id = torch.argmax(q_p, 1)
-            dxy_id = torch.argmax(q_dxy, 1)
-            dz_id = torch.argmax(q_dz, 1)
-            dtheta_id = torch.argmax(q_dtheta, 1)
+        p_loss = F.cross_entropy(q_p, p_id)
+        dxy_loss = F.cross_entropy(q_dxy, dxy_id)
+        dz_loss = F.cross_entropy(q_dz, dz_id)
+        dtheta_loss = F.cross_entropy(q_dtheta, dtheta_id)
 
-        rand = torch.tensor(np.random.uniform(0, 1, obs.size(0)))
-        rand_mask = rand < eps
-        rand_p = torch.randint_like(torch.empty(rand_mask.sum()), 0, q_p.size(1))
-        p_id[rand_mask] = rand_p.long()
-        rand_dxy = torch.randint_like(torch.empty(rand_mask.sum()), 0, q_dxy.size(1))
-        dxy_id[rand_mask] = rand_dxy.long()
-        rand_dz = torch.randint_like(torch.empty(rand_mask.sum()), 0, q_dz.size(1))
-        dz_id[rand_mask] = rand_dz.long()
-        rand_dtheta = torch.randint_like(torch.empty(rand_mask.sum()), 0, q_dtheta.size(1))
-        dtheta_id[rand_mask] = rand_dtheta.long()
-        return self.decodeActions(p_id, dxy_id, dz_id, dtheta_id)
+        loss = p_loss + dxy_loss + dz_loss + dtheta_loss
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        self.loss_calc_dict = {}
+
+        return loss.item(), torch.tensor(0.)
 
     def calcTDLoss(self):
         batch_size, states, obs, action_idx, rewards, next_states, next_obs, non_final_masks, step_lefts, is_experts = self._loadLossCalcDict()

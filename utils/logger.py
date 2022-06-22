@@ -74,6 +74,7 @@ class Logger(object):
         self.step_success = list()
 
         self.eval_rewards = list()
+        self.eval_success = list()
         self.success = list()
 
         # Buffer of transitions
@@ -198,6 +199,11 @@ class Logger(object):
             plt.plot(xs, self.eval_rewards)
             plt.savefig(os.path.join(self.info_dir, 'eval_curve.pdf'))
             plt.close()
+        if len(self.eval_success) > 0:
+            xs = np.arange(eval_freq, (len(self.eval_success)+1) * eval_freq, eval_freq)
+            plt.plot(xs, self.eval_success)
+            plt.savefig(os.path.join(self.info_dir, 'eval_success_curve.pdf'))
+            plt.close()
 
     def saveModel(self, iteration, name, agent):
         '''
@@ -227,6 +233,7 @@ class Logger(object):
 
     def saveEvalRewards(self):
         np.save(os.path.join(self.info_dir, 'eval_rewards.npy'), self.eval_rewards)
+        np.save(os.path.join(self.info_dir, 'eval_success.npy'), self.eval_success)
 
     def saveTransitions(self, iteration="final", n=0):
         '''Saves last n stored transitions to file '''
@@ -282,6 +289,7 @@ class Logger(object):
                 'td_errors': self.td_errors,
                 'expert_samples': self.expert_samples,
                 'eval_rewards': self.eval_rewards,
+                'eval_success': self.eval_success,
                 'success': self.success,
                 'step_reward': self.step_discounted_reward,
                 'step_success': self.step_success,
@@ -315,6 +323,7 @@ class Logger(object):
         self.td_errors =checkpoint['logger']['td_errors']
         self.expert_samples = checkpoint['logger']['expert_samples']
         self.eval_rewards = checkpoint['logger']['eval_rewards']
+        self.eval_success = checkpoint['logger']['eval_success']
         self.success = checkpoint['logger']['success']
         self.step_discounted_reward = checkpoint['logger']['step_reward']
         self.step_success = checkpoint['logger']['step_success']
