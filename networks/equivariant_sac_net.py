@@ -1840,6 +1840,80 @@ class EquivariantPolicyDihedralSpatialSoftmax(SACGaussianPolicyBase):
         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:2], dtheta), dim=1)
         return mean
 
+class EquivariantPolicyDihedralSpatialSoftmax2(SACGaussianPolicyBase):
+    def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
+        super().__init__()
+        assert obs_shape[1] in [128, 64]
+        assert kernel_size in [3, 5]
+        self.obs_channel = obs_shape[0]
+        self.action_dim = action_dim
+        self.c4_act = gspaces.FlipRot2dOnR2(N)
+        self.n_rho1 = 2 if N==2 else 1
+        self.n_hidden = n_hidden
+        self.N = N
+        self.img_conv = torch.nn.Sequential(
+            # 128x128
+            nn.R2Conv(nn.FieldType(self.c4_act, obs_shape[0] * [self.c4_act.trivial_repr]),
+                      nn.FieldType(self.c4_act, n_hidden // 8 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden // 8 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden // 8 * [self.c4_act.regular_repr]), 2),
+            # 64x64
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden // 8 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_hidden // 4 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden // 4 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden // 4 * [self.c4_act.regular_repr]), 2),
+            # 32x32
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden // 4 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_hidden // 2 * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden // 2 * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden // 2 * [self.c4_act.regular_repr]), 2),
+            # 16x16
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden // 2 * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      kernel_size=3, padding=1, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
+            nn.PointwiseMaxPool(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), 2),
+            # 8x8
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True)
+        )
+        self.reducer = SpatialSoftArgmax()
+        self.out_conv = torch.nn.Sequential(
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      kernel_size=1, padding=0, initialize=initialize),
+            nn.ReLU(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]), inplace=True),
+            nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
+                      nn.FieldType(self.c4_act, self.n_rho1 * [self.c4_act.irrep(1, 1)] + 1 * [self.c4_act.quotient_repr((None, 4))] + (action_dim*2-3) * [self.c4_act.trivial_repr]),
+                      kernel_size=1, padding=0, initialize=initialize)
+        )
+
+    def forward(self, obs):
+        batch_size = obs.shape[0]
+        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
+        conv_out = self.img_conv(obs_geo).tensor
+        conv_out = self.reducer(conv_out)
+        conv_out = conv_out.reshape(batch_size, self.n_hidden, self.c4_act.regular_repr.size, 2)
+        W = []
+        for i in self.c4_act.testing_elements:
+            reg = torch.tensor(self.c4_act.regular_repr.representation(i)).float().to(obs.device)
+            std = torch.tensor(self.c4_act.irrep(1, 1).representation(i)).float().to(obs.device)
+            W.append(torch.matmul(torch.matmul(reg, conv_out), std).reshape(batch_size, self.n_hidden, -1).sum(2))
+        conv_out = torch.stack(W, 2).reshape(batch_size, -1, 1, 1)
+        conv_out = nn.GeometricTensor(conv_out, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr]))
+        conv_out = self.out_conv(conv_out).tensor.reshape(batch_size, -1)
+        dxy = conv_out[:, 0:2]
+        dtheta = conv_out[:, 2:3] - conv_out[:, 3:4]
+        inv_act = conv_out[:, 4:self.action_dim + 1]
+        mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:2], dtheta), dim=1)
+        return mean
+
+
 class EquivariantSACVecCriticBase(torch.nn.Module):
     def __init__(self, obs_dim, action_dim):
         super().__init__()
@@ -2455,7 +2529,7 @@ if __name__ == '__main__':
 
     assert (out - out2) < 1e-4
 
-    policy = EquivariantPolicyDihedralSpatialSoftmax(obs_shape=(2, 128, 128), action_dim=5, n_hidden=8, N=4, initialize=True)
+    policy = EquivariantPolicyDihedralSpatialSoftmax2(obs_shape=(2, 128, 128), action_dim=5, n_hidden=16, N=4, initialize=True)
     policy(o)
 
     critic = EquivariantSACCriticO2_3(obs_shape=(2, 128, 128), action_dim=5, n_hidden=32, initialize=False)
