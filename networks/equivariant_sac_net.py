@@ -1971,17 +1971,18 @@ class EquivariantEBMDihedral(torch.nn.Module):
         batch_size = obs.shape[0]
         obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
         conv_out = self.img_conv(obs_geo)
-        dxy = act[:, 1:3]
-        inv_act = torch.cat((act[:, 0:1], act[:, 3:4]), dim=1)
-        dtheta = act[:, 4:5]
-        n_inv = inv_act.shape[1]
+        dxy = act[:, :, 1:3]
+        inv_act = torch.cat((act[:, :, 0:1], act[:, :, 3:4]), dim=2)
+        dtheta = act[:, :, 4:5]
+        n_inv = inv_act.shape[2]
         # dxy_geo = nn.GeometricTensor(dxy.reshape(batch_size, 2, 1, 1), nn.FieldType(self.c4_act, 1*[self.c4_act.irrep(1)]))
         # inv_act_geo = nn.GeometricTensor(inv_act.reshape(batch_size, n_inv, 1, 1), nn.FieldType(self.c4_act, n_inv*[self.c4_act.trivial_repr]))
+        conv_out.tensor.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1)
 
-        fused = torch.cat([conv_out.tensor.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1), inv_act.reshape(batch_size, act.size(1), n_inv, 1, 1), dxy.reshape(batch_size, act.size(1), 2, 1, 1), dtheta.reshape(batch_size, 1, 1, 1), (-dtheta).reshape(batch_size, 1, 1, 1)], dim=2)
+        fused = torch.cat([conv_out.tensor.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1), inv_act.reshape(batch_size, act.size(1), n_inv, 1, 1), dxy.reshape(batch_size, act.size(1), 2, 1, 1), dtheta.reshape(batch_size, act.size(1), 1, 1, 1), (-dtheta).reshape(batch_size, act.size(1), 1, 1, 1)], dim=2)
         B, N, D, _, _ = fused.size()
         fused = fused.reshape(B * N, D, 1, 1)
-        fused_geo = nn.GeometricTensor(fused, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]))
+        fused_geo = nn.GeometricTensor(fused, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)] + 1*[self.c4_act.quotient_repr((None, 4))]))
 
         # cat = torch.cat((conv_out.tensor, inv_act.reshape(batch_size, n_inv, 1, 1), dxy.reshape(batch_size, 2, 1, 1)), dim=1)
         # cat_geo = nn.GeometricTensor(cat, nn.FieldType(self.c4_act, self.n_hidden * [self.c4_act.regular_repr] + n_inv * [self.c4_act.trivial_repr] + self.n_rho1*[self.c4_act.irrep(1, 1)]))
@@ -2131,10 +2132,7 @@ class EquivariantEBMDihedralSpatialSoftmax(torch.nn.Module):
         dtheta = act[:, :, 4:5]
         n_inv = inv_act.shape[2]
 
-        fused = torch.cat([conv_out.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1),
-                           inv_act.reshape(batch_size, act.size(1), n_inv, 1, 1),
-                           dxy.reshape(batch_size, act.size(1), 2, 1, 1), dtheta.reshape(batch_size, 1, 1, 1, 1),
-                           (-dtheta).reshape(batch_size, 1, 1, 1, 1)], dim=2)
+        fused = torch.cat([conv_out.unsqueeze(1).expand(-1, act.size(1), -1, -1, -1), inv_act.reshape(batch_size, act.size(1), n_inv, 1, 1), dxy.reshape(batch_size, act.size(1), 2, 1, 1), dtheta.reshape(batch_size, act.size(1), 1, 1, 1), (-dtheta).reshape(batch_size, act.size(1), 1, 1, 1)], dim=2)
 
         B, N, D, _, _ = fused.size()
         fused = fused.reshape(B * N, D, 1, 1)
