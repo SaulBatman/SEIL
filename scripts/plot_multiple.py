@@ -204,10 +204,10 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
         rs = []
         for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
             try:
-                # r = np.load(os.path.join(base, method, run, 'info/eval_rewards.npy'))
-                data = pickle.load(open(os.path.join(base, method, run, 'log_data.pkl'), 'rb'))
-                rewards = data['eval_eps_rewards']
-                r = [np.mean(x) for x in rewards[:-1]]
+                r = np.load(os.path.join(base, method, run, 'info/eval_success.npy'))
+                # data = pickle.load(open(os.path.join(base, method, run, 'log_data.pkl'), 'rb'))
+                # rewards = data['eval_eps_rewards']
+                # r = [np.mean(x) for x in rewards[:-1]]
                 rs.append(r[:step//freq])
             except Exception as e:
                 print(e)
@@ -223,13 +223,82 @@ def plotEvalCurve(base, step=50000, use_default_cm=False, freq=1000):
     plt.legend(loc=0, facecolor='w', fontsize='x-large')
     plt.xlabel('number of training steps')
     # if base.find('bbp') > -1:
-    plt.ylabel('eval discounted reward')
+    plt.ylabel('eval success rate')
     # plt.xlim((-100, step+100))
     # plt.yticks(np.arange(0., 1.05, 0.1))
     # plt.ylim(bottom=-0.05)
 
     plt.tight_layout()
     plt.savefig(os.path.join(base, 'eval.png'), bbox_inches='tight',pad_inches = 0)
+
+def plotEvalBarChart(base, step=50000, use_default_cm=False, freq=1000):
+    plt.figure(dpi=300)
+    MEDIUM_SIZE = 12
+    BIGGER_SIZE = 14
+
+    plt.rc('axes', titlesize=BIGGER_SIZE)  # fontsize of the axes title
+    plt.rc('axes', labelsize=BIGGER_SIZE)  # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
+    plt.rc('ytick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
+
+    colors = "bgrycmkwbgrycmkw"
+    if use_default_cm:
+        color_map = {}
+    else:
+        color_map = {
+        }
+
+    linestyle_map = {
+    }
+    name_map = {
+    }
+
+    sequence = {
+    }
+
+    names = []
+    ys = []
+    errs = []
+    bar_colors = []
+    i = 0
+    methods = filter(lambda x: x[0] != '.', get_immediate_subdirectories(base))
+    for method in sorted(methods, key=lambda x: sequence[x] if x in sequence.keys() else x):
+        rs = []
+        for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
+            try:
+                r = np.load(os.path.join(base, method, run, 'info/eval_success.npy'))
+                # data = pickle.load(open(os.path.join(base, method, run, 'log_data.pkl'), 'rb'))
+                # rewards = data['eval_eps_rewards']
+                # r = [np.mean(x) for x in rewards[:-1]]
+                rs.append(np.max(r[:step//freq]))
+            except Exception as e:
+                print(e)
+                continue
+
+        # plotEvalCurveAvg(rs, freq, label=name_map[method] if method in name_map else method,
+        #                  color=color_map[method] if method in color_map else colors[i],
+        #                  linestyle=linestyle_map[method] if method in linestyle_map else '-')
+        # plt.bar(i, np.mean(rs), yerr=stats.sem(rs), color=color_map[method] if method in color_map else colors[i], tick_label=name_map[method] if method in name_map else method)
+        names.append(name_map[method] if method in name_map else method)
+        ys.append(np.mean(rs))
+        errs.append(stats.sem(rs))
+        bar_colors.append(color_map[method] if method in color_map else colors[i])
+        i += 1
+
+    for j in range(i):
+        print('{}: {:.1f}+{:.1f}'.format(names[j], ys[j]*100, errs[j]*100))
+
+    plt.style.use('seaborn-whitegrid')
+    plt.figure(figsize=(2*i, 5))
+    plt.bar(np.arange(i), ys, yerr=errs, color=bar_colors, width=0.3, ecolor='black', capsize=5)
+    plt.xticks(np.arange(i), names)
+    plt.ylabel('eval success rate')
+    plt.yticks(np.arange(0., 1.05, 0.1))
+    plt.xlim((-0.5, i-0.5))
+    plt.grid(axis='x')
+    # plt.tight_layout()
+    plt.savefig(os.path.join(base, 'eval_bar.png'), bbox_inches='tight',pad_inches = 0)
+    plt.close()
 
 def plotStepRewardCurve(base, step=50000, use_default_cm=False, freq=1000, file_name='step_reward'):
     plt.style.use('ggplot')
@@ -733,13 +802,14 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/env_paper/bt'
+    base = '/media/dian/hdd/mrun_results/ibc/0419_cnn/bowl'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 3000, window=100)
-    plotEvalCurve(base, 20000, freq=500)
+    plotEvalCurve(base, 20000, freq=1000)
+    plotEvalBarChart(base, 20000, freq=1000)
     # showPerformance(base)
     # plotLoss(base, 30000)
 
-    # plotStepSRCurve(base, 20000, freq=500, file_name='step_success_rate')
+    # plotStepSRCurve(base, 10000, freq=500, file_name='step_success_rate')
     # plotStepRewardCurve(base, 10000, freq=200)
 

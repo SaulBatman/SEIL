@@ -25,6 +25,34 @@ class DQNBase(BaseAgent):
                                        [dx, -dy], [dx, 0], [dx, dy]])
         self.dz_range = torch.tensor([-dz, 0, dz])
 
+        self.dx = dx
+        self.dy = dy
+        self.dz = dz
+        self.dr = dr
+
+    def setDXYRange(self, dxy_size):
+        dx = self.dx
+        dy = self.dy
+        if dxy_size == 3:
+            self.dxy_range = torch.tensor([[-dx, -dy], [-dx, 0], [-dx, dy],
+                                           [0, -dy], [0, 0], [0, dy],
+                                           [dx, -dy], [dx, 0], [dx, dy]])
+        elif dxy_size == 5:
+            self.dxy_range = torch.tensor([[-2*dx, -2*dy], [-2*dx, -dy], [-2*dx, 0], [-2*dx, dy], [-2*dx, 2*dy],
+                                           [-dx, -2*dy], [-dx, -dy], [-dx, 0], [-dx, dy], [-dx, 2*dy],
+                                           [0, -2*dy], [0, -dy], [0, 0], [0, dy], [0, 2*dy],
+                                           [dx, -2*dy], [dx, -dy], [dx, 0], [dx, dy], [dx, 2*dy],
+                                           [2*dx, -2*dy], [2*dx, -dy], [2*dx, 0], [2*dx, dy], [2*dx, 2*dy]])
+        else:
+            raise NotImplementedError
+
+    def setDZRange(self, dz_size):
+        dz = self.dz
+        if dz_size == 3:
+            self.dz_range = torch.tensor([-dz, 0, dz])
+        elif dz_size == 5:
+            self.dz_range = torch.tensor([-2*dz, -dz, 0, dz, 2*dz])
+
     def targetSoftUpdate(self):
         """Soft-update: target = tau*local + (1-tau)*target."""
         tau = 1e-2
