@@ -28,6 +28,47 @@ def set_seed(s):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+def transition_simulate(local_transition, agent, envs, sigma, i, planner_num_process):
+    
+
+    
+    #num_processes=1 # only support single process now
+
+    flag = 1
+    sim_startpoint = -3
+    sim_obs0 = local_transition[sim_startpoint].obs
+    sim_states0 = local_transition[sim_startpoint].state
+    sim_actions0_star_idx = local_transition[sim_startpoint].action
+    sim_states1, sim_obs1 = local_transition[sim_startpoint+1].state, local_transition[sim_startpoint+1].obs
+    sim_actions1_star_idx = local_transition[sim_startpoint+1].action
+    sim_steps_lefts = local_transition[sim_startpoint+1].step_left
+    sim_states2, sim_obs2 = local_transition[sim_startpoint+2].state, local_transition[sim_startpoint+2].obs
+    sim_rewards2, sim_dones2 = local_transition[sim_startpoint+2].reward, local_transition[sim_startpoint+2].done
+    if sim_dones2:
+        flag = 0
+        return None, flag
+    sim_actions1_star_idx_inv, sim_actions1_star_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx, sigma, "gaussian")
+    temp = np.zeros([planner_num_process, agent.n_a])
+    temp[i, :] = sim_actions1_star_inv
+    sim_states_new, sim_obs_new, _, _, sim_flag = envs.simulate(torch.from_numpy(temp))
+
+    sim_actions_new_star_idx,  sim_actions_new_star= agent.getGaussianBCActions(sim_actions1_star_idx_inv)
+    
+    # sim_obs = [sim_obs0, sim_obs1, sim_obs2, sim_obs_new]
+    # actions = [sim_actions1_star_idx, sim_actions_new_star_idx]
+    # fig = visualizeBC(agent, sim_obs, actions)
+    # fig.clf()
+
+    is_expert = 1
+    transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy(), sim_actions_new_star_idx[0].numpy(),
+                                sim_rewards2, sim_states2, sim_obs2, sim_dones2,
+                                sim_steps_lefts, np.array(is_expert))
+    # if obs_type == 'pixel':
+    #     transition = normalizeTransition(transition)
+    if sim_flag == False:
+        flag = 0
+    return transition, flag
+
 def train_step(agent, replay_buffer, logger, p_beta_schedule):
     if buffer_type[:3] == 'per':
         beta = p_beta_schedule.value(logger.num_training_steps)
@@ -167,7 +208,8 @@ def train():
         if not no_bar:
             planner_bar = tqdm(total=planner_episode, leave=True)
         local_transitions = [[] for _ in range(planner_num_process)]
-        global_transitions = []
+
+        simulate_buffer = [[] for _ in range(planner_num_process)]
         while j < planner_episode:
             plan_actions = planner_envs.getNextAction()
             planner_actions_star_idx, planner_actions_star = agent.getActionFromPlan(plan_actions)
@@ -181,6 +223,38 @@ def train():
                     # transition = normalizeTransition(transition)
                 # replay_buffer.add(transition)
                 local_transitions[i].append(transition)
+                if len(local_transitions[i]) >=3 and ("bc" in alg) and (simulate_n>0):
+
+                    f1 = planner_envs.canSimulate()
+                    if f1[i] and not local_transitions[i][-2].state:
+                        if sim_type == "breadth":
+                            for _ in range(simulate_n):
+                                flag=0
+                                planner_envs.resetSimPose()
+                                # sigma = 0.2
+                                new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                if flag == 1:
+                                    simulate_buffer[i].append(new_transition)
+                        
+                        elif sim_type == "depth":
+                            planner_envs.resetSimPose()
+                            for _ in range(simulate_n):
+                                flag=0
+                                
+                                # sigma = 0.2
+                                new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                if flag == 1:
+                                    simulate_buffer[i].append(new_transition)
+
+                        elif sim_type == "hybrid":
+                            for _ in range(simulate_n):
+                                planner_envs.resetSimPose()
+                                for _ in range(simulate_n):
+                                    flag=0
+                                    # sigma = 0.2
+                                    new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                    if flag == 1:
+                                        simulate_buffer[i].append(new_transition)
 
             states = copy.copy(states_)
             obs = copy.copy(obs_)
@@ -189,8 +263,10 @@ def train():
                 if dones[i] and rewards[i]:
                     for t in local_transitions[i]:
                         replay_buffer.add(t)
-                    global_transitions.append(local_transitions[i])
+                    local_transitions[i]+=simulate_buffer[i]
+                    
                     local_transitions[i] = []
+                    simulate_buffer[i] = []
                     j += 1
                     s += 1
                     if not no_bar:
@@ -240,116 +316,7 @@ def train():
     timer_start = time.time()
 
     while logger.num_training_steps < max_train_step:
-<<<<<<< HEAD
-        if fixed_eps:
-            eps = final_eps
-        else:
-            eps = exploration.value(logger.num_training_steps)
-
-        is_expert = 0
-
-        # simulate actions
-        if simulate_n > 0 and envs.canSimulate():
-            sim_obs = obs
-            sim_states = states
-            for _ in range(simulate_n):
-                # for non-BC algs
-                if not alg[:2] == 'bc':
-                    if not envs.canSimulate():
-                        envs.resetSimPose()
-                        sim_obs = obs
-                        sim_states = states
-                    sim_actions_star_idx, sim_actions_star = agent.getEGreedyActions(sim_states, sim_obs, eps)
-                    sim_states_, sim_obs_, sim_rewards, sim_dones = envs.simulate(sim_actions_star)
-                    sim_steps_lefts = envs.getStepLeft()
-
-                    for i in range(num_processes):
-                        transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), sim_actions_star_idx[i].numpy(),
-                                                    sim_rewards[i].numpy(), sim_states_[i].numpy(), sim_obs_[i].numpy(), sim_dones[i].numpy(),
-                                                    sim_steps_lefts[i].numpy(), np.array(is_expert))
-                        # if obs_type == 'pixel':
-                        #     transition = normalizeTransition(transition)
-                        replay_buffer.add(transition)
-                        # insert extra training steps after simulation
-                        if train_simulate:
-                            if len(replay_buffer) >= training_offset:
-                                for training_iter in range(training_iters):
-                                    train_step(agent, replay_buffer, logger, p_beta_schedule)
-                    
-                    sim_obs = sim_obs_
-                    sim_states = sim_states_
-                # for bc algs
-                else:
-                    sampled_expert_seq = global_transitions[np.random.randint(0,planner_episode)]
-                    if len(sampled_expert_seq) < 3:
-                        break
-                    sim_startpoint = np.random.randint(0,len(sampled_expert_seq)-2)
-                    sim_obs0 = sampled_expert_seq[sim_startpoint].obs
-                    sim_states0 = sampled_expert_seq[sim_startpoint].state
-                    sim_actions0_star_idx = sampled_expert_seq[sim_startpoint].action
-                    sim_states1, sim_obs1 = sampled_expert_seq[sim_startpoint+1].state, sampled_expert_seq[sim_startpoint+1].obs
-                    sim_actions1_star_idx = sampled_expert_seq[sim_startpoint+1].action
-                    sim_states2, sim_obs2 = sampled_expert_seq[sim_startpoint+2].state, sampled_expert_seq[sim_startpoint+2].obs
-                    sim_rewards2, sim_dones2 = sampled_expert_seq[sim_startpoint+2].reward, sampled_expert_seq[sim_startpoint+2].done
-                    if sim_states0 == 1 or sim_states1 == 1:
-                        break
-                    sim_actions1_star_idx_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx)
-                    sim_states_new, sim_obs_new, _, _ = envs.simulate(sim_actions1_star_idx_inv)
-                    sim_actions_new_star_idx = agent.getGaussianBCActions(sim_actions1_star_idx_inv)
-                    sim_steps_lefts = envs.getStepLeft()
-                    #num_processes=1 # only support single process now
-                    for i in range(num_processes):
-                        is_expert = 1
-                        transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy(), sim_actions_new_star_idx[i].numpy(),
-                                                    sim_rewards2, sim_states2, sim_obs2, sim_dones2,
-                                                    sim_steps_lefts[i].numpy(), np.array(is_expert))
-                        # if obs_type == 'pixel':
-                        #     transition = normalizeTransition(transition)
-                        replay_buffer.add(transition)
-                        # insert extra training steps after simulation
-                        if train_simulate:
-                            if len(replay_buffer) >= training_offset:
-                                for training_iter in range(training_iters):
-                                    train_step(agent, replay_buffer, logger, p_beta_schedule)
-
-                
-
-                
-
-
-        actions_star_idx, actions_star = agent.getEGreedyActions(states, obs, eps)
-
-        envs.stepAsync(actions_star, auto_reset=False)
-
-        if len(replay_buffer) >= training_offset:
-            for training_iter in range(training_iters):
-                train_step(agent, replay_buffer, logger, p_beta_schedule)
-
-        states_, obs_, rewards, dones = envs.stepWait()
-        steps_lefts = envs.getStepLeft()
-
-        done_idxes = torch.nonzero(dones).squeeze(1)
-        if done_idxes.shape[0] != 0:
-            reset_states_, reset_obs_ = envs.reset_envs(done_idxes)
-            for j, idx in enumerate(done_idxes):
-                states_[idx] = reset_states_[j]
-                obs_[idx] = reset_obs_[j]
-
-        if not alg[:2] == 'bc':
-            for i in range(num_processes):
-                transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), actions_star_idx[i].numpy(),
-                                              rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
-                                              steps_lefts[i].numpy(), np.array(is_expert))
-                # if obs_type == 'pixel':
-                #     transition = normalizeTransition(transition)
-                replay_buffer.add(transition)
-        logger.stepBookkeeping(rewards.numpy(), steps_lefts.numpy(), dones.numpy())
-
-        states = copy.copy(states_)
-        obs = copy.copy(obs_)
-=======
         train_step(agent, replay_buffer, logger, p_beta_schedule)
->>>>>>> 2786cca07681269677621d3c8d06544ce71c8581
 
         if (time.time() - start_time)/3600 > time_limit:
             break

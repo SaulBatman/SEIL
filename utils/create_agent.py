@@ -2,27 +2,6 @@ from utils.parameters import *
 from networks.cnn import Actor
 
 from agents.bc_continuous import BehaviorCloningContinuous
-<<<<<<< HEAD
-from agents.sac_drq import SACDrQ
-from agents.sacfd_drq import SACfDDrQ
-from agents.sac_aux import SACAux
-from agents.fcn_dqn import FCNDQN
-from agents.fcn_sdqfd import FCNSDQfD
-from agents.fcn_dqn_fac import FCNDQNFac
-from agents.fcn_sdqfd_fac import FCNSDQfDFac
-from networks.sac_networks import SACDeterministicPolicy, SACGaussianPolicy, SACCritic, SACVecCritic, SACVecGaussianPolicy, SACCritic2, SACGaussianPolicy2
-from networks.equivariant_sac_net import EquivariantSACActor, EquivariantSACCritic, EquivariantSACActor2, EquivariantPolicy, EquivariantSACVecCritic, EquivariantSACVecGaussianPolicy, EquivariantSACCriticNoGP, EquivariantSACActor3, EquivariantSACActorDihedral, EquivariantSACCriticDihedral, EquivariantSACActorDihedralShareEnc, EquivariantSACCriticDihedralShareEnc, EquivariantEncoder128Dihedral
-from networks.equivariant_sac_net import EquivariantSACActorSO2_1, EquivariantSACCriticSO2_1, EquivariantSACActorSO2_2, EquivariantSACCriticSO2_2, EquivariantSACActorSO2_3, EquivariantSACCriticSO2_3, EquivariantPolicySO2, EquivariantSACActorO2, EquivariantSACCriticO2, EquivariantPolicyO2, EquivariantSACActorO2_2, EquivariantSACCriticO2_2, EquivariantSACActorO2_3, EquivariantSACCriticO2_3
-from networks.equivariant_sac_net import EquivariantPolicyDihedral
-from networks.equivariant_ddpg_net import EquivariantDDPGActor, EquivariantDDPGCritic
-from networks.curl_sac_net import CURLSACEncoder, CURLSACCritic, CURLSACGaussianPolicy, CURLSACEncoderOri, CURLSACEncoder2
-from networks.curl_equi_sac_net import CURLEquiSACEncoder, CURLEquiSACCritic, CURLEquiSACGaussianPolicy
-from networks.cnn import DQNComCURL, DQNComCURLOri
-from networks.equivariant_fcn import EquFCN
-from networks.equivariant_fcn import EquFCNFac
-from networks.cnn_fcn import FCN
-from networks.equivariant import EquiCNNFacD4WithNonEquiFCN, EquiCNNFacD4WithNonEquiEnc
-=======
 
 from networks.equivariant_sac_net import EquivariantPolicy, EquivariantPolicyDihedral
 from networks.equivariant_sac_net import EquivariantPolicySO2, EquivariantPolicyO2
@@ -41,7 +20,6 @@ from networks.equivariant_sac_net import EquivariantEBMDihedralFacAll
 from networks.cnn import CNNMSE
 
 from networks.equivariant_sac_net import EquivariantPolicyDihedralSpatialSoftmax, EquivariantPolicyDihedralSpatialSoftmax1
->>>>>>> 2786cca07681269677621d3c8d06544ce71c8581
 
 def createAgent(test=False):
     print('initializing agent')

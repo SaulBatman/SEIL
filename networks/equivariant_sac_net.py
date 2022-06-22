@@ -1680,47 +1680,25 @@ class EquivariantPolicy(torch.nn.Module):
         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:]), dim=1)
         return torch.tanh(mean)
 
-<<<<<<< HEAD
-class EquivariantPolicyDihedral(torch.nn.Module):
-=======
 class EquivariantPolicyDihedral(SACGaussianPolicyBase):
->>>>>>> 2786cca07681269677621d3c8d06544ce71c8581
     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
         super().__init__()
         assert obs_shape[1] in [128, 64]
         assert kernel_size in [3, 5]
         self.obs_channel = obs_shape[0]
-<<<<<<< HEAD
-        self.N = N
-        self.action_dim = action_dim
-        self.c4_act = gspaces.FlipRot2dOnR2(N)
-=======
         self.action_dim = action_dim
         self.c4_act = gspaces.FlipRot2dOnR2(N)
         self.n_rho1 = 2 if N==2 else 1
->>>>>>> 2786cca07681269677621d3c8d06544ce71c8581
         enc = EquivariantEncoder128Dihedral if kernel_size == 3 else EquivariantEncoder128DihedralK5
         self.conv = torch.nn.Sequential(
             enc(self.obs_channel, n_hidden, initialize, N),
             nn.R2Conv(nn.FieldType(self.c4_act, n_hidden * [self.c4_act.regular_repr]),
-<<<<<<< HEAD
-                      nn.FieldType(self.c4_act, 1 * [self.c4_act.irrep(1,1)] + (action_dim*2-2) * [self.c4_act.trivial_repr]),
-=======
                       nn.FieldType(self.c4_act, self.n_rho1 * [self.c4_act.irrep(1, 1)] + 1 * [self.c4_act.quotient_repr((None, 4))] + (action_dim*2-3) * [self.c4_act.trivial_repr]),
->>>>>>> 2786cca07681269677621d3c8d06544ce71c8581
                       kernel_size=1, padding=0, initialize=initialize)
         )
 
     def forward(self, obs):
         batch_size = obs.shape[0]
-<<<<<<< HEAD
-        obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel * [self.c4_act.trivial_repr]))
-        conv_out = self.conv(obs_geo).tensor.reshape(batch_size, -1)
-        dxy = conv_out[:, 0:2]
-        inv_act = conv_out[:, 2:self.action_dim]
-        mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:]), dim=1)
-        return torch.tanh(mean)
-=======
         obs_geo = nn.GeometricTensor(obs, nn.FieldType(self.c4_act, self.obs_channel*[self.c4_act.trivial_repr]))
         conv_out = self.conv(obs_geo).tensor.reshape(batch_size, -1)
         dxy = conv_out[:, 0:2]
@@ -1861,7 +1839,6 @@ class EquivariantPolicyDihedralSpatialSoftmax(SACGaussianPolicyBase):
         inv_act = conv_out[:, 4:self.action_dim + 1]
         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:2], dtheta), dim=1)
         return mean
->>>>>>> 2786cca07681269677621d3c8d06544ce71c8581
 
 class EquivariantSACVecCriticBase(torch.nn.Module):
     def __init__(self, obs_dim, action_dim):

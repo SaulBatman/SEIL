@@ -77,14 +77,11 @@ training_group.add_argument('--buffer_aug_n', type=int, default=4)
 training_group.add_argument('--expert_aug_n', type=int, default=0)
 training_group.add_argument('--simulate_n', type=int, default=0)
 training_group.add_argument('--train_simulate', type=strToBool, default=False)
-<<<<<<< HEAD
 training_group.add_argument('--sigma', type=float, default=0.2)
 training_group.add_argument('--sim_type', type=str, choices=['depth', 'breadth', 'hybrid'], default='breadth')
 
-=======
 training_group.add_argument('--ibc_ts', type=int, default=2048)
 training_group.add_argument('--ibc_is', type=int, default=2048)
->>>>>>> 2786cca07681269677621d3c8d06544ce71c8581
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
