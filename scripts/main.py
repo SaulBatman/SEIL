@@ -227,7 +227,7 @@ def train():
                 if len(local_transitions[i]) >=3 and ("bc" in alg) and (simulate_n>0):
 
                     f1 = planner_envs.canSimulate()
-                    if f1[i] and not local_transitions[i][-2].state:
+                    if not local_transitions[i][-2].state:
                         if sim_type == "breadth":
                             for _ in range(simulate_n):
                                 flag=0
@@ -263,8 +263,7 @@ def train():
                                     else:
                                         extra_aug_buffer[i].append(new_transition)
                     else:
-                        for t in extra_aug_buffer[i]:
-                            extra_aug_buffer[i].append(t)
+                        extra_aug_buffer[i].append(transition)
 
 
             states = copy.copy(states_)
