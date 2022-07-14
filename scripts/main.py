@@ -210,6 +210,7 @@ def train():
         local_transitions = [[] for _ in range(planner_num_process)]
 
         simulate_buffer = [[] for _ in range(planner_num_process)]
+        extra_aug_buffer = [[] for _ in range(planner_num_process)]
         while j < planner_episode:
             plan_actions = planner_envs.getNextAction()
             planner_actions_star_idx, planner_actions_star = agent.getActionFromPlan(plan_actions)
@@ -235,6 +236,8 @@ def train():
                                 new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
                                 if flag == 1:
                                     simulate_buffer[i].append(new_transition)
+                                else:
+                                    extra_aug_buffer[i].append(new_transition)
                         
                         elif sim_type == "depth":
                             planner_envs.resetSimPose()
@@ -245,6 +248,8 @@ def train():
                                 new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
                                 if flag == 1:
                                     simulate_buffer[i].append(new_transition)
+                                else:
+                                    extra_aug_buffer[i].append(new_transition)
 
                         elif sim_type == "hybrid":
                             for _ in range(simulate_n):
@@ -255,18 +260,29 @@ def train():
                                     new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
                                     if flag == 1:
                                         simulate_buffer[i].append(new_transition)
+                                    else:
+                                        extra_aug_buffer[i].append(new_transition)
+                    else:
+                        for t in extra_aug_buffer[i]:
+                            extra_aug_buffer[i].append(t)
+
 
             states = copy.copy(states_)
             obs = copy.copy(obs_)
 
             for i in range(planner_num_process):
                 if dones[i] and rewards[i]:
+                    local_transitions[i]+=simulate_buffer[i]
+
                     for t in local_transitions[i]:
                         replay_buffer.add(t)
-                    local_transitions[i]+=simulate_buffer[i]
+                    
+                    for t in extra_aug_buffer[i]:
+                         replay_buffer.addOnlyAug(t, simulate_n)
                     
                     local_transitions[i] = []
                     simulate_buffer[i] = []
+                    extra_aug_buffer[i] = []
                     j += 1
                     s += 1
                     if not no_bar:

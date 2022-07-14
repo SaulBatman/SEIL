@@ -802,11 +802,11 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/media/dian/hdd/mrun_results/ibc/0419_cnn/bowl'
+    base = '/home/mingxi/ws/DATA/BC_BASELINES_0709/bc_con_equi_d/pushing'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 3000, window=100)
-    plotEvalCurve(base, 20000, freq=1000)
-    plotEvalBarChart(base, 20000, freq=1000)
+    plotEvalCurve(base, 10000, freq=1000)
+    plotEvalBarChart(base, 10000, freq=1000)
     # showPerformance(base)
     # plotLoss(base, 30000)
 

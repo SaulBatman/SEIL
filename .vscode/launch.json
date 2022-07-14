@@ -11,10 +11,10 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--env=close_loop_block_pushing", "--num_obj=1", "--num_processes=1", "--num_eval_process=5", "--render=f",
+            "args": ["--env=close_loop_block_in_bowl", "--num_obj=1", "--num_processes=1", "--num_eval_process=5", "--render=f",
                 "--max_episode_steps=50", "--planner_episode=1", "--dpos=0.02", "--drot_n=4", "--alg=bc_con", "--model=equi",
                  "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--lr=1e-3", "--gamma=0.99", "--seed=1 ",
-                 "--max_train_step=10000", "--simulate_n=4", "--eval_freq=500", "--robot=panda", "--sigma=0.1", "--device=cpu"]
+                 "--max_train_step=10000", "--simulate_n=4", "--eval_freq=1000", "--robot=panda", "--sigma=0.1", "--device=cpu"]
         }
     ]
 }
