@@ -289,7 +289,7 @@ def plotEvalBarChart(base, step=50000, use_default_cm=False, freq=1000):
         print('{}: {:.1f}+{:.1f}'.format(names[j], ys[j]*100, errs[j]*100))
 
     plt.style.use('seaborn-whitegrid')
-    plt.figure(figsize=(2*i, 5))
+    plt.figure(figsize=(3*i, 5))
     plt.bar(np.arange(i), ys, yerr=errs, color=bar_colors, width=0.3, ecolor='black', capsize=5)
     plt.xticks(np.arange(i), names)
     plt.ylabel('eval success rate')
@@ -802,7 +802,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/home/mingxi/ws/DATA/BC_BASELINES_0709/bc_con_equi_d/pushing'
+    base = '/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/outputs/results/bowl_planner3'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 3000, window=100)
     plotEvalCurve(base, 10000, freq=1000)

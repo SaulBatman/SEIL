@@ -79,6 +79,7 @@ training_group.add_argument('--simulate_n', type=int, default=0)
 training_group.add_argument('--train_simulate', type=strToBool, default=False)
 training_group.add_argument('--sigma', type=float, default=0.2)
 training_group.add_argument('--sim_type', type=str, choices=['depth', 'breadth', 'hybrid'], default='breadth')
+training_group.add_argument('--data_balancing', action='store_true')
 
 training_group.add_argument('--ibc_ts', type=int, default=2048)
 training_group.add_argument('--ibc_is', type=int, default=2048)
@@ -186,8 +187,7 @@ target_update_freq = args.target_update_freq
 save_freq = args.save_freq
 action_selection = args.action_selection
 planner_episode = args.planner_episode
-sigma = args.sigma
-sim_type = args.sim_type
+
 
 load_model_pre = args.load_model_pre
 is_test = args.test
@@ -210,8 +210,12 @@ buffer_aug_type = args.buffer_aug_type
 buffer_aug_n = args.buffer_aug_n
 expert_aug_n = args.expert_aug_n
 
+# transition simulation
 simulate_n = args.simulate_n
 train_simulate = args.train_simulate
+sigma = args.sigma
+sim_type = args.sim_type
+data_balancing = args.data_balancing
 
 ibc_ts = args.ibc_ts
 ibc_is = args.ibc_is

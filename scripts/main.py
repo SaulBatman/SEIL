@@ -276,8 +276,9 @@ def train():
                     for t in local_transitions[i]:
                         replay_buffer.add(t)
                     
-                    for t in extra_aug_buffer[i]:
-                         replay_buffer.addOnlyAug(t, simulate_n)
+                    if data_balancing == "True" and simulate_n > 0:
+                        for t in extra_aug_buffer[i]:
+                            replay_buffer.addOnlyAug(t, simulate_n)
                     
                     local_transitions[i] = []
                     simulate_buffer[i] = []
