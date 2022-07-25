@@ -5,16 +5,44 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "collect expert",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["--env=close_loop_block_in_bowl", "--num_obj=1", "--num_processes=1", "--num_eval_process=5", "--render=f",
-                "--max_episode_steps=50", "--planner_episode=2", "--dpos=0.02", "--drot_n=4", "--alg=bc_con", "--model=equi",
+                "--max_episode_steps=50", "--planner_episode=2", "--dpos=0.02", "--drot_n=4", "--alg=bc_con", "--model=equi_d",
                  "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--lr=1e-3", "--gamma=0.99", "--seed=1 ",
-                 "--max_train_step=10000", "--simulate_n=0", "--eval_freq=1000", "--robot=panda", "--sigma=0.4", "--view_type=render_center"]
+                 "--max_train_step=10000", "--simulate_n=0", "--eval_freq=1000", "--robot=panda", "--sigma=0.4", "--view_type=render_center", "--render=t"
+                ]
+        },
+        {
+            "name": "load real-world npy",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--env=close_loop_block_in_bowl", "--num_obj=1", "--num_processes=1", "--num_eval_process=5", "--render=f",
+                "--max_episode_steps=50", "--planner_episode=0", "--dpos=0.02", "--drot_n=8", "--alg=bc_con", "--model=equi_d",
+                 "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--buffer_aug_n=16","--lr=1e-3", "--gamma=0.99", "--seed=1 ",
+                 "--max_train_step=10000", "--simulate_n=0", "--eval_freq=1000", "--num_eval_episodes=10", "--robot=panda", "--sigma=0.4", "--view_type=render_center",
+                "--load_buffer=/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/outputs/buffer/bowl_20.npy"]
+        },
+        {
+            "name": "test",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--env=close_loop_block_in_bowl", "--num_obj=1", "--num_processes=1", "--num_eval_process=5", "--render=t",
+                "--max_episode_steps=50", "--planner_episode=0", "--dpos=0.02", "--drot_n=8", "--alg=bc_con", "--model=equi_d",
+                 "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--buffer_aug_n=16","--lr=1e-3", "--gamma=0.99", "--seed=1 ",
+                 "--max_train_step=10000", "--simulate_n=0", "--eval_freq=1000", "--num_eval_episodes=10", "--robot=panda", "--sigma=0.4", "--view_type=render_center",
+                "--load_model_pre=/tmp/bc_con_equi_d/train_close_loop_block_in_bowl_2022-07-25.01:50:59/models/snapshot_close_loop_block_in_bowl", 
+            "--transparent_bin=t"]
         }
     ]
 }

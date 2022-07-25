@@ -52,7 +52,7 @@ def transition_simulate(local_transition, agent, envs, sigma, i, planner_num_pro
     temp[i, :] = sim_actions1_star_inv
     sim_states_new, sim_obs_new, _, _, sim_flag = envs.simulate(torch.from_numpy(temp))
 
-    sim_actions_new_star_idx,  sim_actions_new_star= agent.getGaussianBCActions(sim_actions1_star_idx_inv)
+    sim_actions_new_star_idx,  sim_actions_new_star= agent.getGaussianBCActions(sim_actions1_star_idx_inv, torch.tensor(sim_states1))
     
     # sim_obs = [sim_obs0, sim_obs1, sim_obs2, sim_obs_new]
     # actions = [sim_actions1_star_idx, sim_actions_new_star_idx]
@@ -197,7 +197,10 @@ def train():
         logger.loadCheckPoint(os.path.join(log_dir, load_sub, 'checkpoint'), envs, agent, replay_buffer)
 
     if load_buffer is not None and not load_sub:
-        logger.loadBuffer(replay_buffer, load_buffer, load_n)
+        if load_buffer.split('.')[-1] == 'npy':
+            logger.loadNpyBuffer(replay_buffer, load_buffer)
+        else:
+            logger.loadBuffer(replay_buffer, load_buffer, load_n)
 
     if planner_episode > 0 and not load_sub:
         planner_envs = envs
@@ -270,11 +273,13 @@ def train():
 
             for i in range(planner_num_process):
                 if dones[i] and rewards[i]:
-                    local_transitions[i]+=simulate_buffer[i]
+
+                    if simulate_n > 0 and len(simulate_buffer[i]) > 0:
+                        local_transitions[i]+=simulate_buffer[i]
 
                     for t in local_transitions[i]:
                         replay_buffer.add(t)
-                    
+
                     if data_balancing == "True" and simulate_n > 0:
                         for t in extra_aug_buffer[i]:
                             replay_buffer.addOnlyAug(t, simulate_n)

@@ -16,6 +16,9 @@ class QLearningBufferAug(QLearningBuffer):
         for _ in range(self.aug_n * simulate_n):
             super().add(augmentTransition(transition, buffer_aug_type))
 
+    def addNoAug(self, transition: ExpertTransition):
+        super().add(transition)
+
 
 
 

@@ -22,6 +22,8 @@ def test():
     pbar = tqdm(total=test_episode)
     while total < test_episode:
         actions_star_idx, actions_star = agent.getGreedyActions(states, obs)
+        if actions_star[0][0]<0.9:
+            actions_star[0][0] = torch.tensor([0])
         states_, obs_, rewards, dones = envs.step(actions_star, auto_reset=True)
 
         states = copy.copy(states_)

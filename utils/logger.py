@@ -266,6 +266,17 @@ class Logger(object):
                 break
             t = load['storage'][i]
             buffer.add(t)
+    
+    def loadNpyBuffer(self, buffer, path):
+        # input npy file is a list in which every element is a list of items as same as items in ExpertTransition
+        print(f'loading buffer at {path}')
+        load = np.load(path, allow_pickle=True)
+        for traj in load:
+            for t in traj:
+                # state obs action reward next_state next_obs done step_left expert
+                new = ExpertTransition(t[0].astype(np.float32), t[1][1].astype(np.float32), t[2].astype(np.float32), t[3].astype(np.float32), t[4].astype(np.float32), t[5][1].astype(np.float32), t[6].astype(np.float32), t[7].astype(np.float32), t[8].astype(np.float32))
+                buffer.add(new)
+
 
     def saveCheckPoint(self, args, envs, agent, buffer):
         envs_save_path = os.path.join(self.checkpoint_dir, 'envs')

@@ -80,9 +80,24 @@
 #                  --max_train_step=10000 --simulate_n=4 --eval_freq=1000 --robot=panda --sigma=0.4 --log_pre=./outputs\
 #                  --log_sub=bowl_planner1_balanced_TS_aug4 --buffer_aug_n=4 --num_eval_episodes=50 --data_balancing
 
-# planner=3, TS, batch_size=64, equi_d
+# # planner=3, TS, batch_size=64, equi_d
+# python main.py --env=close_loop_block_in_bowl --num_obj=1 --num_processes=1 --num_eval_process=5 --render=f\
+#                 --max_episode_steps=50 --planner_episode=3 --dpos=0.02 --drot_n=4 --alg=bc_con --model=equi_d\
+#                  --equi_n=4 --n_hidden=64 --batch_size=64 --buffer=aug --lr=1e-3 --gamma=0.99 --seed=1 --view_type=render_center\
+#                  --max_train_step=10000 --simulate_n=4 --eval_freq=1000 --robot=panda --sigma=0.4 --log_pre=./outputs\
+#                  --log_sub=bowl_planner3_balanced_TS_aug4 --buffer_aug_n=4 --num_eval_episodes=50 --data_balancing
+
+
+# # planner=1, no TS, batch_size=64, equi_d
+# python main.py --env=close_loop_block_in_bowl --num_obj=1 --num_processes=1 --num_eval_process=5 --render=f\
+#                 --max_episode_steps=50 --planner_episode=3 --dpos=0.02 --drot_n=4 --alg=bc_con --model=equi_d\
+#                  --equi_n=4 --n_hidden=64 --batch_size=64 --buffer=aug --lr=1e-3 --gamma=0.99 --seed=1 --view_type=render_center\
+#                  --max_train_step=10000 --simulate_n=0 --eval_freq=1000 --robot=panda --sigma=0.4 --log_pre=./outputs\
+#                  --log_sub=bowl_planner1_no_TS_aug4_equi_d --buffer_aug_n=4 --num_eval_episodes=50
+
+# planner=1, no TS, batch_size=64, equi_d
 python main.py --env=close_loop_block_in_bowl --num_obj=1 --num_processes=1 --num_eval_process=5 --render=f\
-                --max_episode_steps=50 --planner_episode=3 --dpos=0.02 --drot_n=4 --alg=bc_con --model=equi_d\
+                --max_episode_steps=50 --planner_episode=0 --dpos=0.02 --drot_n=8 --alg=bc_con --model=equi_d\
                  --equi_n=4 --n_hidden=64 --batch_size=64 --buffer=aug --lr=1e-3 --gamma=0.99 --seed=1 --view_type=render_center\
-                 --max_train_step=10000 --simulate_n=4 --eval_freq=1000 --robot=panda --sigma=0.4 --log_pre=./outputs\
-                 --log_sub=bowl_planner3_balanced_TS_aug4 --buffer_aug_n=4 --num_eval_episodes=50 --data_balancing
+                 --max_train_step=10000 --simulate_n=0 --eval_freq=1000 --robot=panda --sigma=0.4 --log_pre=./outputs\
+                 --log_sub=bowl_planner1_no_TS_aug4_equi_d --buffer_aug_n=16 --num_eval_episodes=10 --load_buffer=/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/outputs/buffer/bowl_20.npy
