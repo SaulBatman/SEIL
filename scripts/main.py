@@ -19,7 +19,8 @@ from utils.env_wrapper import EnvWrapper
 from utils.create_agent import createAgent
 import threading
 
-from utils.torch_utils import ExpertTransition, augmentBuffer
+from utils.torch_utils import ExpertTransition
+from debug import visualizeTransition
 
 def set_seed(s):
     np.random.seed(s)
@@ -58,6 +59,10 @@ def transition_simulate(local_transition, agent, envs, sigma, i, planner_num_pro
     # actions = [sim_actions1_star_idx, sim_actions_new_star_idx]
     # fig = visualizeBC(agent, sim_obs, actions)
     # fig.clf()
+    sim_obs = [sim_obs1, sim_obs2]
+    actions = [sim_actions1_star_idx]
+    fig = visualizeTransition(agent, sim_obs, actions)
+    fig.clf()
 
     is_expert = 1
     transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy(), sim_actions_new_star_idx[0].numpy(),
@@ -198,7 +203,7 @@ def train():
 
     if load_buffer is not None and not load_sub:
         if load_buffer.split('.')[-1] == 'npy':
-            logger.loadNpyBuffer(replay_buffer, load_buffer)
+            logger.loadNpyBuffer(replay_buffer, load_buffer, load_n)
         else:
             logger.loadBuffer(replay_buffer, load_buffer, load_n)
 
