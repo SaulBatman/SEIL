@@ -31,9 +31,32 @@ def visualizeBC(agent, sim_obs, actions):
     plt.colorbar()
     return fig
     
+def visualizeTransition(agent, obs, actions):
+    obs1 = obs[0]
+    obs2 = obs[1]
+
+    sim_actions1_star_idx = actions[0]
+    print("action: ", sim_actions1_star_idx)
+
+    fig, axes = plt.subplots(1,2)
+    axes[0].imshow(obs1[0])
+    axes[0].set_title("sim_obs0")
+    axes[1].imshow(obs1[0])
+    unscaled, sim_action = agent.decodeSingleActions(*[torch.tensor(sim_actions1_star_idx)[i] for i in range(5)])
+    axes[1].arrow(x=64, y=64, dx=sim_action[1]/0.3*128, dy=sim_action[2]/0.3*128, width=.8) 
+    axes[1].set_title("obs1")
+    
+
+    axes[1].imshow(obs2[0])
+    axes[1].set_title("obs2")
+    
+
+    plt.colorbar()
+    plt.show()
+    return fig
 
 
-def visualizeExpert(agent, local_transition, column_num = 4, delete_num=0):
+def visualizeTraj(agent, local_transition, column_num = 4, delete_num=0):
     SMALL_SIZE = 8
 
     
