@@ -254,6 +254,10 @@ def plotEvalBarChart(base, step=50000, use_default_cm=False, freq=1000):
     }
 
     sequence = {
+        "4": 0,
+        "8": 1,
+        "16": 2,
+        "32": 3,
     }
 
     names = []

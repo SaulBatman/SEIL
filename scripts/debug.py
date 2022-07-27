@@ -2,57 +2,52 @@ import matplotlib.pyplot as plt
 import torch
 import numpy as np
 
-def visualizeBC(agent, sim_obs, actions):
-    sim_obs0 = sim_obs[0]
+def visualizeTransitionTS(sim_obs, actions):
+
     sim_obs1 = sim_obs[1]
     sim_obs2 = sim_obs[2]
     sim_obs_new = sim_obs[3]
 
-    sim_actions1_star_idx = actions[0]
-    sim_actions_new_star_idx = actions[1]
+    sim_actions1_star = actions[0]
+    sim_actions_new_star = actions[1]
 
-    fig, axes = plt.subplots(1,4)
-    axes[0].imshow(sim_obs0[0])
-    axes[0].set_title("sim_obs0")
-    axes[1].imshow(sim_obs1[0])
-    unscaled, sim_action = agent.decodeSingleActions(*[torch.tensor(sim_actions1_star_idx)[i] for i in range(5)])
-    axes[1].arrow(x=64, y=64, dx=sim_action[1]/0.3*128, dy=sim_action[2]/0.3*128, width=.8) 
-    axes[1].set_title("sim_obs1")
+    fig, axes = plt.subplots(1,3)
+    axes[0].imshow(sim_obs1[0])
+    axes[0].arrow(x=64, y=64, dx=sim_actions1_star[2]/0.45*128, dy=sim_actions1_star[1]/0.45*128, width=.5) 
+    axes[0].set_title("obs1")
+    axes[0].text(0, 0, f"action: {np.round(sim_actions1_star.tolist(), 2)}")
     
 
-    axes[2].imshow(sim_obs_new[0][0])
-    unscaled, sim_action = agent.decodeSingleActions(*[torch.tensor(sim_actions_new_star_idx)[0,i] for i in range(5)])
-    axes[2].arrow(x=64, y=64, dx=sim_action[1]/0.3*128, dy=sim_action[2]/0.3*128, width=.8) 
-    axes[2].set_title("sim_obs_new")
+    axes[1].imshow(sim_obs_new[0][0])
+    axes[1].arrow(x=64, y=64, dx=sim_actions_new_star[2]/0.45*128, dy=sim_actions_new_star[1]/0.45*128, width=.5) 
+    axes[1].set_title("sim_obs_new")
+    axes[1].text(0, 0, f"action: {np.round(sim_actions_new_star.tolist(), 2)}")
     
-
-    axes[3].imshow(sim_obs2[0])
-    axes[3].set_title("sim_obs2")
-    plt.colorbar()
+    axes[2].imshow(sim_obs2[0])
+    axes[2].set_title("obs2")
+    print(1)
+    
     return fig
     
 def visualizeTransition(agent, obs, actions):
-    obs1 = obs[0]
-    obs2 = obs[1]
+    obs0 = obs[0]
+    obs1 = obs[1]
 
     sim_actions1_star_idx = actions[0]
-    print("action: ", sim_actions1_star_idx)
+    
 
     fig, axes = plt.subplots(1,2)
-    axes[0].imshow(obs1[0])
-    axes[0].set_title("sim_obs0")
-    axes[1].imshow(obs1[0])
+    axes[0].imshow(obs0[0])
+    axes[0].set_title("obs0")
     unscaled, sim_action = agent.decodeSingleActions(*[torch.tensor(sim_actions1_star_idx)[i] for i in range(5)])
-    axes[1].arrow(x=64, y=64, dx=sim_action[1]/0.3*128, dy=sim_action[2]/0.3*128, width=.8) 
+    print("action: ", sim_action)
+    axes[0].arrow(x=64, y=64, dx=sim_action[2]/0.45*128, dy=sim_action[1]/0.45*128, width=.8) 
+    
+
+    axes[1].imshow(obs1[0])
     axes[1].set_title("obs1")
-    
+    print(1)
 
-    axes[1].imshow(obs2[0])
-    axes[1].set_title("obs2")
-    
-
-    plt.colorbar()
-    plt.show()
     return fig
 
 

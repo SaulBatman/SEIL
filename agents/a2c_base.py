@@ -150,20 +150,20 @@ class A2CBase(BaseAgent):
             unscaled_actions = self.forwardActor(state, obs, to_cpu=True)
         return self.decodeActions(*[unscaled_actions[:, i] for i in range(self.n_a)])
 
-    def getInvBCActions(self, unscaled_action0, unscaled_action1, sigma, method='gaussian'):
+    def getInvBCActions(self, scaled_action0, scaled_action1, sigma, method='gaussian'):
         if method == 'gaussian':
-            p_inv = unscaled_action0[0]
+            p_inv = scaled_action0[0]
             # sigma = 0.2 # 20% disturbance
-            x_inv = np.clip(np.random.normal(-unscaled_action1[1], sigma), -1, 1)
-            y_inv = np.clip(np.random.normal(-unscaled_action1[2], sigma), -1, 1)
-            z_inv = np.clip(np.random.normal(-unscaled_action1[3], sigma), -1, 1)
-            r_inv = np.clip(np.random.normal(-unscaled_action1[4], sigma), -1, 1)
+            x_inv = np.clip(np.random.normal(-scaled_action1[1], sigma), -1, 1)
+            y_inv = np.clip(np.random.normal(-scaled_action1[2], sigma), -1, 1)
+            z_inv = np.clip(np.random.normal(-scaled_action1[3], sigma), -1, 1)
+            r_inv = np.clip(np.random.normal(-scaled_action1[4], sigma), -1, 1)
         elif method == 'identical':
-            p_inv = unscaled_action0[0]
-            x_inv = -unscaled_action1[1]
-            y_inv = -unscaled_action1[2]
-            z_inv = -unscaled_action1[3]
-            r_inv = -unscaled_action1[4]
+            p_inv = scaled_action0[0]
+            x_inv = -scaled_action1[1]
+            y_inv = -scaled_action1[2]
+            z_inv = -scaled_action1[3]
+            r_inv = -scaled_action1[4]
         elif method == 'uniform':
             pass
         
@@ -171,9 +171,9 @@ class A2CBase(BaseAgent):
         unscaled_actions = torch.tensor([[p_inv, x_inv, y_inv, z_inv, r_inv]])
         return self.decodeActions(*[unscaled_actions[:, i] for i in range(self.n_a)])
 
-    def getGaussianBCActions(self, scaled_action_inv, star_state):
+    def getSimBCActions(self, scaled_action_inv, star_gripper_action):
         scaled_actions_new = -scaled_action_inv.clone().detach()
-        scaled_actions_new[0][0] = star_state
+        scaled_actions_new[0][0] = star_gripper_action
         # return self.decodeActions(*[scaled_actions_new[:, i] for i in range(self.n_a)])
         return self.decodeActions(*[scaled_actions_new[:, i] for i in range(self.n_a)])
 
