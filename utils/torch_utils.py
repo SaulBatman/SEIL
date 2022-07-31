@@ -16,6 +16,7 @@ from scipy.ndimage import affine_transform
 from torch.distributions.utils import _standard_normal
 
 ExpertTransition = collections.namedtuple('ExpertTransition', 'state obs action reward next_state next_obs done step_left expert')
+ExpertSimTransition = collections.namedtuple('ExpertTransition', 'state obs action reward next_state next_obs done step_left expert is_sim')
 
 def featureExtractor():
     '''Creates a CNN module used for feature extraction'''

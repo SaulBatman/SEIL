@@ -25,7 +25,7 @@ def visualizeTransitionTS(sim_obs, actions):
     
     axes[2].imshow(sim_obs2[0])
     axes[2].set_title("obs2")
-    print(1)
+    # print(1)
     
     return fig
     

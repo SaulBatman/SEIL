@@ -806,7 +806,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/outputs/results/0719_bowl/equi_theta_bc_TStf_aug4&16_planner1'
+    base = '/home/mingxi/ws/data/bc_con_equi_d/bowl'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 3000, window=100)
     plotEvalCurve(base, 10000, freq=1000)

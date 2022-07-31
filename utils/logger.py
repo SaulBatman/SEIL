@@ -272,13 +272,18 @@ class Logger(object):
         print(f'loading buffer at {path}')
         load = np.load(path, allow_pickle=True)
         i=0
+
         for traj in load:
             for t in traj:
-                if t[2][0] < 0.8:
+                # to correct the error in block in bowl dataset version 1, where wrongly uses gripper openwidth instead of 0 when grasping
+                state = 0 if t[1][0] == False else 1
+                if t[2][0] < 0.75:
                     t[2][0] = 0
                 # state obs action reward next_state next_obs done step_left expert
-                new = ExpertTransition(t[0].astype(np.float32), t[1][1].astype(np.float32), t[2].astype(np.float32), t[3].astype(np.float32), t[4].astype(np.float32), t[5][1].astype(np.float32), t[6].astype(np.float32), t[7].astype(np.float32), t[8].astype(np.float32))
+                new = ExpertTransition(np.array([state]).astype(np.float32), t[1][1].astype(np.float32), t[2].astype(np.float32), t[3].astype(np.float32), t[4].astype(np.float32), t[5][1].astype(np.float32), t[6].astype(np.float32), t[7].astype(np.float32), t[8].astype(np.float32))
+                # print(new.action)
                 buffer.add(new)
+
             i+=1
             if i == episode_n:
                 break

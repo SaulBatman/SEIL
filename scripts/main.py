@@ -58,7 +58,7 @@ def transition_simulate(local_transition, agent, envs, sigma, i, planner_num_pro
     sim_obs = [sim_obs0, sim_obs1, sim_obs2, sim_obs_new]
     scaled_sim_action, unscales_sim_action = agent.decodeSingleActions(*[torch.tensor(sim_actions1_star_idx)[i] for i in range(5)])
     actions = [unscales_sim_action, sim_actions_new_star[0]]
-    fig = visualizeTransitionTS(sim_obs, actions)
+    # fig = visualizeTransitionTS(sim_obs, actions)
     # fig.clf()
     # sim_obs = [sim_obs1, sim_obs2]
     # actions = [sim_actions1_star_idx]
@@ -227,6 +227,7 @@ def train():
                 transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), planner_actions_star_idx[i].numpy(),
                                               rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
                                               np.array(100), np.array(1))
+                
                 # if obs_type == 'pixel':
                     # transition = normalizeTransition(transition)
                 # replay_buffer.add(transition)
