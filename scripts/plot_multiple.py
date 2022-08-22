@@ -806,7 +806,7 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/home/mingxi/ws/data/bc_con_equi_d/bowl'
+    base = '/home/mingxi/ws/001results/bc_result/DATA/dian_group/grasp'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 3000, window=100)
     plotEvalCurve(base, 10000, freq=1000)

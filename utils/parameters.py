@@ -83,6 +83,7 @@ training_group.add_argument('--data_balancing', action='store_true')
 
 training_group.add_argument('--ibc_ts', type=int, default=2048)
 training_group.add_argument('--ibc_is', type=int, default=2048)
+training_group.add_argument('--save_multi_freq', type=int, default=0)
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -188,6 +189,7 @@ save_freq = args.save_freq
 action_selection = args.action_selection
 planner_episode = args.planner_episode
 
+save_multi_freq = args.save_multi_freq
 
 load_model_pre = args.load_model_pre
 is_test = args.test

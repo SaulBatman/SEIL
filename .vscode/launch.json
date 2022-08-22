@@ -4,6 +4,8 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
+
         {
             "name": "collect expert",
             "type": "python",
@@ -11,10 +13,11 @@
             "program": "/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--env=close_loop_block_in_bowl", "--num_obj=1", "--num_processes=1", "--num_eval_process=5", "--render=t",
-                "--max_episode_steps=50", "--planner_episode=2", "--dpos=0.02", "--drot_n=4", "--alg=bc_con", "--model=equi_d",
+            "args": ["--env=close_loop_block_in_bowl", "--num_obj=1", "--num_processes=5", "--num_eval_process=5", "--render=t",
+                "--max_episode_steps=100", "--planner_episode=3", "--dpos=0.01", "--drot_n=8", "--alg=bc_implicit", "--model=equi_d_inv_theta",
                  "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--lr=1e-3", "--gamma=0.99", "--seed=1 ",
-                 "--max_train_step=10000", "--simulate_n=0", "--eval_freq=1000", "--robot=panda", "--sigma=0.4", "--view_type=render_center", "--render=t"
+                 "--max_train_step=20000", "--simulate_n=0", "--eval_freq=2500", "--num_eval_episodes=10", "--robot=kuka", "--sigma=0.4", "--view_type=camera_center_xyz",
+                  "--render=f", "--view_scale=1.5", "--fixed_eps", "--buffer_aug_n=9", "--ibc_ts=4096", "--ibc_is=16384"
                 ]
         },
         {
@@ -32,7 +35,7 @@
                 ]
         },
         {
-            "name": "load real-world npy",
+            "name": "real-world bowl",
             "type": "python",
             "request": "launch",
             "program": "/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/main.py",
@@ -43,6 +46,46 @@
                  "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--buffer_aug_n=16","--lr=1e-3", "--gamma=0.99", "--seed=1 ",
                  "--max_train_step=10000", "--simulate_n=0", "--eval_freq=2000", "--num_eval_episodes=10", "--robot=panda", "--sigma=0.4", "--view_type=render_center",
                 "--load_buffer=/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/outputs/buffer/bowl_20.npy"]
+        },
+        {
+            "name": "real-world TIDY2",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--env=close_loop_block_in_bowl", "--num_obj=1", "--num_processes=1", "--num_eval_process=5", "--render=f",
+                "--max_episode_steps=50", "--planner_episode=0", "--dpos=0.02", "--drot_n=8", "--alg=bc_con", "--model=cnn",
+                 "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--buffer_aug_n=16","--lr=1e-3", "--gamma=0.99", "--seed=1 ",
+                 "--max_train_step=10000", "--simulate_n=0", "--eval_freq=-1", "--num_eval_episodes=10", "--robot=panda", "--sigma=0.4", "--view_type=render_center",
+                "--load_buffer=/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/outputs/buffer/obj2_in_box_planner5.npy"]
+        },
+        {
+            "name": "real-world explicit trash5 tidy",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--env=close_loop_block_in_bowl", "--num_obj=1", "--num_processes=5", "--num_eval_process=1", "--render=f",
+                "--max_episode_steps=50", "--planner_episode=0", "--dpos=0.02", "--drot_n=8", "--alg=bc_con", "--model=equi_d",
+                 "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--buffer_aug_n=16","--lr=1e-3", "--gamma=0.99", "--seed=1 ",
+                 "--max_train_step=10000", "--simulate_n=0", "--eval_freq=-1", "--num_eval_episodes=1", "--robot=panda", "--sigma=0.4", "--view_type=render_center",
+                "--load_buffer=/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/outputs/buffer/trash5_tidying.npy"]
+        },
+        {
+            "name": "real-world implicit trash5 tidy",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--env=close_loop_block_in_bowl", "--num_obj=1", "--num_processes=5", "--num_eval_process=1", "--render=f",
+                "--max_episode_steps=50", "--planner_episode=0", "--dpos=0.02", "--drot_n=8", "--alg=bc_con", "--model=equi_d",
+                 "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--buffer_aug_n=16","--lr=1e-3", "--gamma=0.99", "--seed=1 ",
+                 "--max_train_step=30000", "--simulate_n=0", "--eval_freq=-1", "--num_eval_episodes=1", "--robot=panda", "--sigma=0.4", "--view_type=render_center",
+                "--load_buffer=/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/outputs/buffer/trash5_tidying.npy",
+                "--ibc_ts=4096", "--ibc_is=16384", "--fixed_eps"]
         },
         {
             "name": "test",
@@ -65,12 +108,13 @@
             "program": "/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--env=close_loop_block_in_bowl", "--num_obj=1", "--num_processes=1", "--num_eval_process=5", "--render=f",
-                "--max_episode_steps=50", "--planner_episode=1", "--dpos=0.02", "--drot_n=4", "--alg=bc_implicit", "--model=equi_d",
-                 "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--buffer_aug_n=16","--lr=1e-3", "--gamma=0.99", "--seed=1 ",
-                 "--max_train_step=10000", "--simulate_n=0", "--eval_freq=5000", "--robot=panda", "--sigma=0.2", "--view_type=render_center", "--render=f",
-                 "--view_scale=1.5", "--num_eval_episodes=50", "--ibc_is=16384"
+            "args": ["--env=close_loop_block_in_bowl", "--num_obj=1", "--num_processes=5", "--num_eval_process=5", "--render=f",
+                 "--max_episode_steps=100", "--planner_episode=3", "--dpos=0.01", "--drot_n=8", "--alg=bc_implicit", "--model=equi_d", 
+                 "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--buffer_aug_n=9", "--lr=1e-3", "--gamma=0.99", 
+                 "--seed=1", "--max_train_step=10000", "--simulate_n=0", "--eval_freq=100", "--num_eval_episodes=50", "--robot=kuka", 
+                 "--ibc_ts=4096", "--ibc_is=16384", "--fixed_eps", "--save_multi_freq=5"
                 ]
         },
+        
     ]
 }

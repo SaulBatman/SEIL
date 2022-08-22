@@ -216,6 +216,17 @@ class Logger(object):
         '''
         agent.saveModel(os.path.join(self.models_dir, 'snapshot_{}'.format(name)))
 
+    def saveMultiModel(self, iteration, name, agent):
+        '''
+        Save PyTorch model to log directory
+
+        Args:
+          - iteration: Interation of the current run
+          - name: Name to save model as
+          - agent: Agent containing model to save
+        '''
+        agent.saveModel(os.path.join(self.models_dir, f'snapshot_{name}_step{iteration}'))
+
     def saveRewards(self):
         np.save(os.path.join(self.info_dir, 'rewards.npy'), self.rewards)
         np.save(os.path.join(self.info_dir, 'success_rate.npy'), self.success)
@@ -272,16 +283,35 @@ class Logger(object):
         print(f'loading buffer at {path}')
         load = np.load(path, allow_pickle=True)
         i=0
-
+        
         for traj in load:
+            flag1=0
             for t in traj:
-                # to correct the error in block in bowl dataset version 1, where wrongly uses gripper openwidth instead of 0 when grasping
-                state = 0 if t[1][0] == False else 1
-                if t[2][0] < 0.75:
-                    t[2][0] = 0
-                # state obs action reward next_state next_obs done step_left expert
-                new = ExpertTransition(np.array([state]).astype(np.float32), t[1][1].astype(np.float32), t[2].astype(np.float32), t[3].astype(np.float32), t[4].astype(np.float32), t[5][1].astype(np.float32), t[6].astype(np.float32), t[7].astype(np.float32), t[8].astype(np.float32))
-                # print(new.action)
+                if "bowl" in path:
+                    # to correct the error in block in bowl dataset version 1, where wrongly uses gripper openwidth instead of 0 when grasping
+                    state = 0 if t[1][0] == False else 1
+                    if t[2][0] < 0.75:
+                        t[2][0] = 0
+                    # state obs action reward next_state next_obs done step_left expert
+                    new = ExpertTransition(np.array([state]).astype(np.float32), t[1][1].astype(np.float32), t[2].astype(np.float32), t[3].astype(np.float32), t[4].astype(np.float32), t[5][1].astype(np.float32), t[6].astype(np.float32), t[7].astype(np.float32), t[8].astype(np.float32))
+                    print(new.state)
+                    print(new.action)
+                    # plt.imshow(new.obs[0])                
+                elif "obj2_in_box" in path:
+                    if flag1 == 0 and t[0] == True:
+                        t[0] = np.array(False)
+                        flag1 = 1  
+                    
+                        # new = ExpertTransition(t[0].astype(np.float32), t[1][1].astype(np.float32), t[2].astype(np.float32), t[3].astype(np.float32), t[4].astype(np.float32), t[5][1].astype(np.float32), t[6].astype(np.float32), t[7].astype(np.float32), t[8].astype(np.float32))
+                        # buffer.add(new)
+                        # buffer.add(new)
+                        # buffer.add(new)
+                    new = ExpertTransition(t[0].astype(np.float32), t[1][1].astype(np.float32), t[2].astype(np.float32), t[3].astype(np.float32), t[4].astype(np.float32), t[5][1].astype(np.float32), t[6].astype(np.float32), t[7].astype(np.float32), t[8].astype(np.float32))
+                    print(new.state)
+                    print(new.action)
+                    # plt.imshow(new.obs[0])
+                else:
+                    new = ExpertTransition(t[0].astype(np.float32), t[1][1].astype(np.float32), t[2].astype(np.float32), t[3].astype(np.float32), t[4].astype(np.float32), t[5][1].astype(np.float32), t[6].astype(np.float32), t[7].astype(np.float32), t[8].astype(np.float32))
                 buffer.add(new)
 
             i+=1
