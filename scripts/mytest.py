@@ -15,7 +15,7 @@ from storage.per_aug_buffer import PrioritizedQLearningBufferAug
 from utils.logger import Logger
 from utils.schedules import LinearSchedule
 from utils.env_wrapper import EnvWrapper
-from debug import visualizeBC, visualizeExpert
+from utils.debug import visualizeBC, visualizeExpert
 
 from utils.create_agent import createAgent
 import threading
@@ -101,7 +101,7 @@ def evaluate(envs, agent, logger):
 def countParameters(m):
     return sum(p.numel() for p in m.parameters() if p.requires_grad)
 
-def transition_simulate(local_transition, agent, envs, sigma, i, planner_num_process):
+def transitionSimulateSim(local_transition, agent, envs, sigma, i, planner_num_process):
     
 
     
@@ -233,7 +233,7 @@ def train():
                                 flag=0
                                 planner_envs.resetSimPose()
                                 # sigma = 0.2
-                                new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
                                 if flag == 1:
                                     simulate_buffer[i].append(new_transition)
                         
@@ -243,7 +243,7 @@ def train():
                                 flag=0
                                 
                                 # sigma = 0.2
-                                new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
                                 if flag == 1:
                                     simulate_buffer[i].append(new_transition)
 
@@ -253,7 +253,7 @@ def train():
                                 for _ in range(simulate_n):
                                     flag=0
                                     # sigma = 0.2
-                                    new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                    new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
                                     if flag == 1:
                                         simulate_buffer[i].append(new_transition)
                         

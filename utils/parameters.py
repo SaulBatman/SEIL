@@ -80,6 +80,8 @@ training_group.add_argument('--train_simulate', type=strToBool, default=False)
 training_group.add_argument('--sigma', type=float, default=0.2)
 training_group.add_argument('--sim_type', type=str, choices=['depth', 'breadth', 'hybrid'], default='breadth')
 training_group.add_argument('--data_balancing', action='store_true')
+training_group.add_argument('--ts_from_cloud', type=strToBool, default=False)
+
 
 training_group.add_argument('--ibc_ts', type=int, default=2048)
 training_group.add_argument('--ibc_is', type=int, default=2048)
@@ -218,6 +220,7 @@ train_simulate = args.train_simulate
 sigma = args.sigma
 sim_type = args.sim_type
 data_balancing = args.data_balancing
+ts_from_cloud = args.ts_from_cloud
 
 ibc_ts = args.ibc_ts
 ibc_is = args.ibc_is

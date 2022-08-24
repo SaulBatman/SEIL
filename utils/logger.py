@@ -285,7 +285,7 @@ class Logger(object):
         i=0
         
         for traj in load:
-            flag1=0
+            flag1=0 # just for obj2_in_box which is wrong
             for t in traj:
                 if "bowl" in path:
                     # to correct the error in block in bowl dataset version 1, where wrongly uses gripper openwidth instead of 0 when grasping
@@ -317,7 +317,7 @@ class Logger(object):
             i+=1
             if i == episode_n:
                 break
-
+    
 
     def saveCheckPoint(self, args, envs, agent, buffer):
         envs_save_path = os.path.join(self.checkpoint_dir, 'envs')

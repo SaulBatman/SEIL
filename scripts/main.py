@@ -20,8 +20,11 @@ from utils.create_agent import createAgent
 import threading
 
 from utils.torch_utils import ExpertTransition
-from debug import visualizeTransitionTS
+from utils.debug import visualizeTransitionTS
+from utils.transition_sim import NpyBuffer, transitionSimulateSim
 import matplotlib.pyplot as plt
+
+
 
 def set_seed(s):
     np.random.seed(s)
@@ -30,50 +33,7 @@ def set_seed(s):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-def transition_simulate(local_transition, agent, envs, sigma, i, planner_num_process):
-    
 
-    
-    #num_processes=1 # only support single process now
-
-    flag = 1
-    sim_startpoint = -3
-    sim_obs0 = local_transition[sim_startpoint].obs
-    sim_states0 = local_transition[sim_startpoint].state
-    sim_actions0_star_idx = local_transition[sim_startpoint].action
-    sim_states1, sim_obs1 = local_transition[sim_startpoint+1].state, local_transition[sim_startpoint+1].obs
-    sim_actions1_star_idx = local_transition[sim_startpoint+1].action
-    sim_steps_lefts = local_transition[sim_startpoint+1].step_left
-    sim_states2, sim_obs2 = local_transition[sim_startpoint+2].state, local_transition[sim_startpoint+2].obs
-    sim_rewards2, sim_dones2 = local_transition[sim_startpoint+2].reward, local_transition[sim_startpoint+2].done
-    if sim_dones2:
-        flag = 0
-        return None, flag
-    sim_actions1_star_idx_inv, sim_actions1_star_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx, sigma, "gaussian")
-    temp = np.zeros([planner_num_process, agent.n_a])
-    temp[i, :] = sim_actions1_star_inv
-    sim_states_new, sim_obs_new, _, _, sim_flag = envs.simulate(torch.from_numpy(temp))
-
-    sim_actions_new_star_idx,  sim_actions_new_star= agent.getSimBCActions(sim_actions1_star_idx_inv, torch.tensor(sim_actions1_star_idx[0]))
-    
-    sim_obs = [sim_obs0, sim_obs1, sim_obs2, sim_obs_new]
-    scaled_sim_action, unscales_sim_action = agent.decodeSingleActions(*[torch.tensor(sim_actions1_star_idx)[i] for i in range(5)])
-    actions = [unscales_sim_action, sim_actions_new_star[0]]
-    # fig = visualizeTransitionTS(sim_obs, actions)
-    # fig.clf()
-    # sim_obs = [sim_obs1, sim_obs2]
-    # actions = [sim_actions1_star_idx]
-    # fig = visualizeTransition(agent, sim_obs, actions)
-
-    is_expert = 1
-    transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy(), sim_actions_new_star_idx[0].numpy(),
-                                sim_rewards2, sim_states2, sim_obs2, sim_dones2,
-                                sim_steps_lefts, np.array(is_expert))
-    # if obs_type == 'pixel':
-    #     transition = normalizeTransition(transition)
-    if sim_flag == False:
-        flag = 0
-    return transition, flag
 
 def train_step(agent, replay_buffer, logger, p_beta_schedule):
     if buffer_type[:3] == 'per':
@@ -102,8 +62,9 @@ def preTrainCURLStep(agent, replay_buffer, logger):
     logger.trainingBookkeeping(loss, 0)
 
 def saveModelAndInfo(logger, agent):
-    if logger.num_training_steps % save_multi_freq == 0:
-        logger.saveMultiModel(logger.num_training_steps, env, agent)
+    if save_multi_freq > 0:
+        if logger.num_training_steps % save_multi_freq == 0:
+            logger.saveMultiModel(logger.num_training_steps, env, agent)
     logger.saveModel(logger.num_steps, env, agent)
     logger.saveLearningCurve(20)
     logger.saveLossCurve(100)
@@ -205,8 +166,11 @@ def train():
         logger.loadCheckPoint(os.path.join(log_dir, load_sub, 'checkpoint'), envs, agent, replay_buffer)
 
     if load_buffer is not None and not load_sub:
-        if load_buffer.split('.')[-1] == 'npy':
+        if load_buffer.split('.')[-1] == 'npy' and not ts_from_cloud:
             logger.loadNpyBuffer(replay_buffer, load_buffer, load_n)
+        elif load_buffer.split('.')[-1] == 'npy' and ts_from_cloud:
+            data = NpyBuffer(env_config, agent, load_buffer, replay_buffer, resample=True, sim_n=4, sigma=0.4, data_balancing=data_balancing, sim_type='breadth', no_bar=no_bar, load_n=load_n)
+            data.addData()
         else:
             logger.loadBuffer(replay_buffer, load_buffer, load_n)
 
@@ -237,7 +201,7 @@ def train():
                 local_transitions[i].append(transition)
                 # print(transition.state)
                 # print(transition.action)
-                plt.imshow(transition.obs[0])
+                # plt.imshow(transition.obs[0])
                 if len(local_transitions[i]) >=3 and ("bc" in alg) and (simulate_n>0):
 
                     f1 = planner_envs.canSimulate()
@@ -247,7 +211,7 @@ def train():
                                 flag=0
                                 planner_envs.resetSimPose()
                                 # sigma = 0.2
-                                new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
                                 if flag == 1:
                                     simulate_buffer[i].append(new_transition)
                                 else:
@@ -259,7 +223,7 @@ def train():
                                 flag=0
                                 
                                 # sigma = 0.2
-                                new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
                                 if flag == 1:
                                     simulate_buffer[i].append(new_transition)
                                 else:
@@ -271,7 +235,7 @@ def train():
                                 for _ in range(simulate_n):
                                     flag=0
                                     # sigma = 0.2
-                                    new_transition, flag = transition_simulate(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                    new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
                                     if flag == 1:
                                         simulate_buffer[i].append(new_transition)
                                     else:
