@@ -169,7 +169,7 @@ def train():
         if load_buffer.split('.')[-1] == 'npy' and not ts_from_cloud:
             logger.loadNpyBuffer(replay_buffer, load_buffer, load_n)
         elif load_buffer.split('.')[-1] == 'npy' and ts_from_cloud:
-            data = NpyBuffer(env_config, agent, load_buffer, replay_buffer, resample=True, sim_n=4, sigma=0.4, data_balancing=data_balancing, sim_type='breadth', no_bar=no_bar, load_n=load_n)
+            data = NpyBuffer(env_config, agent, load_buffer, replay_buffer, resample=True, sim_n=simulate_n, sigma=sigma, data_balancing=data_balancing, sim_type=sim_type, no_bar=no_bar, load_n=load_n)
             data.addData()
         else:
             logger.loadBuffer(replay_buffer, load_buffer, load_n)
