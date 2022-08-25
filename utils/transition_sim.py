@@ -52,7 +52,7 @@ def transitionSimulateSim(local_transition, agent, envs, sigma, i, planner_num_p
     # fig = visualizeTransition(agent, sim_obs, actions)
 
     is_expert = 1
-    transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy().astype(np.float32), sim_actions_new_star_idx[0].numpy(),
+    transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy().astype(np.float32), sim_actions_new_star_idx[0].numpy().astype(np.float32),
                                 sim_rewards2, sim_states2, sim_obs2, sim_dones2,
                                 sim_steps_lefts, np.array(is_expert))
     # if obs_type == 'pixel':
