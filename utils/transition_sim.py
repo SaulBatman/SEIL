@@ -9,14 +9,13 @@ from utils.create_agent import createAgent
 import threading
 
 from utils.torch_utils import ExpertTransition
-from utils.debug import visualizeTransitionTS
+from utils.debug import visualizeTransitionTS, visualizeTraj
 import matplotlib.pyplot as plt
 import torch
 import numpy as np
 from utils import transformations
 import scipy
 from scipy.ndimage import rotate
-from utils.debug import visualizeTraj
 
 def transitionSimulateSim(local_transition, agent, envs, sigma, i, planner_num_process):
     
@@ -69,7 +68,7 @@ class NpyBuffer():
         # self.view_type = 'render_center'
 
         self.load = np.load(path, allow_pickle=True)
-        self.agent = agent
+        # self.agent = agent
         self.resample = resample  # all obs come from cloud reprojection
         self.no_bar = no_bar
         self.view_type = config['view_type']
@@ -77,6 +76,15 @@ class NpyBuffer():
         self.load_n = load_n
         # self.step_idx = 0
         # self.epi_idx = 0
+
+        dpos = 0.02
+        drot_dgree = 180 / 8
+        self.n_a = 5
+        self.p_range = torch.tensor([0, 1])
+        self.dtheta_range = torch.tensor([-drot_dgree, drot_dgree])
+        self.dx_range = torch.tensor([-dpos, dpos])
+        self.dy_range = torch.tensor([-dpos, dpos])
+        self.dz_range = torch.tensor([-dpos, dpos])
 
         self.data_balancing = data_balancing
         self.sim_type = sim_type
@@ -93,8 +101,9 @@ class NpyBuffer():
         self.desk_center = (-0.527, -0.005)
         self.z_min = -0.080
         
-        ws_x = 0.4
-        ws_y = 0.4
+        self.workspace_size = 0.4
+        ws_x = self.workspace_size
+        ws_y = self.workspace_size
        
         self.desk_workspace = np.asarray([[self.desk_center[0] - ws_x / 2, self.desk_center[0] + ws_x / 2],
                                           [self.desk_center[1] - ws_y/2, self.desk_center[1] + ws_y/2],
@@ -140,7 +149,7 @@ class NpyBuffer():
 
         return result0
 
-    def getProjectImg(self, gripper_pos=(-0.5, 0, 0.1)):
+    def getProjectImg(self, gripper_pos=None):
         """
         return orthographic projection depth img from self.cloud
         obs_size_m: img coverage size in meters
@@ -276,8 +285,8 @@ class NpyBuffer():
         dtheta = r
         # pos = list(self.robot._getEndEffectorPosition())
         # gripper_rz = transformations.euler_from_quaternion(self.robot._getEndEffectorRotation())[2]
-        pos = self.simulate_pos[:3]
-        gripper_rz = self.simulate_pos[3]
+        pos = (self.simulate_pos[:3]).copy()
+        gripper_rz = (self.simulate_pos[3]).copy()
         pos[0] += dx
         pos[1] += dy
         pos[2] += dz
@@ -287,21 +296,109 @@ class NpyBuffer():
         pos[2] = np.clip(pos[2], self.simulate_z_threshold, self.desk_workspace[2, 1])
         if (temp1!=pos[0]) or (temp2!=pos[1]) or (temp3!=pos[2]):
             flag=False
-        gripper_rz += dtheta
-        self.simulate_pos = pos
+        gripper_rz = np.array(gripper_rz + dtheta)
+        sim_pos = np.append(pos, gripper_rz)
         # obs = self.renderer.getTopDownDepth(self.obs_size_m, self.heightmap_size, pos, 0)
         # obs = self.getProjectImg(gripper_pos=self.simulate_pos[:3])
-        gripper_img = self.getGripperImg(p, gripper_rz)
-        is_holding, obs = self.getObs(self.t[4], self.is_holding, self.current_pos)
-        if self.view_type.find('height') > -1:
-            obs[0][gripper_img == 1] = self.simulate_pos[2]
-        else:
-            obs[0][gripper_img == 1] = 0
+        # gripper_img = self.getGripperImg(p, gripper_rz)
+        # obs = self.getHeightmapReconstruct(self.current_pos)
+        is_holding, obs = self.getObs(self.t[4], self.is_holding, sim_pos)
+        # if self.view_type.find('height') > -1:
+        #     obs[0][gripper_img == 1] = self.simulate_pos[2]
+        # else:
+        #     obs[0][gripper_img == 1] = 0
         # gripper_img = gripper_img.reshape([1, self.heightmap_size, self.heightmap_size])
         # obs[gripper_img==1] = 0
         obs = obs.reshape([1, self.heightmap_size, self.heightmap_size])
         return False, obs, None, None, flag
         # return self.is_holding, None, obs, flag
+
+    def getCloud(self, raw):
+        # generate 'fake' point cloud for area outside the bins
+        workspace_size_mm = self.workspace_size * 1000
+        half_size = self.workspace_size / 2
+        x = np.arange(self.desk_center[0]*1000-workspace_size_mm, self.desk_center[0]*1000+workspace_size_mm, 2)
+        y = np.arange(self.desk_center[1]*1000-workspace_size_mm, self.desk_center[1]*1000+workspace_size_mm, 2)
+        xx, yy = np.meshgrid(x, y)
+        xx = xx/1000
+        yy = yy/1000
+        xx = xx.reshape(-1, 1)
+        yy = yy.reshape(-1, 1)
+        pts = np.concatenate([xx, yy, np.ones_like(yy)*(self.z_min-0.02)], 1)
+        pts = pts[np.logical_not(((pts[:, 0] < self.desk_center[0] + half_size) * (pts[:, 0] > self.desk_center[0] - half_size) * (pts[:, 1] < self.desk_center[1] + half_size) * (pts[:, 1] > self.desk_center[1] - half_size)))]
+        # pts = pts[np.logical_not(((pts[:, 1] < 0.239 + half_size) * (pts[:, 1] > 0.239 - half_size)) + ((pts[:, 1] < -0.21 + half_size) * (pts[:, 1] > -0.21 - half_size)))]
+        cloud = np.concatenate([raw, pts])
+        # uncomment for visualization
+        # pcd = open3d.geometry.PointCloud()
+        # pcd.points = open3d.utility.Vector3dVector(cloud)
+        # open3d.visualization.draw_geometries([pcd])
+        return cloud
+
+    def decodeActions(self, *args):
+        unscaled_p, unscaled_dx, unscaled_dy, unscaled_dz = args[0], args[1], args[2], args[3]
+
+        p = 0.5 * (unscaled_p + 1) * (self.p_range[1] - self.p_range[0]) + self.p_range[0]
+        dx = 0.5 * (unscaled_dx + 1) * (self.dx_range[1] - self.dx_range[0]) + self.dx_range[0]
+        dy = 0.5 * (unscaled_dy + 1) * (self.dy_range[1] - self.dy_range[0]) + self.dy_range[0]
+        dz = 0.5 * (unscaled_dz + 1) * (self.dz_range[1] - self.dz_range[0]) + self.dz_range[0]
+
+        if self.n_a == 5:
+            unscaled_dtheta = args[4]
+            dtheta = 0.5 * (unscaled_dtheta + 1) * (self.dtheta_range[1] - self.dtheta_range[0]) + self.dtheta_range[0]
+            actions = torch.stack([p, dx, dy, dz, dtheta], dim=1)
+            unscaled_actions = torch.stack([unscaled_p, unscaled_dx, unscaled_dy, unscaled_dz, unscaled_dtheta], dim=1)
+        else:
+            actions = torch.stack([p, dx, dy, dz], dim=1)
+            unscaled_actions = torch.stack([unscaled_p, unscaled_dx, unscaled_dy, unscaled_dz], dim=1)
+
+        return unscaled_actions, actions
+
+    def decodeSingleActions(self, *args):
+        unscaled_p, unscaled_dx, unscaled_dy, unscaled_dz = args[0], args[1], args[2], args[3]
+
+        p = 0.5 * (unscaled_p + 1) * (self.p_range[1] - self.p_range[0]) + self.p_range[0]
+        dx = 0.5 * (unscaled_dx + 1) * (self.dx_range[1] - self.dx_range[0]) + self.dx_range[0]
+        dy = 0.5 * (unscaled_dy + 1) * (self.dy_range[1] - self.dy_range[0]) + self.dy_range[0]
+        dz = 0.5 * (unscaled_dz + 1) * (self.dz_range[1] - self.dz_range[0]) + self.dz_range[0]
+
+        if self.n_a == 5:
+            unscaled_dtheta = args[4]
+            dtheta = 0.5 * (unscaled_dtheta + 1) * (self.dtheta_range[1] - self.dtheta_range[0]) + self.dtheta_range[0]
+            actions = torch.stack([p, dx, dy, dz, dtheta], dim=0)
+            unscaled_actions = torch.stack([unscaled_p, unscaled_dx, unscaled_dy, unscaled_dz, unscaled_dtheta], dim=0)
+        else:
+            actions = torch.stack([p, dx, dy, dz], dim=0)
+            unscaled_actions = torch.stack([unscaled_p, unscaled_dx, unscaled_dy, unscaled_dz], dim=0)
+
+        return unscaled_actions, actions
+
+    def getInvBCActions(self, scaled_action0, scaled_action1, sigma, method='gaussian'):
+        if method == 'gaussian':
+            p_inv = scaled_action0[0]
+            # sigma = 0.2 # 20% disturbance
+            x_inv = np.clip(np.random.normal(-scaled_action1[1], sigma), -1, 1)
+            y_inv = np.clip(np.random.normal(-scaled_action1[2], sigma), -1, 1)
+            z_inv = np.clip(np.random.normal(-scaled_action1[3], sigma), -1, 1)
+            r_inv = np.clip(np.random.normal(-scaled_action1[4], sigma), -1, 1)
+        elif method == 'identical':
+            p_inv = scaled_action0[0]
+            x_inv = -scaled_action1[1]
+            y_inv = -scaled_action1[2]
+            z_inv = -scaled_action1[3]
+            r_inv = -scaled_action1[4]
+        elif method == 'uniform':
+            pass
+        
+        # return self.decodeActions(*[scaled_actions_new[:, i] for i in range(self.n_a)])
+        scaled_actions = torch.tensor([[p_inv, x_inv, y_inv, z_inv, r_inv]])
+        return self.decodeActions(*[scaled_actions[:, i] for i in range(self.n_a)])
+
+    def getSimBCActions(self, scaled_action_inv, star_gripper_action):
+        scaled_actions_new = -scaled_action_inv.clone().detach()
+        scaled_actions_new[0][0] = star_gripper_action
+        # return self.decodeActions(*[scaled_actions_new[:, i] for i in range(self.n_a)])
+        return self.decodeActions(*[scaled_actions_new[:, i] for i in range(self.n_a)])
+
 
     def addData(self):
 
@@ -318,7 +415,7 @@ class NpyBuffer():
             for t in traj:
                 i+=1
                 self.t = t
-                self.cloud = t[9]
+                self.cloud = self.getCloud(t[9])
                 self.current_pos = t[10]
                 self.is_holding = t[0]
                 if self.resample:
@@ -353,7 +450,7 @@ class NpyBuffer():
                                     if flag == 1:
                                         self.simulate_buffer.append(new_transition)
                                     else:
-                                        self.extra_aug_buffer.append(new_transition)
+                                        self.extra_aug_buffer.append(transition)
                             
                             elif self.sim_type == 'depth':
                                 for _ in range(self.sim_n):
@@ -362,7 +459,7 @@ class NpyBuffer():
                                     if flag == 1:
                                         self.simulate_buffer.append(new_transition)
                                     else:
-                                        self.extra_aug_buffer.append(new_transition)
+                                        self.extra_aug_buffer.append(transition)
 
                             elif self.sim_type == "hybrid":
                                 for _ in range(self.sim_n):
@@ -374,7 +471,7 @@ class NpyBuffer():
                                         if flag == 1:
                                             self.simulate_buffer.append(new_transition)
                                         else:
-                                            self.extra_aug_buffer.append(new_transition)
+                                            self.extra_aug_buffer.append(transition)
 
                     else:
                         self.extra_aug_buffer.append(transition)
@@ -425,15 +522,15 @@ class NpyBuffer():
         if sim_dones2 or flag == 0: # if episode ends, stop TS
             flag = 0
             return None, flag
-        sim_actions1_star_idx_inv, sim_actions1_star_inv = self.agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx, self.sigma, "gaussian")
-        temp = np.zeros([1, self.agent.n_a])
+        sim_actions1_star_idx_inv, sim_actions1_star_inv = self.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx, self.sigma, "gaussian")
+        temp = np.zeros([1, self.n_a])
         temp[0, :] = sim_actions1_star_inv
         sim_states_new, sim_obs_new, _, _, sim_flag = self.simulate(torch.from_numpy(temp))
 
-        sim_actions_new_star_idx,  sim_actions_new_star= self.agent.getSimBCActions(sim_actions1_star_idx_inv, torch.tensor(sim_actions1_star_idx[0]))
+        sim_actions_new_star_idx,  sim_actions_new_star= self.getSimBCActions(sim_actions1_star_idx_inv, torch.tensor(sim_actions1_star_idx[0]))
         
         sim_obs0= [sim_obs0, sim_obs1, sim_obs2, sim_obs_new]
-        scaled_sim_action, unscales_sim_action = self.agent.decodeSingleActions(*[torch.tensor(sim_actions1_star_idx)[i] for i in range(5)])
+        scaled_sim_action, unscales_sim_action = self.decodeSingleActions(*[torch.tensor(sim_actions1_star_idx)[i] for i in range(5)])
         actions = [unscales_sim_action, sim_actions_new_star[0]]
         # fig = visualizeTransitionTS(sim_obs, actions)
         # fig.clf()

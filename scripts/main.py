@@ -215,7 +215,7 @@ def train():
                                 if flag == 1:
                                     simulate_buffer[i].append(new_transition)
                                 else:
-                                    extra_aug_buffer[i].append(new_transition)
+                                    extra_aug_buffer[i].append(transition)
                         
                         elif sim_type == "depth":
                             planner_envs.resetSimPose()
@@ -227,7 +227,7 @@ def train():
                                 if flag == 1:
                                     simulate_buffer[i].append(new_transition)
                                 else:
-                                    extra_aug_buffer[i].append(new_transition)
+                                    extra_aug_buffer[i].append(transition)
 
                         elif sim_type == "hybrid":
                             for _ in range(simulate_n):
@@ -239,7 +239,7 @@ def train():
                                     if flag == 1:
                                         simulate_buffer[i].append(new_transition)
                                     else:
-                                        extra_aug_buffer[i].append(new_transition)
+                                        extra_aug_buffer[i].append(transition)
                     else:
                         extra_aug_buffer[i].append(transition)
 
