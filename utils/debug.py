@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import torch
 import numpy as np
 
-def visualizeTransitionTS(sim_obs, actions):
+def visualizeTransitionTS(sim_obs, actions, view_obs_m=0.4*1.5):
 
     sim_obs1 = sim_obs[1]
     sim_obs2 = sim_obs[2]
@@ -13,13 +13,13 @@ def visualizeTransitionTS(sim_obs, actions):
 
     fig, axes = plt.subplots(1,3)
     axes[0].imshow(sim_obs1[0])
-    axes[0].arrow(x=64, y=64, dx=sim_actions1_star[2]/0.45*128, dy=sim_actions1_star[1]/0.45*128, width=.5) 
+    axes[0].arrow(x=64, y=64, dx=sim_actions1_star[2]/view_obs_m*128, dy=sim_actions1_star[1]/view_obs_m*128, width=.5) 
     axes[0].set_title("obs1")
     axes[0].text(0, 0, f"action: {np.round(sim_actions1_star.tolist(), 2)}")
     
 
     axes[1].imshow(sim_obs_new[0][0])
-    axes[1].arrow(x=64, y=64, dx=sim_actions_new_star[2]/0.45*128, dy=sim_actions_new_star[1]/0.45*128, width=.5) 
+    axes[1].arrow(x=64, y=64, dx=sim_actions_new_star[2]/view_obs_m*128, dy=sim_actions_new_star[1]/view_obs_m*128, width=.5) 
     axes[1].set_title("sim_obs_new")
     axes[1].text(0, 0, f"action: {np.round(sim_actions_new_star.tolist(), 2)}")
     
