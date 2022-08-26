@@ -78,7 +78,7 @@ class NpyBuffer():
         # self.epi_idx = 0
 
         dpos = 0.02
-        drot_dgree = 180 / 8
+        drot_dgree = np.deg2rad(180 / 8)
         self.n_a = 5
         self.p_range = torch.tensor([0, 1])
         self.dtheta_range = torch.tensor([-drot_dgree, drot_dgree])
