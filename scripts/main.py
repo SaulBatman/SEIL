@@ -196,7 +196,7 @@ def train():
             planner_actions_star_idx, planner_actions_star = agent.getActionFromPlan(plan_actions)
             states_, obs_, rewards, dones = planner_envs.step(planner_actions_star, auto_reset=True)
             for i in range(planner_num_process):
-                transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), planner_actions_star_idx[i].numpy(),
+                transition = ExpertTransition(states[i].numpy(), obs[i].numpy().astype(np.float32), planner_actions_star_idx[i].numpy(),
                                               rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
                                               np.array(100), np.array(1))
                 
@@ -279,6 +279,9 @@ def train():
                     local_transitions[i] = []
         if not no_bar:
             planner_bar.close()
+
+        if simulate_n > 0:
+            planner_envs.close()
 
         if expert_aug_n > 0:
             augmentBuffer(replay_buffer, buffer_aug_type, expert_aug_n)
