@@ -414,10 +414,13 @@ class NpyBuffer():
             i=0
             for t in traj:
                 i+=1
+                if t[2][0] == 0: # reinforce grasping action, make is consistnet with env planners
+                    t[2][0] = -1
                 self.t = t
                 self.cloud = self.getCloud(t[9])
                 self.current_pos = t[10]
                 self.is_holding = t[0]
+                
                 if self.resample:
                     # obs = self.getProjectImg(gripper_pos=t[10][:3])
                     if len(self.local_transitions) > 0:

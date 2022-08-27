@@ -122,7 +122,7 @@ def train():
     # setup env
     print('creating envs')
     envs = EnvWrapper(num_processes, simulator, env, env_config, planner_config)
-    if simulate_n > 0:
+    if simulate_n > 0 and not load_buffer:
         planner_envs = EnvWrapper(1, simulator, env, env_config, planner_config)
     # setup agent
     agent = createAgent()
@@ -176,7 +176,7 @@ def train():
             logger.loadBuffer(replay_buffer, load_buffer, load_n)
 
     if planner_episode > 0 and not load_sub:
-        if simulate_n > 0: # TS now only support 1 proces
+        if simulate_n > 0 and not load_buffer: # TS now only support 1 proces
             planner_envs = planner_envs
             planner_num_process = 1
         else:
@@ -280,8 +280,7 @@ def train():
         if not no_bar:
             planner_bar.close()
 
-        if simulate_n > 0:
-            planner_envs.close()
+        planner_envs.close()
 
         if expert_aug_n > 0:
             augmentBuffer(replay_buffer, buffer_aug_type, expert_aug_n)
