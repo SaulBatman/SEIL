@@ -258,8 +258,10 @@ def train():
                     if simulate_n > 0 and len(simulate_buffer[i]) > 0:
                         local_transitions[i]+=simulate_buffer[i]
 
-                    for t in local_transitions[i]:
-                        replay_buffer.add(t)
+                    for idx in range(len(local_transitions[i])):
+                        replay_buffer.add(local_transitions[i][idx])
+                        # if idx + 1 == len(local_transitions[i]):
+                        #     replay_buffer.addOnlyAug(local_transitions[i][idx], 4)
 
                     if data_balancing == "True" and simulate_n > 0:
                         for t in extra_aug_buffer[i]:
@@ -280,7 +282,7 @@ def train():
         if not no_bar:
             planner_bar.close()
 
-        planner_envs.close()
+        # planner_envs.close()
 
         if expert_aug_n > 0:
             augmentBuffer(replay_buffer, buffer_aug_type, expert_aug_n)

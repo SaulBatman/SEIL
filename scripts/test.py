@@ -1,7 +1,9 @@
 import copy
 import collections
 from tqdm import tqdm
-
+import sys
+sys.path.append('./')
+sys.path.append('..')
 import matplotlib.pyplot as plt
 
 from utils.create_agent import createAgent

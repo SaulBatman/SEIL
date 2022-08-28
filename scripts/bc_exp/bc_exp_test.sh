@@ -1,0 +1,4 @@
+python scripts/test.py --workspace_size=0.4 --env=close_loop_block_stacking --num_obj=2 --num_processes=1 --num_eval_process=5 --render=t --max_episode_steps=100 --dpos=0.02 --drot_n=8 --alg=bc_implicit --model=equi_d --equi_n=4 --n_hidden=64 --batch_size=64 --buffer=aug --lr=1e-3 --gamma=0.99 --seed=1 --sigma=0.2 --robot=kuka --load_model_pre=/home/mingxi/ws/001results/001Implicit_Equi/sugu/bc_implicit_equi_d/2stack/planner40_sn0/BC_BULLET_IMP_BC_2stack_planner40_sn0_sigma0.4_bc_implicit_equi_d_0825_2_31529548_1/models/snapshot_close_loop_block_stacking
+
+
+python main.py --workspace_size=0.4 --env=close_loop_block_stacking --num_obj=2 --num_processes=1 --num_eval_process=5 --render=t --max_episode_steps=50 --planner_episode=20 --dpos=0.02 --drot_n=4 --alg=bc_con --model=equi --equi_n=4 --n_hidden=64 --batch_size=64 --buffer=aug --lr=1e-3 --gamma=0.99 --seed=1 --sigma=0.2 --max_train_step=10000 --simulate_n=4 --eval_freq=500 --robot=panda
