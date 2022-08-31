@@ -414,7 +414,7 @@ class NpyBuffer():
             i=0
             for t in traj:
                 i+=1
-                if t[2][0] == 0: # reinforce grasping action, make is consistnet with env planners
+                if t[2][0] == 0: # reinforce grasping action, make is consistent with env planners
                     t[2][0] = -1
                 self.t = t
                 self.cloud = self.getCloud(t[9])

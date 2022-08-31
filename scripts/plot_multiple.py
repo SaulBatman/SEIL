@@ -806,11 +806,11 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/home/mingxi/ws/001results/001Implicit_Equi/DIAN_TEST_IMP/bc_implicit_equi_d/bowl'
+    base = '/home/mingxi/ws/001results/001Implicit_Equi/sugu/bc_implicit_equi_d/bowl'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 3000, window=100)
-    plotEvalCurve(base, 10000, freq=1000)
-    plotEvalBarChart(base, 10000, freq=1000)
+    plotEvalCurve(base, 20000, freq=2000)
+    plotEvalBarChart(base, 20000, freq=2000)
     # showPerformance(base)
     # plotLoss(base, 30000)
 
