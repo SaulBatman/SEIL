@@ -293,8 +293,109 @@ def plotEvalBarChart(base, step=50000, use_default_cm=False, freq=1000):
         print('{}: {:.1f}+{:.1f}'.format(names[j], ys[j]*100, errs[j]*100))
 
     plt.style.use('seaborn-whitegrid')
+    fig, ax = plt.subplots(figsize=(3*i, 5))
+    rects = ax.bar(np.arange(i), ys, yerr=errs, color=bar_colors, width=0.3, ecolor='black', capsize=5)
+    def autolabel(rects, errs):
+        """
+        Attach a text label above each bar displaying its height
+        """
+        i=0
+        for rect in rects:
+            height = rect.get_height()
+            ax.text(rect.get_x() + rect.get_width()/2., 1.05*height,
+                    f"{round(height*100,1)}+{round(errs[i]*100, 1)}%",
+                    ha='center', va='bottom')
+            i+=1
+    autolabel(rects, errs)
+    plt.xticks(np.arange(i), names)
+    plt.ylabel('eval success rate')
+    plt.yticks(np.arange(0., 1.05, 0.1))
+    plt.xlim((-0.5, i-0.5))
+    plt.grid(axis='x')
+    # plt.tight_layout()
+    plt.savefig(os.path.join(base, 'eval_bar.png'), bbox_inches='tight',pad_inches = 0)
+    plt.close()
+
+def plotAblationBarChart(base, legend,  step=50000, use_default_cm=False, freq=1000):
+    plt.figure(dpi=300)
+    MEDIUM_SIZE = 12
+    BIGGER_SIZE = 14
+
+    plt.rc('axes', titlesize=BIGGER_SIZE)  # fontsize of the axes title
+    plt.rc('axes', labelsize=BIGGER_SIZE)  # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
+    plt.rc('ytick', labelsize=MEDIUM_SIZE)  # fontsize of the tick labels
+
+    colors = "bgrycmkwbgrycmkw"
+    if use_default_cm:
+        color_map = {}
+    else:
+        color_map = {
+        }
+
+    linestyle_map = {
+    }
+    name_map = {
+    }
+
+    sequence = {
+        "4": 0,
+        "8": 1,
+        "16": 2,
+        "32": 3,
+
+        "Equi BC + TS +DB": 0, 
+        "Equi BC + TS": 1, 
+        "Equi BC": 2, 
+        "CNN BC + TS + DB": 3, 
+        "CNN BC": 4,
+    }
+
+    names = []
+    ys = []
+    errs = []
+    bar_colors = []
+    i = 0
+    methods = filter(lambda x: x[0] != '.', get_immediate_subdirectories(base))
+    for method in sorted(methods, key=lambda x: sequence[x] if x in sequence.keys() else x):
+        rs = []
+        for j, run in enumerate(get_immediate_subdirectories(os.path.join(base, method))):
+            try:
+                r = np.load(os.path.join(base, method, run, 'info/eval_success.npy'))
+                # data = pickle.load(open(os.path.join(base, method, run, 'log_data.pkl'), 'rb'))
+                # rewards = data['eval_eps_rewards']
+                # r = [np.mean(x) for x in rewards[:-1]]
+                rs.append(np.max(r[:step//freq]))
+            except Exception as e:
+                print(e)
+                continue
+
+        # plotEvalCurveAvg(rs, freq, label=name_map[method] if method in name_map else method,
+        #                  color=color_map[method] if method in color_map else colors[i],
+        #                  linestyle=linestyle_map[method] if method in linestyle_map else '-')
+        # plt.bar(i, np.mean(rs), yerr=stats.sem(rs), color=color_map[method] if method in color_map else colors[i], tick_label=name_map[method] if method in name_map else method)
+        names.append(name_map[method] if method in name_map else method)
+        ys.append(np.mean(rs))
+        errs.append(stats.sem(rs))
+        bar_colors.append(color_map[method] if method in color_map else colors[i])
+        i += 1
+
+    for j in range(i):
+        print('{}: {:.1f}+{:.1f}'.format(names[j], ys[j]*100, errs[j]*100))
+
+    plt.style.use('seaborn-whitegrid')
     plt.figure(figsize=(3*i, 5))
-    plt.bar(np.arange(i), ys, yerr=errs, color=bar_colors, width=0.3, ecolor='black', capsize=5)
+    ax = plt.bar(np.arange(i), ys, yerr=errs, color=bar_colors, width=0.3, ecolor='black', capsize=5)
+    def autolabel(rects):
+        """
+        Attach a text label above each bar displaying its height
+        """
+        for rect in rects:
+            height = rect.get_height()
+            ax.text(rect.get_x() + rect.get_width()/2., 1.05*height,
+                    '%d' % int(height),
+                    ha='center', va='bottom')
+    autolabel(ax)
     plt.xticks(np.arange(i), names)
     plt.ylabel('eval success rate')
     plt.yticks(np.arange(0., 1.05, 0.1))
@@ -806,11 +907,12 @@ def plotLoss(base, step):
 
 
 if __name__ == '__main__':
-    base = '/home/mingxi/ws/data/bc_con_equi_d/bowl'
+    base = '/home/mingxi/ws/DATA/001BCBC/Explicit_data/workspace0.4_CNN_SN0/bowl'
     # plotLearningCurve(base, 1000, window=20)
     # plotSuccessRate(base, 3000, window=100)
-    plotEvalCurve(base, 10000, freq=1000)
-    plotEvalBarChart(base, 10000, freq=1000)
+    plotEvalCurve(base, 20000, freq=2000)
+    plotEvalBarChart(base, 20000, freq=2000)
+    # plotAblationBarChart(base, ["Equi BC + TS +DB", "Equi BC + TS", "Equi BC", "CNN BC + TS + DB", "CNN BC"], 20000, freq=2000)
     # showPerformance(base)
     # plotLoss(base, 30000)
 
