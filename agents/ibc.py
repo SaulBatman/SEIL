@@ -7,7 +7,7 @@ from copy import deepcopy
 
 class DerivativeFreeOptimizer:
     """A simple derivative-free optimizer. Great for up to 5 dimensions."""
-    def __init__(self, device, n_a=5, train_samples=4096, inference_samples=2048, boundary_buffer=0.05):
+    def __init__(self, device, n_a=5, train_samples=512, inference_samples=2048, boundary_buffer=0.05):
         self.noise_scale = 0.33
         self.noise_shrink = 0.5
         self.iters = 3

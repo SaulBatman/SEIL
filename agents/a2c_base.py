@@ -145,10 +145,10 @@ class A2CBase(BaseAgent):
         unscaled_actions[rand_mask] = rand_act
         return self.decodeActions(*[unscaled_actions[:, i] for i in range(self.n_a)])
 
-    def getExpertActions(self, state, obs, eps):
-        with torch.no_grad():
-            unscaled_actions = self.forwardActor(state, obs, to_cpu=True)
-        return self.decodeActions(*[unscaled_actions[:, i] for i in range(self.n_a)])
+    # def getExpertActions(self, state, obs, eps):
+    #     with torch.no_grad():
+    #         unscaled_actions = self.forwardActor(state, obs, to_cpu=True)
+    #     return self.decodeActions(*[unscaled_actions[:, i] for i in range(self.n_a)])
 
     def getInvBCActions(self, scaled_action0, scaled_action1, sigma, method='gaussian'):
         if method == 'gaussian':

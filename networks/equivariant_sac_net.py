@@ -1563,7 +1563,8 @@ class EquivariantPolicySO2(SACGaussianPolicyBase):
         dxy = conv_out[:, 0:2]
         inv_act = conv_out[:, 2:self.action_dim]
         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:]), dim=1)
-        return mean
+        normalized_mean = torch.tanh(mean)
+        return normalized_mean
 
 class EquivariantPolicyO2(SACGaussianPolicyBase):
     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, kernel_size=3):
@@ -1592,7 +1593,8 @@ class EquivariantPolicyO2(SACGaussianPolicyBase):
         dxy = conv_out[:, 0:2]
         inv_act = conv_out[:, 2:self.action_dim]
         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:]), dim=1)
-        return mean
+        normalized_mean = torch.tanh(mean)
+        return normalized_mean
 
 # non-equi non-inv theta
 class EquivariantSACActor2(SACGaussianPolicyBase):
@@ -1678,7 +1680,8 @@ class EquivariantPolicy(torch.nn.Module):
         dxy = conv_out[:, 0:2]
         inv_act = conv_out[:, 2:]
         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:]), dim=1)
-        return torch.tanh(mean)
+        normalized_mean = torch.tanh(mean)
+        return normalized_mean
 
 class EquivariantPolicyDihedralInvTheta(SACGaussianPolicyBase):
     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
@@ -1704,7 +1707,8 @@ class EquivariantPolicyDihedralInvTheta(SACGaussianPolicyBase):
         dxy = conv_out[:, 0:2]
         inv_act = conv_out[:, 2:]
         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:]), dim=1)
-        return mean
+        normalized_mean = torch.tanh(mean)
+        return normalized_mean
 
 class EquivariantPolicyDihedral(SACGaussianPolicyBase):
     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
@@ -1731,7 +1735,8 @@ class EquivariantPolicyDihedral(SACGaussianPolicyBase):
         dtheta = conv_out[:, 2:3] - conv_out[:, 3:4]
         inv_act = conv_out[:, 4:self.action_dim + 1]
         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:2], dtheta), dim=1)
-        return mean
+        normalized_mean = torch.tanh(mean)
+        return normalized_mean
 
 class EquivariantPolicyDihedralSpatialSoftmax1(SACGaussianPolicyBase):
     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
@@ -1797,7 +1802,8 @@ class EquivariantPolicyDihedralSpatialSoftmax1(SACGaussianPolicyBase):
         dtheta = conv_out[:, 2:3] - conv_out[:, 3:4]
         inv_act = conv_out[:, 4:self.action_dim+1]
         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:2], dtheta), dim=1)
-        return mean
+        normalized_mean = torch.tanh(mean)
+        return normalized_mean
 
 class EquivariantPolicyDihedralSpatialSoftmax(SACGaussianPolicyBase):
     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
@@ -1864,7 +1870,8 @@ class EquivariantPolicyDihedralSpatialSoftmax(SACGaussianPolicyBase):
         dtheta = conv_out[:, 2:3] - conv_out[:, 3:4]
         inv_act = conv_out[:, 4:self.action_dim + 1]
         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:2], dtheta), dim=1)
-        return mean
+        normalized_mean = torch.tanh(mean)
+        return normalized_mean
 
 class EquivariantPolicyDihedralSpatialSoftmax2(SACGaussianPolicyBase):
     def __init__(self, obs_shape=(2, 128, 128), action_dim=5, n_hidden=128, initialize=True, N=4, kernel_size=3):
@@ -1937,7 +1944,8 @@ class EquivariantPolicyDihedralSpatialSoftmax2(SACGaussianPolicyBase):
         dtheta = conv_out[:, 2:3] - conv_out[:, 3:4]
         inv_act = conv_out[:, 4:self.action_dim + 1]
         mean = torch.cat((inv_act[:, 0:1], dxy, inv_act[:, 1:2], dtheta), dim=1)
-        return mean
+        normalized_mean = torch.tanh(mean)
+        return normalized_mean
 
 
 class EquivariantSACVecCriticBase(torch.nn.Module):

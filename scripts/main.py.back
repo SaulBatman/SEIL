@@ -15,7 +15,6 @@ from storage.per_aug_buffer import PrioritizedQLearningBufferAug
 from utils.logger import Logger
 from utils.schedules import LinearSchedule
 from utils.env_wrapper import EnvWrapper
-from utils.debug import visualizeBC, visualizeExpert
 
 from utils.create_agent import createAgent
 import threading
@@ -59,7 +58,7 @@ def saveModelAndInfo(logger, agent):
     logger.saveModel(logger.num_steps, env, agent)
     logger.saveLearningCurve(20)
     logger.saveLossCurve(100)
-    logger.saveTdErrorCurve(100)
+    # logger.saveTdErrorCurve(100)
     logger.saveStepLeftCurve(100)
     logger.saveExpertSampleCurve(100)
     logger.saveEvalCurve()
@@ -73,8 +72,9 @@ def evaluate(envs, agent, logger):
     evaled = 0
     temp_reward = [[] for _ in range(num_eval_processes)]
     eval_rewards = []
+    eval_success = []
     if not no_bar:
-        eval_bar = tqdm(total=num_eval_episodes)
+        eval_bar = tqdm(total=num_eval_episodes, position=1, leave=False)
     while evaled < num_eval_episodes:
         actions_star_idx, actions_star = agent.getGreedyActions(states, obs)
         states_, obs_, rewards, dones = envs.step(actions_star, auto_reset=True)
@@ -91,57 +91,18 @@ def evaluate(envs, agent, logger):
                 for r in reversed(temp_reward[i]):
                     R = r + gamma * R
                 eval_rewards.append(R)
+                eval_success.append(np.sum(temp_reward[i]))
                 temp_reward[i] = []
         if not no_bar:
             eval_bar.update(evaled - eval_bar.n)
     logger.eval_rewards.append(np.mean(eval_rewards[:num_eval_episodes]))
+    logger.eval_success.append(np.mean(eval_success[:num_eval_episodes]))
     if not no_bar:
+        eval_bar.clear()
         eval_bar.close()
 
 def countParameters(m):
     return sum(p.numel() for p in m.parameters() if p.requires_grad)
-
-def transitionSimulateSim(local_transition, agent, envs, sigma, i, planner_num_process):
-    
-
-    
-    #num_processes=1 # only support single process now
-
-    flag = 1
-    sim_startpoint = -3
-    sim_obs0 = local_transition[sim_startpoint].obs
-    sim_states0 = local_transition[sim_startpoint].state
-    sim_actions0_star_idx = local_transition[sim_startpoint].action
-    sim_states1, sim_obs1 = local_transition[sim_startpoint+1].state, local_transition[sim_startpoint+1].obs
-    sim_actions1_star_idx = local_transition[sim_startpoint+1].action
-    sim_steps_lefts = local_transition[sim_startpoint+1].step_left
-    sim_states2, sim_obs2 = local_transition[sim_startpoint+2].state, local_transition[sim_startpoint+2].obs
-    sim_rewards2, sim_dones2 = local_transition[sim_startpoint+2].reward, local_transition[sim_startpoint+2].done
-    if sim_dones2:
-        flag = 0
-        return None, flag
-    sim_actions1_star_idx_inv, sim_actions1_star_inv = agent.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx, sigma, "gaussian")
-    temp = np.zeros([planner_num_process, agent.n_a])
-    temp[i, :] = sim_actions1_star_inv
-    sim_states_new, sim_obs_new, _, _, sim_flag = envs.simulate(torch.from_numpy(temp))
-
-    sim_actions_new_star_idx,  sim_actions_new_star= agent.getGaussianBCActions(sim_actions1_star_idx_inv)
-    
-    # sim_obs = [sim_obs0, sim_obs1, sim_obs2, sim_obs_new]
-    # actions = [sim_actions1_star_idx, sim_actions_new_star_idx]
-    # fig = visualizeBC(agent, sim_obs, actions)
-    # fig.clf()
-
-    is_expert = 1
-    transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy(), sim_actions_new_star_idx[0].numpy(),
-                                sim_rewards2, sim_states2, sim_obs2, sim_dones2,
-                                sim_steps_lefts, np.array(is_expert))
-    # if obs_type == 'pixel':
-    #     transition = normalizeTransition(transition)
-    if sim_flag == False:
-        flag = 0
-    return transition, flag
-        
 
 def train():
     eval_thread = None
@@ -151,7 +112,6 @@ def train():
     # setup env
     print('creating envs')
     envs = EnvWrapper(num_processes, simulator, env, env_config, planner_config)
-    eval_envs = EnvWrapper(num_eval_processes, simulator, env, env_config, planner_config)
 
     # setup agent
     agent = createAgent()
@@ -205,79 +165,39 @@ def train():
         states, obs = planner_envs.reset()
         s = 0
         if not no_bar:
-            planner_bar = tqdm(total=planner_episode)
+            planner_bar = tqdm(total=planner_episode, leave=True)
         local_transitions = [[] for _ in range(planner_num_process)]
-       
-        simulate_buffer = [[] for _ in range(planner_num_process)]
         while j < planner_episode:
-            
             plan_actions = planner_envs.getNextAction()
             planner_actions_star_idx, planner_actions_star = agent.getActionFromPlan(plan_actions)
             states_, obs_, rewards, dones = planner_envs.step(planner_actions_star, auto_reset=True)
-            steps_lefts = planner_envs.getStepLeft()
             for i in range(planner_num_process):
                 transition = ExpertTransition(states[i].numpy(), obs[i].numpy(), planner_actions_star_idx[i].numpy(),
                                               rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
-                                              steps_lefts[i].numpy(), np.array(1))
+                                              np.array(100), np.array(1))
                 # if obs_type == 'pixel':
                     # transition = normalizeTransition(transition)
                 # replay_buffer.add(transition)
                 local_transitions[i].append(transition)
-                # print("1")
-                if len(local_transitions[i]) >=3 and ("bc" in alg) and (simulate_n>0):
-
-                    f1 = planner_envs.canSimulate()
-                    if f1[i] and not local_transitions[i][-2].state:
-                        if sim_type == "breadth":
-                            for _ in range(simulate_n):
-                                flag=0
-                                planner_envs.resetSimPose()
-                                # sigma = 0.2
-                                new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
-                                if flag == 1:
-                                    simulate_buffer[i].append(new_transition)
-                        
-                        elif sim_type == "depth":
-                            planner_envs.resetSimPose()
-                            for _ in range(simulate_n):
-                                flag=0
-                                
-                                # sigma = 0.2
-                                new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
-                                if flag == 1:
-                                    simulate_buffer[i].append(new_transition)
-
-                        elif sim_type == "hybrid":
-                            for _ in range(simulate_n):
-                                planner_envs.resetSimPose()
-                                for _ in range(simulate_n):
-                                    flag=0
-                                    # sigma = 0.2
-                                    new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
-                                    if flag == 1:
-                                        simulate_buffer[i].append(new_transition)
-                        
             states = copy.copy(states_)
             obs = copy.copy(obs_)
 
             for i in range(planner_num_process):
                 if dones[i] and rewards[i]:
-                    local_transitions[i]+=simulate_buffer[i]
                     for t in local_transitions[i]:
                         replay_buffer.add(t)
-                    # global_transitions.append(local_transitions[i])
-                    
-                    # visualizeExpert(agent, local_transitions[i])
                     local_transitions[i] = []
-                    simulate_buffer[i] = []
                     j += 1
                     s += 1
-                    
                     if not no_bar:
                         planner_bar.set_description('{:.3f}/{}, AVG: {:.3f}'.format(s, j, float(s) / j if j != 0 else 0))
                         planner_bar.update(1)
+                    if j == planner_episode:
+                        break
                 elif dones[i]:
                     local_transitions[i] = []
+        if not no_bar:
+            planner_bar.close()
 
         if expert_aug_n > 0:
             augmentBuffer(replay_buffer, buffer_aug_type, expert_aug_n)
@@ -299,7 +219,7 @@ def train():
             train_step(agent, replay_buffer, logger, p_beta_schedule)
             if logger.num_training_steps % 1000 == 0:
                 logger.saveLossCurve(100)
-                logger.saveTdErrorCurve(100)
+                # logger.saveTdErrorCurve(100)
             if not no_bar:
                 pbar.set_description('loss: {:.3f}, time: {:.2f}'.format(float(logger.getCurrentLoss()), time.time()-t0))
                 pbar.update()
@@ -311,10 +231,9 @@ def train():
         logger.saveModel(0, 'pretrain', agent)
 
     if not no_bar:
-        pbar = tqdm(total=max_train_step)
+        pbar = tqdm(total=max_train_step, position=0, leave=True)
         pbar.set_description('Episodes:0; Reward:0.0; Explore:0.0; Loss:0.0; Time:0.0')
     timer_start = time.time()
-
 
     while logger.num_training_steps < max_train_step:
         train_step(agent, replay_buffer, logger, p_beta_schedule)
@@ -348,7 +267,6 @@ def train():
     if logger.num_training_steps >= max_train_step:
         logger.saveResult()
     envs.close()
-    eval_envs.close()
     print('training finished')
     if not no_bar:
         pbar.close()

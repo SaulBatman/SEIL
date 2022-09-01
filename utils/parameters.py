@@ -80,9 +80,12 @@ training_group.add_argument('--train_simulate', type=strToBool, default=False)
 training_group.add_argument('--sigma', type=float, default=0.2)
 training_group.add_argument('--sim_type', type=str, choices=['depth', 'breadth', 'hybrid'], default='breadth')
 training_group.add_argument('--data_balancing', action='store_true')
+training_group.add_argument('--ts_from_cloud', type=strToBool, default=False)
+
 
 training_group.add_argument('--ibc_ts', type=int, default=2048)
 training_group.add_argument('--ibc_is', type=int, default=2048)
+training_group.add_argument('--save_multi_freq', type=int, default=0)
 
 eval_group = parser.add_argument_group('eval')
 eval_group.add_argument('--eval_freq', default=1000, type=int)
@@ -188,6 +191,7 @@ save_freq = args.save_freq
 action_selection = args.action_selection
 planner_episode = args.planner_episode
 
+save_multi_freq = args.save_multi_freq
 
 load_model_pre = args.load_model_pre
 is_test = args.test
@@ -216,6 +220,7 @@ train_simulate = args.train_simulate
 sigma = args.sigma
 sim_type = args.sim_type
 data_balancing = args.data_balancing
+ts_from_cloud = args.ts_from_cloud
 
 ibc_ts = args.ibc_ts
 ibc_is = args.ibc_is

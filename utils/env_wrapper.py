@@ -1,11 +1,14 @@
 import torch
 import os
-from helping_hands_rl_envs import env_factory
-# from bulletarm import env_factory
+# from helping_hands_rl_envs import env_factory
+from bulletarm import env_factory
 
 
 class EnvWrapper:
     def __init__(self, num_processes, simulator, env, env_config, planner_config):
+        if env == 'real':
+            # load a random env, because real-world does not need it
+            env = "close_loop_block_stacking"
         self.envs = env_factory.createEnvs(num_processes,env, env_config, planner_config)
 
     def reset(self):
