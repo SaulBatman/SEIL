@@ -9,6 +9,7 @@ class EnvWrapper:
         if env == 'real':
             # load a random env, because real-world does not need it
             env = "close_loop_block_stacking"
+            env_config['num_objects'] = 2
         self.envs = env_factory.createEnvs(num_processes,env, env_config, planner_config)
 
     def reset(self):

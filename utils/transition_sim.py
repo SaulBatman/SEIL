@@ -406,6 +406,7 @@ class NpyBuffer():
             N = len(self.load) if len(self.load) < self.load_n else self.load_n
             load_bar = tqdm(total=len(self.load), leave=True)
         tra_idx = 0
+        print(f"loading dataset (contains {len(self.load)} episodes)")
         for traj in self.load:
             tra_idx += 1
             self.local_transitions = []
