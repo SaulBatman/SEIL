@@ -294,8 +294,8 @@ class Logger(object):
                         t[2][0] = 0
                     # state obs action reward next_state next_obs done step_left expert
                     new = ExpertTransition(np.array([state]).astype(np.float32), t[1][1].astype(np.float32), t[2].astype(np.float32), t[3].astype(np.float32), t[4].astype(np.float32), t[5][1].astype(np.float32), t[6].astype(np.float32), t[7].astype(np.float32), t[8].astype(np.float32))
-                    print(new.state)
-                    print(new.action)
+                    # print(new.state)
+                    # print(new.action)
                     # plt.imshow(new.obs[0])                
                 elif "obj2_in_box" in path:
                     if flag1 == 0 and t[0] == True:

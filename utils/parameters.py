@@ -16,7 +16,7 @@ env_group.add_argument('--env', type=str, default='close_loop_block_stacking', h
 env_group.add_argument('--reward_type', type=str, default='sparse')
 env_group.add_argument('--simulator', type=str, default='pybullet')
 env_group.add_argument('--robot', type=str, default='panda')
-env_group.add_argument('--num_objects', type=int, default=1)
+env_group.add_argument('--num_objects', type=int, default=2)
 env_group.add_argument('--max_episode_steps', type=int, default=50)
 env_group.add_argument('--fast_mode', type=strToBool, default=True)
 env_group.add_argument('--action_sequence', type=str, default='pxyzr')
