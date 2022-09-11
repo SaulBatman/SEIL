@@ -324,7 +324,7 @@ class NpyBuffer():
         yy = yy/1000
         xx = xx.reshape(-1, 1)
         yy = yy.reshape(-1, 1)
-        pts = np.concatenate([xx, yy, np.ones_like(yy)*(self.z_min-0.02)], 1)
+        pts = np.concatenate([xx, yy, np.ones_like(yy)*(self.z_min-0.005)], 1)
         pts = pts[np.logical_not(((pts[:, 0] < self.desk_center[0] + half_size) * (pts[:, 0] > self.desk_center[0] - half_size) * (pts[:, 1] < self.desk_center[1] + half_size) * (pts[:, 1] > self.desk_center[1] - half_size)))]
         # pts = pts[np.logical_not(((pts[:, 1] < 0.239 + half_size) * (pts[:, 1] > 0.239 - half_size)) + ((pts[:, 1] < -0.21 + half_size) * (pts[:, 1] > -0.21 - half_size)))]
         cloud = np.concatenate([raw, pts])
@@ -478,6 +478,9 @@ class NpyBuffer():
                                             self.simulate_buffer.append(new_transition)
                                         else:
                                             self.extra_aug_buffer.append(transition)
+                            
+                            else:
+                                raise NotImplementedError
 
                     else:
                         self.extra_aug_buffer.append(transition)
