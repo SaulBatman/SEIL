@@ -77,14 +77,14 @@ class NpyBuffer():
         # self.step_idx = 0
         # self.epi_idx = 0
 
-        dpos = 0.02
-        drot_dgree = np.deg2rad(180 / 8)
+        self.dpos = 0.02
+        self.drot_dgree = np.deg2rad(180 / 8)
         self.n_a = 5
         self.p_range = torch.tensor([0, 1])
-        self.dtheta_range = torch.tensor([-drot_dgree, drot_dgree])
-        self.dx_range = torch.tensor([-dpos, dpos])
-        self.dy_range = torch.tensor([-dpos, dpos])
-        self.dz_range = torch.tensor([-dpos, dpos])
+        self.dtheta_range = torch.tensor([-self.drot_dgree, self.drot_dgree])
+        self.dx_range = torch.tensor([-self.dpos, self.dpos])
+        self.dy_range = torch.tensor([-self.dpos, self.dpos])
+        self.dz_range = torch.tensor([-self.dpos, self.dpos])
 
         self.data_balancing = data_balancing
         self.sim_type = sim_type
@@ -473,7 +473,7 @@ class NpyBuffer():
                                     for _ in range(self.sim_n):
                                         flag=0
                                         # sigma = 0.2
-                                        new_transition, flag = transitionSimulateSim()
+                                        new_transition, flag = self.transitionSimulateReal()
                                         if flag == 1:
                                             self.simulate_buffer.append(new_transition)
                                         else:
@@ -528,7 +528,10 @@ class NpyBuffer():
         if sim_dones2 or flag == 0: # if episode ends, stop TS
             flag = 0
             return None, flag
-        sim_actions1_star_idx_inv, sim_actions1_star_inv = self.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx, self.sigma, "gaussian")
+        while True:
+            sim_actions1_star_idx_inv, sim_actions1_star_inv = self.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx, self.sigma, "gaussian")
+            if torch.norm(sim_actions1_star_inv) > self.dpos*0.7:
+                break
         temp = np.zeros([1, self.n_a])
         temp[0, :] = sim_actions1_star_inv
         sim_states_new, sim_obs_new, _, _, sim_flag = self.simulate(torch.from_numpy(temp))
