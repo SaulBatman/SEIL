@@ -45,8 +45,8 @@
                 "--max_episode_steps=50", "--planner_episode=0", "--dpos=0.02", "--drot_n=8", "--alg=bc_con", "--model=cnn",
                  "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--buffer_aug_n=16","--lr=1e-3", "--gamma=0.99", "--seed=1 ",
                  "--max_train_step=10000", "--ts_from_cloud=f", "--simulate_n=0", "--eval_freq=-1", "--num_eval_episodes=1", "--robot=panda",
-                  "--sigma=0.4", "--view_type=render_center", "--workspace_size=0.4", "--load_n=1",
-                "--load_buffer=/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/outputs/buffer/trash5_3epi_obs0.5.npy"]
+                  "--sigma=0.4", "--view_type=render_center", "--workspace_size=0.4", "--load_n=1", 
+                "--load_buffer=/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/outputs/buffer/drawer1_10.npy"]
         },
         {
             "name": "real-world explicit training with TS",
@@ -55,12 +55,12 @@
             "program": "/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--env=real", "--num_obj=2", "--num_processes=5", "--num_eval_process=1", "--render=f", "--view_scale=1.5",
+            "args": ["--env=real_drawer", "--num_obj=2", "--num_processes=5", "--num_eval_process=1", "--render=f", "--view_scale=1.5",
                 "--max_episode_steps=50", "--planner_episode=0", "--dpos=0.02", "--drot_n=8", "--alg=bc_con", "--model=cnn",
                  "--equi_n=4", "--n_hidden=64", "--batch_size=64", "--buffer=aug", "--buffer_aug_n=64","--lr=1e-3", "--gamma=0.99", "--seed=1 ",
-                 "--max_train_step=10000", "--ts_from_cloud=t", "--simulate_n=1", "--eval_freq=-1", "--num_eval_episodes=1", "--robot=panda",
+                 "--max_train_step=10000", "--ts_from_cloud=t", "--simulate_n=1", "--eval_freq=-1", "--num_eval_episodes=1", "--robot=kuka",
                   "--sigma=0.4", "--view_type=render_center", "--workspace_size=0.4", "--data_balancing", "--load_n=1",
-                "--load_buffer=/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/outputs/buffer/trash5_3epi_obs0.5.npy"]
+                "--load_buffer=/home/mingxi/ws/equi_close_loop_new/BC/equi_close_loop/scripts/outputs/buffer/drawer1_10.npy"]
         },
         {
             "name": "real-world explicit training with direct loaded TS",

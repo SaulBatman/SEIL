@@ -64,7 +64,7 @@ def transitionSimulateSim(local_transition, agent, envs, sigma, i, planner_num_p
 
 
 class NpyBuffer():
-    def __init__(self, config, agent, path, buffer, resample=True, sim_n=4, sigma=0.4, data_balancing=True, sim_type='breadth', no_bar = "False", load_n=9999):
+    def __init__(self, config, env, path, buffer, resample=True, sim_n=4, sigma=0.4, data_balancing=True, sim_type='breadth', no_bar = "False", load_n=9999):
         # self.view_type = 'render_center'
 
         self.load = np.load(path, allow_pickle=True)
@@ -114,7 +114,13 @@ class NpyBuffer():
 
         self.obs_size_m = ws_x * self.view_scale
         self.simulate_z_threshold = self.desk_workspace[2][0] + 0.07
-        
+
+        if "drawer" in env:
+            self.obs_gripper_offset = 0.065
+            
+        else:
+            self.obs_gripper_offset = 0
+        print("self.obs_gripper_offset", self.obs_gripper_offset)
 
     def getTransition(self):
         step_total = len(self.load[self.epi_idx])
@@ -158,7 +164,7 @@ class NpyBuffer():
         return depth image
         """
         cloud = np.copy(self.cloud)
-        cloud = cloud[(cloud[:, 2] < max(gripper_pos[2], self.z_min + 0.05))]
+        cloud = cloud[(cloud[:, 2] < max(gripper_pos[2]+0.065, self.z_min + 0.05))]
         view_matrix = transformations.euler_matrix(0, np.pi, 0).dot(np.eye(4))
         # view_matrix = np.eye(4)
         view_matrix[:3, 3] = [gripper_pos[0], -gripper_pos[1], gripper_pos[2]]
@@ -533,7 +539,7 @@ class NpyBuffer():
             return None, flag
         while True:
             sim_actions1_star_idx_inv, sim_actions1_star_inv = self.getInvBCActions(sim_actions0_star_idx, sim_actions1_star_idx, self.sigma, "gaussian")
-            if torch.norm(sim_actions1_star_inv) > self.dpos*0.7:
+            if torch.norm(sim_actions1_star_inv) > self.dpos*0.3:
                 break
         temp = np.zeros([1, self.n_a])
         temp[0, :] = sim_actions1_star_inv
