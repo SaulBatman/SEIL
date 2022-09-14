@@ -164,7 +164,7 @@ class NpyBuffer():
         return depth image
         """
         cloud = np.copy(self.cloud)
-        cloud = cloud[(cloud[:, 2] < max(gripper_pos[2]+0.065, self.z_min + 0.05))]
+        cloud = cloud[(cloud[:, 2] < max(gripper_pos[2]+self.obs_gripper_offset, self.z_min + 0.05))]
         view_matrix = transformations.euler_matrix(0, np.pi, 0).dot(np.eye(4))
         # view_matrix = np.eye(4)
         view_matrix[:3, 3] = [gripper_pos[0], -gripper_pos[1], gripper_pos[2]]
@@ -304,6 +304,7 @@ class NpyBuffer():
             flag=False
         gripper_rz = np.array(gripper_rz + dtheta)
         sim_pos = np.append(pos, gripper_rz)
+        self.simulate_pos = sim_pos.copy()
         # obs = self.renderer.getTopDownDepth(self.obs_size_m, self.heightmap_size, pos, 0)
         # obs = self.getProjectImg(gripper_pos=self.simulate_pos[:3])
         # gripper_img = self.getGripperImg(p, gripper_rz)
