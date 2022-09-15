@@ -115,11 +115,13 @@ class NpyBuffer():
         self.obs_size_m = ws_x * self.view_scale
         self.simulate_z_threshold = self.desk_workspace[2][0] + 0.07
 
+        
         if "drawer" in env:
-            self.obs_gripper_offset = 0.065
-            
+            self.obs_gripper_offset = -0.03
+            self.desk_offset = 0.1
         else:
             self.obs_gripper_offset = 0
+            self.desk_offset = 0.05
         print("self.obs_gripper_offset", self.obs_gripper_offset)
 
     def getTransition(self):
@@ -164,7 +166,8 @@ class NpyBuffer():
         return depth image
         """
         cloud = np.copy(self.cloud)
-        cloud = cloud[(cloud[:, 2] < max(gripper_pos[2]+self.obs_gripper_offset, self.z_min + 0.05))]
+        cloud = cloud[(cloud[:, 2] < max(gripper_pos[2]+self.obs_gripper_offset, self.z_min + + self.desk_offset))]
+        # cloud = cloud[(cloud[:, 2] < max(gripper_pos[2], self.z_min + self.desk_offset))]
         view_matrix = transformations.euler_matrix(0, np.pi, 0).dot(np.eye(4))
         # view_matrix = np.eye(4)
         view_matrix[:3, 3] = [gripper_pos[0], -gripper_pos[1], gripper_pos[2]]
@@ -438,6 +441,7 @@ class NpyBuffer():
                     else:
                         p=1
                     is_holding, obs = self.getObs(p, self.is_holding, self.current_pos)
+                    plt.imshow(obs[0])
                     transition = ExpertTransition(is_holding, obs.astype(np.float32), 
                                                   t[2].astype(np.float32), t[3].astype(np.float32), 
                                                   np.array(False).astype(np.float32), t[5][1].astype(np.float32), 
