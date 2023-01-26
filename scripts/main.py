@@ -20,7 +20,6 @@ from utils.create_agent import createAgent
 import threading
 
 from utils.torch_utils import ExpertTransition
-from utils.debug import visualizeTransitionTS
 from utils.transition_sim import NpyBuffer, transitionSimulateSim
 import matplotlib.pyplot as plt
 
@@ -166,126 +165,113 @@ def train():
     if load_sub:
         logger.loadCheckPoint(os.path.join(log_dir, load_sub, 'checkpoint'), envs, agent, replay_buffer)
 
-    if load_buffer is not None and not load_sub:
-        if load_buffer.split('.')[-1] == 'npy' and not ts_from_cloud:
-            logger.loadNpyBuffer(replay_buffer, load_buffer, load_n)
-        elif load_buffer.split('.')[-1] == 'npy' and ts_from_cloud:
-            data = NpyBuffer(env_config, env, load_buffer, replay_buffer, resample=True, sim_n=simulate_n, sigma=sigma, data_balancing=data_balancing, sim_type=sim_type, no_bar=no_bar, load_n=load_n)
-            data.addData()
-        else:
-            logger.loadBuffer(replay_buffer, load_buffer, load_n)
+    if not load_sub:
+        if load_buffer is not None:
+            if load_buffer.split('.')[-1] == 'npy' and not ts_from_cloud:
+                logger.loadNpyBuffer(replay_buffer, load_buffer, load_n)
+            elif load_buffer.split('.')[-1] == 'npy' and ts_from_cloud:
+                data = NpyBuffer(env_config, env, load_buffer, replay_buffer, resample=True, sim_n=simulate_n, sigma=sigma, data_balancing=data_balancing, sim_type=sim_type, no_bar=no_bar, load_n=load_n)
+                data.addData()
+            else:
+                logger.loadBuffer(replay_buffer, load_buffer, load_n)
 
-    if planner_episode > 0 and not load_sub:
-        if simulate_n > 0 and not load_buffer: # TS now only support 1 proces
-            planner_envs = planner_envs
-            planner_num_process = 1
-        else:
-            planner_envs = envs
-            planner_num_process = num_processes
-        j = 0
-        states, obs = planner_envs.reset()
-        s = 0
-        if not no_bar:
-            planner_bar = tqdm(total=planner_episode, leave=True)
-        local_transitions = [[] for _ in range(planner_num_process)]
+        elif planner_episode > 0:
+            if simulate_n > 0 and not load_buffer: # TS now only support 1 process now
+                planner_envs = planner_envs
+                planner_num_process = 1
+            else:
+                planner_envs = envs
+                planner_num_process = num_processes
+            j = 0
+            states, obs = planner_envs.reset()
+            s = 0
+            if not no_bar:
+                planner_bar = tqdm(total=planner_episode, leave=True)
+            local_transitions = [[] for _ in range(planner_num_process)]
 
-        simulate_buffer = [[] for _ in range(planner_num_process)]
-        extra_aug_buffer = [[] for _ in range(planner_num_process)]
-        while j < planner_episode:
-            plan_actions = planner_envs.getNextAction()
-            planner_actions_star_idx, planner_actions_star = agent.getActionFromPlan(plan_actions)
-            states_, obs_, rewards, dones = planner_envs.step(planner_actions_star, auto_reset=True)
-            for i in range(planner_num_process):
-                transition = ExpertTransition(states[i].numpy(), obs[i].numpy().astype(np.float32), planner_actions_star_idx[i].numpy(),
-                                              rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
-                                              np.array(100), np.array(1))
-                
-                # if obs_type == 'pixel':
-                    # transition = normalizeTransition(transition)
-                # replay_buffer.add(transition)
-                local_transitions[i].append(transition)
-                # print(transition.state)
-                # print(transition.action)
-                # plt.imshow(transition.obs[0])
-                if len(local_transitions[i]) >=3 and ("bc" in alg) and (simulate_n>0):
+            simulate_buffer = [[] for _ in range(planner_num_process)]
+            extra_aug_buffer = [[] for _ in range(planner_num_process)]
+            while j < planner_episode:
+                plan_actions = planner_envs.getNextAction()
+                planner_actions_star_idx, planner_actions_star = agent.getActionFromPlan(plan_actions)
+                states_, obs_, rewards, dones = planner_envs.step(planner_actions_star, auto_reset=True)
+                for i in range(planner_num_process):
+                    transition = ExpertTransition(states[i].numpy(), obs[i].numpy().astype(np.float32), planner_actions_star_idx[i].numpy(),
+                                                rewards[i].numpy(), states_[i].numpy(), obs_[i].numpy(), dones[i].numpy(),
+                                                np.array(100), np.array(1))
+                    local_transitions[i].append(transition)
+                    if len(local_transitions[i]) >=3 and ("bc" in alg) and (simulate_n>0):
 
-                    f1 = planner_envs.canSimulate()
-                    if not local_transitions[i][-2].state:
-                        if sim_type == "breadth":
-                            for _ in range(simulate_n):
-                                flag=0
-                                planner_envs.resetSimPose()
-                                # sigma = 0.2
-                                new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
-                                if flag == 1:
-                                    simulate_buffer[i].append(new_transition)
-                                else:
-                                    extra_aug_buffer[i].append(transition)
-                        
-                        elif sim_type == "depth":
-                            planner_envs.resetSimPose()
-                            for _ in range(simulate_n):
-                                flag=0
-                                
-                                # sigma = 0.2
-                                new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
-                                if flag == 1:
-                                    simulate_buffer[i].append(new_transition)
-                                else:
-                                    extra_aug_buffer[i].append(transition)
-
-                        elif sim_type == "hybrid":
-                            for _ in range(simulate_n):
-                                planner_envs.resetSimPose()
+                        f1 = planner_envs.canSimulate()
+                        if not local_transitions[i][-2].state:
+                            if sim_type == "breadth":
                                 for _ in range(simulate_n):
                                     flag=0
+                                    planner_envs.resetSimPose()
                                     # sigma = 0.2
                                     new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
                                     if flag == 1:
                                         simulate_buffer[i].append(new_transition)
                                     else:
                                         extra_aug_buffer[i].append(transition)
-                    else:
-                        extra_aug_buffer[i].append(transition)
+                            
+                            elif sim_type == "depth":
+                                planner_envs.resetSimPose()
+                                for _ in range(simulate_n):
+                                    flag=0
+                                    
+                                    # sigma = 0.2
+                                    new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                    if flag == 1:
+                                        simulate_buffer[i].append(new_transition)
+                                    else:
+                                        extra_aug_buffer[i].append(transition)
+
+                            elif sim_type == "hybrid":
+                                for _ in range(simulate_n):
+                                    planner_envs.resetSimPose()
+                                    for _ in range(simulate_n):
+                                        flag=0
+                                        # sigma = 0.2
+                                        new_transition, flag = transitionSimulateSim(local_transitions[i], agent, planner_envs, sigma, i, planner_num_process)
+                                        if flag == 1:
+                                            simulate_buffer[i].append(new_transition)
+                                        else:
+                                            extra_aug_buffer[i].append(transition)
+                        else:
+                            extra_aug_buffer[i].append(transition)
 
 
-            states = copy.copy(states_)
-            obs = copy.copy(obs_)
+                states = copy.copy(states_)
+                obs = copy.copy(obs_)
 
-            for i in range(planner_num_process):
-                if dones[i] and rewards[i]:
+                for i in range(planner_num_process):
+                    if dones[i] and rewards[i]:
 
-                    if simulate_n > 0 and len(simulate_buffer[i]) > 0:
-                        local_transitions[i]+=simulate_buffer[i]
+                        if simulate_n > 0 and len(simulate_buffer[i]) > 0:
+                            local_transitions[i]+=simulate_buffer[i]
 
-                    for idx in range(len(local_transitions[i])):
-                        replay_buffer.add(local_transitions[i][idx])
-                        # if idx + 1 == len(local_transitions[i]):
-                        #     replay_buffer.addOnlyAug(local_transitions[i][idx], 4)
+                        for idx in range(len(local_transitions[i])):
+                            replay_buffer.add(local_transitions[i][idx])
 
-                    if data_balancing == "True" and simulate_n > 0:
-                        for t in extra_aug_buffer[i]:
-                            replay_buffer.addOnlyAug(t, simulate_n)
-                    
-                    local_transitions[i] = []
-                    simulate_buffer[i] = []
-                    extra_aug_buffer[i] = []
-                    j += 1
-                    s += 1
-                    if not no_bar:
-                        planner_bar.set_description('{:.3f}/{}, AVG: {:.3f}'.format(s, j, float(s) / j if j != 0 else 0))
-                        planner_bar.update(1)
-                    if j == planner_episode:
-                        break
-                elif dones[i]:
-                    local_transitions[i] = []
-        if not no_bar:
-            planner_bar.close()
-
-        # planner_envs.close()
-
-        if expert_aug_n > 0:
-            augmentBuffer(replay_buffer, buffer_aug_type, expert_aug_n)
+                        if data_balancing == "True" and simulate_n > 0:
+                            for t in extra_aug_buffer[i]:
+                                replay_buffer.addOnlyAug(t, simulate_n)
+                        
+                        local_transitions[i] = []
+                        simulate_buffer[i] = []
+                        extra_aug_buffer[i] = []
+                        j += 1
+                        s += 1
+                        if not no_bar:
+                            planner_bar.set_description('{:.3f}/{}, AVG: {:.3f}'.format(s, j, float(s) / j if j != 0 else 0))
+                            planner_bar.update(1)
+                        if j == planner_episode:
+                            break
+                    elif dones[i]:
+                        local_transitions[i] = []
+            if not no_bar:
+                planner_bar.close()
 
         if alg in ['curl_sac', 'curl_sacfd', 'curl_sacfd_mean']:
             if not no_bar:
