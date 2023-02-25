@@ -9,7 +9,6 @@ from utils.create_agent import createAgent
 import threading
 
 from utils.torch_utils import ExpertTransition
-from utils.debug import visualizeTransitionTS, visualizeTraj
 import matplotlib.pyplot as plt
 import torch
 import numpy as np
