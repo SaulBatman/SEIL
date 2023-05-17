@@ -9,9 +9,7 @@ sys.path.append('./')
 sys.path.append('..')
 from utils.parameters import *
 from storage.buffer import QLearningBufferExpert, QLearningBuffer
-from storage.per_buffer import PrioritizedQLearningBuffer, EXPERT, NORMAL
 from storage.aug_buffer import QLearningBufferAug
-from storage.per_aug_buffer import PrioritizedQLearningBufferAug
 from utils.logger import Logger
 from utils.schedules import LinearSchedule
 from utils.env_wrapper import EnvWrapper
@@ -145,18 +143,10 @@ def train():
     hyper_parameters['model_shape'] = agent.getModelStr()
     logger.saveParameters(hyper_parameters)
 
-    if buffer_type == 'per':
-        replay_buffer = PrioritizedQLearningBuffer(buffer_size, per_alpha, NORMAL)
-    elif buffer_type == 'per_expert':
-        replay_buffer = PrioritizedQLearningBuffer(buffer_size, per_alpha, EXPERT)
-    elif buffer_type == 'expert':
-        replay_buffer = QLearningBufferExpert(buffer_size)
-    elif buffer_type == 'normal':
+    if buffer_type == 'normal':
         replay_buffer = QLearningBuffer(buffer_size)
     elif buffer_type == 'aug':
         replay_buffer = QLearningBufferAug(buffer_size, aug_n=buffer_aug_n)
-    elif buffer_type == 'per_expert_aug':
-        replay_buffer = PrioritizedQLearningBufferAug(buffer_size, per_alpha, EXPERT, aug_n=buffer_aug_n)
     else:
         raise NotImplementedError
     exploration = LinearSchedule(schedule_timesteps=explore, initial_p=init_eps, final_p=final_eps)
@@ -273,14 +263,6 @@ def train():
             if not no_bar:
                 planner_bar.close()
 
-        if alg in ['curl_sac', 'curl_sacfd', 'curl_sacfd_mean']:
-            if not no_bar:
-                pre_train_bar = tqdm(total=1600)
-            while j < 1600:
-                preTrainCURLStep(agent, replay_buffer, logger)
-                j += 1
-                if not no_bar:
-                    pre_train_bar.update(1)
 
     # pre train
     if pre_train_step > 0 and not load_sub and not load_model_pre:

@@ -2,8 +2,9 @@ from utils.parameters import *
 from networks.cnn import Actor
 
 from agents.bc_continuous import BehaviorCloningContinuous
-
+from agents.ibc import ImplicitBehaviorCloning
 from networks.equivariant_sac_net import EquivariantPolicy, EquivariantPolicyDihedral
+from networks.cnn import CNNEBM
 
 
 def createAgent(test=False):
@@ -31,6 +32,18 @@ def createAgent(test=False):
             policy = EquivariantPolicy((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
         elif model == 'equi_d':
             policy = EquivariantPolicyDihedral((obs_channel, crop_size, crop_size), len(action_sequence), n_hidden=n_hidden, initialize=initialize, N=equi_n).to(device)
+        elif model == 'cnn':
+            policy = Actor(len(action_sequence)).to(device)
+
+        else:
+            raise NotImplementedError
+        agent.initNetwork(policy)
+        
+    elif alg in ['bc_implicit']:
+        agent = ImplicitBehaviorCloning(lr=lr, gamma=gamma, device=device, dx=dpos, dy=dpos, dz=dpos, dr=drot,
+                                          n_a=len(action_sequence), ibc_ts=ibc_ts, ibc_is=ibc_is)
+        if model == 'cnn_ssm':
+            policy = CNNEBM(len(action_sequence), reducer='spatial_softmax').to(device)
         else:
             raise NotImplementedError
         agent.initNetwork(policy)

@@ -22,15 +22,15 @@ python main.py --env=close_loop_block_in_bowl --model=cnn
 # run implicit BC baseline
 python main.py --env=close_loop_block_in_bowl --model=ibc
 ```
-4. Run real-world experiments in Block in Bowl (dataset link)
+4. Run real-world experiments in Block in Bowl after unzip data into /scripts/buffer(dataset link)
 ```
 cd SEIL/scripts
 # run SEIL
-python main.py --env=real_close_loop_block_in_bowl --model=equi_d
+python main.py --env=real_close_loop_block_in_bowl --model=equi_d --load_buffer=/YOURPATH/SEIL/scripts/buffer/bowl_new10.npy
 # run CNN baseline
-python main.py --env=real_close_loop_block_in_bowl --model=cnn
+python main.py --env=real_close_loop_block_in_bowl --model=cnn --load_buffer=/YOURPATH/SEIL/scripts/buffer/bowl_new10.npy
 # run implicit BC baseline
-python main.py --env=real_close_loop_block_in_bowl --model=ibc
+python main.py --env=real_close_loop_block_in_bowl --model=ibc --load_buffer=/YOURPATH/SEIL/scripts/buffer/bowl_new10.npy
 ```
 # Note
 * All saved models and parameters are defaultly saved in YOURPATH/SEIL/scripts/outputs

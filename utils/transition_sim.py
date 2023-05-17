@@ -40,14 +40,6 @@ def transitionSimulateSim(local_transition, agent, envs, sigma, i, planner_num_p
 
     sim_actions_new_star_idx,  sim_actions_new_star= agent.getSimBCActions(sim_actions1_star_idx_inv, torch.tensor(sim_actions1_star_idx[0]))
     
-    sim_obs = [sim_obs0, sim_obs1, sim_obs2, sim_obs_new]
-    scaled_sim_action, unscales_sim_action = agent.decodeSingleActions(*[torch.tensor(sim_actions1_star_idx)[i] for i in range(5)])
-    actions = [unscales_sim_action, sim_actions_new_star[0]]
-    # fig = visualizeTransitionTS(sim_obs, actions)
-    # fig.clf()
-    # sim_obs = [sim_obs1, sim_obs2]
-    # actions = [sim_actions1_star_idx]
-    # fig = visualizeTransition(agent, sim_obs, actions)
 
     is_expert = 1
     transition = ExpertTransition(sim_states_new[i].numpy(), sim_obs_new[i].numpy().astype(np.float32), sim_actions_new_star_idx[0].numpy().astype(np.float32),
