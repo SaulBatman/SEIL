@@ -17,20 +17,22 @@ export PYTHONPATH=$PYTHONPATH:/YOURPATH/BulletArm/
 cd SEIL/scripts
 # run SEIL
 python main.py --env=close_loop_block_in_bowl --model=equi_d
-# run CNN baseline
+# run CNN w/ TS
 python main.py --env=close_loop_block_in_bowl --model=cnn
+# run CNN baseline
+python main.py --env=close_loop_block_in_bowl --model=cnn --simulate_n=0
 # run implicit BC baseline
-python main.py --env=close_loop_block_in_bowl --model=ibc
+python main.py --env=close_loop_block_in_bowl --model=ibc --simulate_n=0
 ```
-4. Run real-world experiments in Block in Bowl after unzip data into /scripts/buffer(dataset link)
+4. Run real-world experiments in Block in Bowl after unzip data into /scripts/buffer([dataset link](https://drive.google.com/drive/folders/14Df4-aKpS9uG_I6Hqfmj7c5srFYtfC_r?usp=sharing))
 ```
 cd SEIL/scripts
 # run SEIL
-python main.py --env=real_close_loop_block_in_bowl --model=equi_d --load_buffer=/YOURPATH/SEIL/scripts/buffer/bowl_new10.npy
+python main.py --env=real_close_loop_block_in_bowl --model=equi_d --load_buffer=/YOURPATH/SEIL/scripts/buffer/bowl.npy
 # run CNN baseline
-python main.py --env=real_close_loop_block_in_bowl --model=cnn --load_buffer=/YOURPATH/SEIL/scripts/buffer/bowl_new10.npy
+python main.py --env=real_close_loop_block_in_bowl --model=cnn --load_buffer=/YOURPATH/SEIL/scripts/buffer/bowl.npy
 # run implicit BC baseline
-python main.py --env=real_close_loop_block_in_bowl --model=ibc --load_buffer=/YOURPATH/SEIL/scripts/buffer/bowl_new10.npy
+python main.py --env=real_close_loop_block_in_bowl --model=ibc --load_buffer=/YOURPATH/SEIL/scripts/buffer/bowl.npy
 ```
 # Note
 * All saved models and parameters are defaultly saved in YOURPATH/SEIL/scripts/outputs
@@ -48,3 +50,4 @@ python main.py --env=real_close_loop_block_in_bowl --model=ibc --load_buffer=/YO
   ```
   --render=t
   ```
+* If you are using your own real-world data, please make sure that transition simulation has the access to your point-cloud-to-image projection function. 

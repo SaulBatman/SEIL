@@ -126,6 +126,9 @@ num_objects = args.num_objects
 max_episode_steps = args.max_episode_steps
 fast_mode = args.fast_mode
 action_sequence = args.action_sequence
+# if args.model == 'equi_d' and args.simulate_n > 0:
+#     print("TS only supports num_processes = 1")
+#     args.num_processes = 1
 num_processes = args.num_processes
 num_eval_processes = args.num_eval_processes
 render = args.render

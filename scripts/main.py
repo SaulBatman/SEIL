@@ -119,8 +119,10 @@ def train():
     # setup env
     print('creating envs')
     envs = EnvWrapper(num_processes, simulator, env, env_config, planner_config)
-    if simulate_n > 0 and not load_buffer:
+    if simulate_n > 0:
         planner_envs = EnvWrapper(1, simulator, env, env_config, planner_config)
+    else:
+        planner_envs = envs
     # setup agent
     agent = createAgent()
     eval_agent = createAgent(test=True)
@@ -149,7 +151,6 @@ def train():
         replay_buffer = QLearningBufferAug(buffer_size, aug_n=buffer_aug_n)
     else:
         raise NotImplementedError
-    exploration = LinearSchedule(schedule_timesteps=explore, initial_p=init_eps, final_p=final_eps)
     p_beta_schedule = LinearSchedule(schedule_timesteps=max_train_step, initial_p=per_beta, final_p=1.0)
 
     if load_sub:
@@ -166,11 +167,9 @@ def train():
                 logger.loadBuffer(replay_buffer, load_buffer, load_n)
 
         elif planner_episode > 0:
-            if simulate_n > 0 and not load_buffer: # TS now only support 1 process now
-                planner_envs = planner_envs
+            if simulate_n > 0:
                 planner_num_process = 1
             else:
-                planner_envs = envs
                 planner_num_process = num_processes
             j = 0
             states, obs = planner_envs.reset()
@@ -263,25 +262,6 @@ def train():
             if not no_bar:
                 planner_bar.close()
 
-
-    # pre train
-    if pre_train_step > 0 and not load_sub and not load_model_pre:
-        pbar = tqdm(total=pre_train_step)
-        for i in range(pre_train_step):
-            t0 = time.time()
-            train_step(agent, replay_buffer, logger, p_beta_schedule)
-            if logger.num_training_steps % 1000 == 0:
-                logger.saveLossCurve(100)
-                # logger.saveTdErrorCurve(100)
-            if not no_bar:
-                pbar.set_description('loss: {:.3f}, time: {:.2f}'.format(float(logger.getCurrentLoss()), time.time()-t0))
-                pbar.update()
-
-            if (time.time() - start_time) / 3600 > time_limit:
-                logger.saveCheckPoint(args, envs, agent, replay_buffer)
-                exit(0)
-        pbar.close()
-        logger.saveModel(0, 'pretrain', agent)
 
     if not no_bar:
         pbar = tqdm(total=max_train_step, position=0, leave=True)
