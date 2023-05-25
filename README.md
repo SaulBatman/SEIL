@@ -5,7 +5,7 @@
 1. Clone this repo
 ```
 git clone https://github.com/SaulBatman/SEIL.git
-cd SEIL & pip install -r requirements.txt
+cd SEIL && pip install -r requirements.txt
 ```
 2. Clone environment repo and export PYTHONPATH
 ```
