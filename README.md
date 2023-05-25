@@ -9,7 +9,7 @@ cd SEIL && pip install -r requirements.txt
 ```
 2. Clone environment repo and export PYTHONPATH
 ```
-git clone https://github.com/SaulBatman/BulletArm.git -b SEIL
+git clone https://github.com/SaulBatman/BulletArm.git -b ibc
 export PYTHONPATH=$PYTHONPATH:/YOURPATH/BulletArm/
 ```
 3. Run simulation experiments in Block in Bowl
