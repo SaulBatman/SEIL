@@ -19,6 +19,8 @@ cd SEIL/scripts
 python main.py --env=close_loop_block_in_bowl --model=equi_d
 # run CNN w/ TS
 python main.py --env=close_loop_block_in_bowl --model=cnn
+# run equivariant BC
+python main.py --env=close_loop_block_in_bowl --model=equi_d --simulate_n=0
 # run CNN baseline
 python main.py --env=close_loop_block_in_bowl --model=cnn --simulate_n=0
 # run implicit BC baseline
