@@ -5,6 +5,7 @@ import math
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 from collections import namedtuple
 from more_itertools import windowed
 import dill as pickle
@@ -415,4 +416,14 @@ class Logger(object):
         np.save(os.path.join(result_dir, 'success_rate.npy'), self.success)
         np.save(os.path.join(result_dir, 'step_reward.npy'), self.step_discounted_reward)
         np.save(os.path.join(result_dir, 'step_success_rate.npy'), self.step_success)
+
+    def saveInitExpertImg(self, image: np.array, name='expert.png'):
+        print(self.trans_dir)
+        c, _, _ = image.shape
+        if c == 1:
+            mpimg.imsave(os.path.join(self.trans_dir, name), image.repeat(3, axis=0).transpose(1,2,0))
+        elif c == 3:
+            mpimg.imsave(os.path.join(self.trans_dir, name), image.transpose(1,2,0))
+        else:
+            assert (c == 1) or (c == 3)
 

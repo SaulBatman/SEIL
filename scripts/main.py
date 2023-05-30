@@ -236,6 +236,11 @@ def train():
 
                 for i in range(planner_num_process):
                     if dones[i] and rewards[i]:
+                        try:
+                            logger.saveInitExpertImg(local_transitions[i][0].obs, 'expert.png')
+                            logger.saveInitExpertImg(simulate_buffer[i][0].obs, 'expert_ts.png')
+                        except:
+                            print("No available obs")
 
                         if simulate_n > 0 and len(simulate_buffer[i]) > 0:
                             local_transitions[i]+=simulate_buffer[i]
