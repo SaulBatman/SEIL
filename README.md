@@ -1,5 +1,7 @@
 # ICRA2023 SEIL: Simulation-augmented Equivariant Imitation Learning
  <img src="./img/icra.png" alt="drawing" width="900"/>
+ 
+## [PDF](https://arxiv.org/pdf/2211.00194) | [Website](https://saulbatman.github.io/project/seil/) | [Video](https://www.youtube.com/watch?v=A9gJZWZO7Og&pp=ygUzc2ltdWxhdGlvbi1hdWdtZW50ZWQgZXF1aXZhcmlhbnQgaW1pdGF0aW9uIGxlYXJuaW5n)
 
 ## Instruction
 1. Clone this repo
