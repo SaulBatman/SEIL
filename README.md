@@ -1,15 +1,17 @@
 # ICRA2023 SEIL: Simulation-augmented Equivariant Imitation Learning
  <img src="./img/icra.png" alt="drawing" width="900"/>
+ 
+## [PDF](https://arxiv.org/pdf/2211.00194) | [Website](https://saulbatman.github.io/project/seil/) | [Video](https://www.youtube.com/watch?v=A9gJZWZO7Og&pp=ygUzc2ltdWxhdGlvbi1hdWdtZW50ZWQgZXF1aXZhcmlhbnQgaW1pdGF0aW9uIGxlYXJuaW5n)
 
 ## Instruction
 1. Clone this repo
 ```
 git clone https://github.com/SaulBatman/SEIL.git
-cd SEIL & pip install -r requirements.txt
+cd SEIL && pip install -r requirements.txt
 ```
 2. Clone environment repo and export PYTHONPATH
 ```
-git clone https://github.com/SaulBatman/BulletArm.git -b SEIL
+git clone https://github.com/SaulBatman/BulletArm.git -b ibc
 export PYTHONPATH=$PYTHONPATH:/YOURPATH/BulletArm/
 ```
 3. Run simulation experiments in Block in Bowl
@@ -19,6 +21,8 @@ cd SEIL/scripts
 python main.py --env=close_loop_block_in_bowl --model=equi_d
 # run CNN w/ TS
 python main.py --env=close_loop_block_in_bowl --model=cnn
+# run equivariant BC
+python main.py --env=close_loop_block_in_bowl --model=equi_d --simulate_n=0
 # run CNN baseline
 python main.py --env=close_loop_block_in_bowl --model=cnn --simulate_n=0
 # run implicit BC baseline
