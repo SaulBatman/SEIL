@@ -9,4 +9,4 @@ dill
 more_itertools
 opencv-python
 scikit-learn
-e2cnn
+escnn # Note: requires fortran compiler

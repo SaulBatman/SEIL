@@ -2,8 +2,8 @@ import torch
 import torch.nn.functional as F
 from torch.distributions import Normal
 
-from e2cnn import gspaces
-from e2cnn import nn
+from escnn import gspaces
+from escnn import nn
 
 from networks.sac_networks import SACGaussianPolicyBase
 
@@ -77,7 +77,7 @@ class SpatialSoftArgmaxCycle(torch.nn.Module):
 class EquiResBlock(torch.nn.Module):
     def __init__(self, input_channels, hidden_dim, kernel_size, N, initialize=True):
         super(EquiResBlock, self).__init__()
-        r2_act = gspaces.Rot2dOnR2(N=N)
+        r2_act = gspaces.rot2dOnR2(N=N)
         rep = r2_act.regular_repr
 
         feat_type_in = nn.FieldType(r2_act, input_channels * [rep])
@@ -116,7 +116,7 @@ class EquivariantEncoder128(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
         super().__init__()
         self.obs_channel = obs_channel
-        self.c4_act = gspaces.Rot2dOnR2(N)
+        self.c4_act = gspaces.rot2dOnR2(N)
         self.conv = torch.nn.Sequential(
             # 128x128
             nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
@@ -169,7 +169,7 @@ class EquivariantEncoder128Dihedral(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
         super().__init__()
         self.obs_channel = obs_channel
-        self.d4_act = gspaces.FlipRot2dOnR2(N)
+        self.d4_act = gspaces.flipRot2dOnR2(N)
         self.conv = torch.nn.Sequential(
             # 128x128
             nn.R2Conv(nn.FieldType(self.d4_act, obs_channel * [self.d4_act.trivial_repr]),
@@ -222,7 +222,7 @@ class EquivariantEncoder128DihedralK5(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
         super().__init__()
         self.obs_channel = obs_channel
-        self.d4_act = gspaces.FlipRot2dOnR2(N)
+        self.d4_act = gspaces.flipRot2dOnR2(N)
         self.conv = torch.nn.Sequential(
             # 128x128
             nn.R2Conv(nn.FieldType(self.d4_act, obs_channel * [self.d4_act.trivial_repr]),
@@ -275,7 +275,7 @@ class EquivariantEncoder128SO2_1(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True):
         super().__init__()
         self.obs_channel = obs_channel
-        self.c4_act = gspaces.Rot2dOnR2(N=-1, maximum_frequency=3)
+        self.c4_act = gspaces.rot2dOnR2(N=-1, maximum_frequency=3)
         self.repr = self.c4_act.irrep(0) + self.c4_act.irrep(1) + self.c4_act.irrep(2) + self.c4_act.irrep(3)
         self.conv = torch.nn.Sequential(
             # 128x128
@@ -357,7 +357,7 @@ class EquivariantEncoder128SO2_2(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True):
         super().__init__()
         self.obs_channel = obs_channel
-        self.c4_act = gspaces.Rot2dOnR2(N=-1, maximum_frequency=3)
+        self.c4_act = gspaces.rot2dOnR2(N=-1, maximum_frequency=3)
         self.repr = [self.c4_act.irrep(0), self.c4_act.irrep(1), self.c4_act.irrep(2), self.c4_act.irrep(3)]
 
         self.conv = torch.nn.Sequential(
@@ -397,7 +397,7 @@ class EquivariantEncoder128SO2_3(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True):
         super().__init__()
         self.obs_channel = obs_channel
-        self.so2 = gspaces.Rot2dOnR2(N=-1, maximum_frequency=3)
+        self.so2 = gspaces.rot2dOnR2(N=-1, maximum_frequency=3)
         self.repr = [self.so2.irrep(0), self.so2.irrep(1), self.so2.irrep(2), self.so2.irrep(3)]
         self.conv = torch.nn.Sequential(
             # 128x128
@@ -451,8 +451,8 @@ class EquivariantEncoder128O2(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True):
         super().__init__()
         self.obs_channel = obs_channel
-        self.o2 = gspaces.FlipRot2dOnR2(N=-1, maximum_frequency=3)
-        self.so2 = gspaces.Rot2dOnR2(N=-1, maximum_frequency=3)
+        self.o2 = gspaces.flipRot2dOnR2(N=-1, maximum_frequency=3)
+        self.so2 = gspaces.rot2dOnR2(N=-1, maximum_frequency=3)
         self.repr = [self.o2.induced_repr((None, -1), self.so2.irrep(0)), self.o2.induced_repr((None, -1), self.so2.irrep(1)), self.o2.induced_repr((None, -1), self.so2.irrep(2)), self.o2.induced_repr((None, -1), self.so2.irrep(3))]
         # self.repr = [self.o2.irrep(1, 0), self.o2.irrep(1, 1), self.o2.irrep(1, 2), self.o2.irrep(1, 3)]
         self.conv = torch.nn.Sequential(
@@ -507,8 +507,8 @@ class EquivariantEncoder128O2_2(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True):
         super().__init__()
         self.obs_channel = obs_channel
-        self.o2 = gspaces.FlipRot2dOnR2(N=-1, maximum_frequency=3)
-        self.so2 = gspaces.Rot2dOnR2(N=-1, maximum_frequency=3)
+        self.o2 = gspaces.flipRot2dOnR2(N=-1, maximum_frequency=3)
+        self.so2 = gspaces.rot2dOnR2(N=-1, maximum_frequency=3)
         self.repr = [self.o2.irrep(0, 0), self.o2.irrep(1, 0), self.o2.irrep(1, 1), self.o2.irrep(1, 2), self.o2.irrep(1, 3)]
         self.conv = torch.nn.Sequential(
             # 128x128
@@ -562,8 +562,8 @@ class EquivariantEncoder128O2_3(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True):
         super().__init__()
         self.obs_channel = obs_channel
-        self.o2 = gspaces.FlipRot2dOnR2(N=-1, maximum_frequency=3)
-        self.so2 = gspaces.Rot2dOnR2(N=-1, maximum_frequency=3)
+        self.o2 = gspaces.flipRot2dOnR2(N=-1, maximum_frequency=3)
+        self.so2 = gspaces.rot2dOnR2(N=-1, maximum_frequency=3)
         self.repr = [self.o2.irrep(0, 0), self.o2.irrep(1, 0), self.o2.irrep(1, 1), self.o2.irrep(1, 2), self.o2.irrep(1, 3), self.o2.induced_repr((None, -1), self.so2.irrep(0)), self.o2.induced_repr((None, -1), self.so2.irrep(1)), self.o2.induced_repr((None, -1), self.so2.irrep(2)), self.o2.induced_repr((None, -1), self.so2.irrep(3))]
         self.conv = torch.nn.Sequential(
             # 128x128
@@ -617,7 +617,7 @@ class EquivariantEncoder128NoPool(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
         super().__init__()
         self.obs_channel = obs_channel
-        self.c4_act = gspaces.Rot2dOnR2(N)
+        self.c4_act = gspaces.rot2dOnR2(N)
         self.conv = torch.nn.Sequential(
             nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
                       nn.FieldType(self.c4_act, n_out//8 * [self.c4_act.regular_repr]),
@@ -653,7 +653,7 @@ class EquivariantEncoder128Small(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
         super().__init__()
         self.obs_channel = obs_channel
-        self.c4_act = gspaces.Rot2dOnR2(N)
+        self.c4_act = gspaces.rot2dOnR2(N)
         self.conv = torch.nn.Sequential(
             # 128x128
             nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
@@ -690,7 +690,7 @@ class EquivariantEncoder128Res(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
         super().__init__()
         self.obs_channel = obs_channel
-        self.c4_act = gspaces.Rot2dOnR2(N)
+        self.c4_act = gspaces.rot2dOnR2(N)
         self.conv = torch.nn.Sequential(
             nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
                       nn.FieldType(self.c4_act, n_out // 8 * [self.c4_act.regular_repr]),
@@ -731,7 +731,7 @@ class EquivariantEncoder64_1(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
         super().__init__()
         self.obs_channel = obs_channel
-        self.c4_act = gspaces.Rot2dOnR2(N)
+        self.c4_act = gspaces.rot2dOnR2(N)
         self.conv = torch.nn.Sequential(
             # 64x64
             nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
@@ -778,7 +778,7 @@ class EquivariantEncoder64_2(torch.nn.Module):
     def __init__(self, obs_channel=2, n_out=128, initialize=True, N=4):
         super().__init__()
         self.obs_channel = obs_channel
-        self.c4_act = gspaces.Rot2dOnR2(N)
+        self.c4_act = gspaces.rot2dOnR2(N)
         self.conv = torch.nn.Sequential(
             # 64x64
             nn.R2Conv(nn.FieldType(self.c4_act, obs_channel * [self.c4_act.trivial_repr]),
@@ -852,7 +852,7 @@ class EquivariantPolicy(torch.nn.Module):
         self.obs_channel = obs_shape[0]
         self.N = N
         self.action_dim = action_dim
-        self.c4_act = gspaces.Rot2dOnR2(N)
+        self.c4_act = gspaces.rot2dOnR2(N)
         enc = getEnc(obs_shape[1], enc_id)
         self.conv = torch.nn.Sequential(
             enc(self.obs_channel, n_hidden, initialize, N),
@@ -879,7 +879,7 @@ class EquivariantPolicyDihedral(SACGaussianPolicyBase):
         assert kernel_size in [3, 5]
         self.obs_channel = obs_shape[0]
         self.action_dim = action_dim
-        self.d4_act = gspaces.FlipRot2dOnR2(N)
+        self.d4_act = gspaces.flipRot2dOnR2(N)
         self.n_rho1 = 2 if N==2 else 1
         enc = EquivariantEncoder128Dihedral if kernel_size == 3 else EquivariantEncoder128DihedralK5
         self.conv = torch.nn.Sequential(
